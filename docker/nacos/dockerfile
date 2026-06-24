@@ -5,3 +5,8 @@ MAINTAINER ruoyi
 
 # 复制conf文件到路径
 COPY ./conf/application.properties /home/nacos/conf/application.properties
+
+# 复制人大金仓 Kingbase JDBC 驱动（可选：在 docker/nacos/ 目录下放置 kingbase8-*.jar）
+# 如果未放置驱动，Nacos 将使用内置 PostgreSQL 驱动尝试连接 Kingbase（V8 兼容 PG）
+COPY ./kingbase8-*.jar /tmp/kingbase-drivers/ 2>/dev/null || true
+RUN if [ -n "$(ls -A /tmp/kingbase-drivers/ 2>/dev/null)" ]; then cp /tmp/kingbase-drivers/*.jar /home/nacos/plugins/; fi

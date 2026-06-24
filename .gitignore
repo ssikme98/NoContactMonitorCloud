@@ -44,3 +44,13 @@ nbdist/
 !*/build/*.java
 !*/build/*.html
 !*/build/*.xml
+
+######################################################################
+# Deployment artifacts
+
+# Docker deployment JARs
+docker/ruoyi/**/jar/*.jar
+docker/nacos/*.jar
+
+# Database driver JARs at project root
+/kingbase8-*.jar

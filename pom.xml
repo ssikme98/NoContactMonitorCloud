@@ -34,6 +34,7 @@
         <poi.version>4.1.2</poi.version>
         <springdoc.version>1.6.9</springdoc.version>
         <transmittable-thread-local.version>2.14.5</transmittable-thread-local.version>
+        <kingbase8.version>8.6.0</kingbase8.version>
         <!-- override dependency version -->
         <tomcat.version>9.0.112</tomcat.version>
         <logback.version>1.2.13</logback.version>
@@ -180,6 +181,13 @@
                 <groupId>com.alibaba</groupId>
                 <artifactId>transmittable-thread-local</artifactId>
                 <version>${transmittable-thread-local.version}</version>
+            </dependency>
+
+            <!-- 人大金仓 Kingbase 驱动 -->
+            <dependency>
+                <groupId>com.kingbase8</groupId>
+                <artifactId>kingbase8</artifactId>
+                <version>${kingbase8.version}</version>
             </dependency>
 
             <!-- 核心模块 -->

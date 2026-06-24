@@ -31,5 +31,11 @@
             <version>${dynamic-ds.version}</version>
         </dependency>
 
+        <!-- 人大金仓 Kingbase 驱动 -->
+        <dependency>
+            <groupId>com.kingbase8</groupId>
+            <artifactId>kingbase8</artifactId>
+        </dependency>
+
     </dependencies>
 </project>
