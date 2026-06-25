@@ -54,3 +54,12 @@ docker/nacos/*.jar
 
 # Database driver JARs at project root
 /kingbase8-*.jar
+
+######################################################################
+# Local agent/wiki docs
+
+AGENTS.md
+**/AGENTS.md
+.wiki/
+**/.wiki/
+.scratch/

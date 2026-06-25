@@ -3,6 +3,7 @@ services:
   ruoyi-nacos:
     container_name: ruoyi-nacos
     image: nacos/nacos-server:v2.4.2
+    platform: linux/amd64
     build:
       context: ./nacos
     environment:
@@ -91,6 +92,18 @@ services:
       dockerfile: dockerfile
     ports:
       - "9203:9203"
+    restart: unless-stopped
+  ruoyi-modules-survey:
+    container_name: ruoyi-modules-survey
+    build:
+      context: ./ruoyi/modules/survey
+      dockerfile: dockerfile
+    ports:
+      - "9204:9204"
+    depends_on:
+      - ruoyi-redis
+    links:
+      - ruoyi-redis
     restart: unless-stopped
   ruoyi-modules-file:
     container_name: ruoyi-modules-file

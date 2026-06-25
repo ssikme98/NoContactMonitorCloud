@@ -52,6 +52,12 @@ export const constantRoutes = [
     hidden: true
   },
   {
+    path: '/survey/fill/:token',
+    component: () => import('@/views/survey/fill/index'),
+    hidden: true,
+    meta: { title: '问卷填报' }
+  },
+  {
     path: '/404',
     component: () => import('@/views/error/404'),
     hidden: true
