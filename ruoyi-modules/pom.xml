@@ -10,6 +10,7 @@
 
     <modules>
         <module>ruoyi-system</module>
+        <module>ruoyi-survey</module>
         <module>ruoyi-gen</module>
         <module>ruoyi-job</module>
         <module>ruoyi-file</module>

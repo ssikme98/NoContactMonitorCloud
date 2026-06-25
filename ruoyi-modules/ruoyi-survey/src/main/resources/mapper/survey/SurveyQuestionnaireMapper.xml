@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.survey.mapper.SurveyQuestionnaireMapper">
+
+    <resultMap type="SurveyQuestionnaire" id="SurveyQuestionnaireResult">
+        <id     property="questionnaireId"       column="questionnaire_id"        />
+        <result property="questionnaireName"     column="questionnaire_name"      />
+        <result property="description"           column="description"             />
+        <result property="status"                column="status"                  />
+        <result property="versionNo"             column="version_no"              />
+        <result property="sourceQuestionnaireId" column="source_questionnaire_id" />
+        <result property="publishedTime"         column="published_time"          />
+        <result property="endedTime"             column="ended_time"              />
+        <result property="delFlag"               column="del_flag"                />
+        <result property="createBy"              column="create_by"               />
+        <result property="createTime"            column="create_time"             />
+        <result property="updateBy"              column="update_by"               />
+        <result property="updateTime"            column="update_time"             />
+        <result property="remark"                column="remark"                  />
+    </resultMap>
+
+    <resultMap type="SurveyQuestion" id="SurveyQuestionResult">
+        <id     property="questionId"      column="question_id"      />
+        <result property="questionnaireId" column="questionnaire_id" />
+        <result property="questionTitle"   column="question_title"   />
+        <result property="questionType"    column="question_type"    />
+        <result property="requiredFlag"    column="required_flag"    />
+        <result property="dimension"       column="dimension"        />
+        <result property="scoreMax"        column="score_max"        />
+        <result property="orderNum"        column="order_num"        />
+        <result property="delFlag"         column="del_flag"         />
+    </resultMap>
+
+    <resultMap type="SurveyQuestionOption" id="SurveyQuestionOptionResult">
+        <id     property="optionId"    column="option_id"    />
+        <result property="questionId"  column="question_id"  />
+        <result property="optionType"  column="option_type"  />
+        <result property="optionLabel" column="option_label" />
+        <result property="optionValue" column="option_value" />
+        <result property="scoreValue"  column="score_value"  />
+        <result property="orderNum"    column="order_num"    />
+    </resultMap>
+
+    <sql id="selectQuestionnaireVo">
+        select questionnaire_id, questionnaire_name, description, status, version_no,
+               source_questionnaire_id, published_time, ended_time, del_flag,
+               create_by, create_time, update_by, update_time, remark
+        from survey_questionnaire
+    </sql>
+
+    <select id="selectQuestionnaireList" parameterType="SurveyQuestionnaire" resultMap="SurveyQuestionnaireResult">
+        <include refid="selectQuestionnaireVo"/>
+        <where>
+            del_flag = '0'
+            <if test="questionnaireName != null and questionnaireName != ''">
+                AND questionnaire_name like '%' || #{questionnaireName} || '%'
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        order by create_time desc, questionnaire_id desc
+    </select>
+
+    <select id="selectQuestionnaireById" parameterType="Long" resultMap="SurveyQuestionnaireResult">
+        <include refid="selectQuestionnaireVo"/>
+        where questionnaire_id = #{questionnaireId} and del_flag = '0'
+    </select>
+
+    <select id="selectQuestionsByQuestionnaireId" parameterType="Long" resultMap="SurveyQuestionResult">
+        select question_id, questionnaire_id, question_title, question_type, required_flag,
+               dimension, score_max, order_num, del_flag
+        from survey_question
+        where questionnaire_id = #{questionnaireId} and del_flag = '0'
+        order by order_num, question_id
+    </select>
+
+    <select id="selectOptionsByQuestionnaireId" parameterType="Long" resultMap="SurveyQuestionOptionResult">
+        select o.option_id, o.question_id, o.option_type, o.option_label, o.option_value,
+               o.score_value, o.order_num
+        from survey_question_option o
+        inner join survey_question q on q.question_id = o.question_id
+        where q.questionnaire_id = #{questionnaireId}
+          and q.del_flag = '0'
+        order by o.question_id, o.option_type, o.order_num, o.option_id
+    </select>
+
+    <select id="selectMaxVersionNo" parameterType="Long" resultType="Integer">
+        select max(version_no)
+        from survey_questionnaire
+        where del_flag = '0'
+          and (questionnaire_id = #{rootQuestionnaireId} or source_questionnaire_id = #{rootQuestionnaireId})
+    </select>
+
+    <insert id="insertQuestionnaire" parameterType="SurveyQuestionnaire" useGeneratedKeys="true" keyProperty="questionnaireId">
+        insert into survey_questionnaire(
+            questionnaire_name, description, status, version_no, source_questionnaire_id,
+            published_time, ended_time, del_flag, create_by, create_time, remark
+        ) values (
+            #{questionnaireName}, #{description}, #{status}, #{versionNo}, #{sourceQuestionnaireId},
+            #{publishedTime}, #{endedTime}, '0', #{createBy}, #{createTime}, #{remark}
+        )
+    </insert>
+
+    <update id="updateQuestionnaire" parameterType="SurveyQuestionnaire">
+        update survey_questionnaire
+        <set>
+            <if test="questionnaireName != null and questionnaireName != ''">questionnaire_name = #{questionnaireName},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="versionNo != null">version_no = #{versionNo},</if>
+            <if test="sourceQuestionnaireId != null">source_questionnaire_id = #{sourceQuestionnaireId},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = #{updateTime}
+        </set>
+        where questionnaire_id = #{questionnaireId} and del_flag = '0'
+    </update>
+
+    <update id="updateQuestionnaireStatus" parameterType="SurveyQuestionnaire">
+        update survey_questionnaire
+        <set>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="publishedTime != null">published_time = #{publishedTime},</if>
+            <if test="endedTime != null">ended_time = #{endedTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = #{updateTime}
+        </set>
+        where questionnaire_id = #{questionnaireId} and del_flag = '0'
+    </update>
+
+    <update id="deleteQuestionnaireByIds" parameterType="Long">
+        update survey_questionnaire set del_flag = '2' where questionnaire_id in
+        <foreach collection="array" item="questionnaireId" open="(" separator="," close=")">
+            #{questionnaireId}
+        </foreach>
+    </update>
+
+    <insert id="insertQuestion" parameterType="SurveyQuestion" useGeneratedKeys="true" keyProperty="questionId">
+        insert into survey_question(
+            questionnaire_id, question_title, question_type, required_flag,
+            dimension, score_max, order_num, del_flag
+        ) values (
+            #{questionnaireId}, #{questionTitle}, #{questionType}, #{requiredFlag},
+            #{dimension}, #{scoreMax}, #{orderNum}, '0'
+        )
+    </insert>
+
+    <insert id="batchQuestionOption">
+        insert into survey_question_option(
+            question_id, option_type, option_label, option_value, score_value, order_num
+        ) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.questionId}, #{item.optionType}, #{item.optionLabel}, #{item.optionValue}, #{item.scoreValue}, #{item.orderNum})
+        </foreach>
+    </insert>
+
+    <delete id="deleteQuestionsByQuestionnaireId" parameterType="Long">
+        delete from survey_question where questionnaire_id = #{questionnaireId}
+    </delete>
+
+    <delete id="deleteOptionsByQuestionnaireId" parameterType="Long">
+        delete from survey_question_option
+        where question_id in (
+            select question_id from survey_question where questionnaire_id = #{questionnaireId}
+        )
+    </delete>
+
+</mapper>
