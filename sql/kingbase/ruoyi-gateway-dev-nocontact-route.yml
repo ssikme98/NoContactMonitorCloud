@@ -1,0 +1,18 @@
+        # 营商无感业务模块（兼容问卷旧路径）
+        - id: ruoyi-nocontact-survey
+          uri: lb://ruoyi-nocontact
+          predicates:
+            - Path=/survey/**
+          filters:
+            - StripPrefix=1
+        - id: ruoyi-nocontact
+          uri: lb://ruoyi-nocontact
+          predicates:
+            - Path=/nocontact/**
+          filters:
+            - StripPrefix=1
+
+# 公开填报接口需要加入 security.ignore.whites（仅放行公开填报接口，严禁放行管理接口）：
+#   - /survey/public/**
+#
+# 警告：切勿将 /survey/** 写入 ignore.whites，否则企业库/问卷/任务等管理端接口将全部匿名暴露

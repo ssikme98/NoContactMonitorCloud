@@ -20,7 +20,7 @@ console.log('=== Code Review Fix Verification ===\n');
 
 // Bug 1: dispatchTask must check status before allowing re-dispatch
 {
-  const svc = read('ruoyi-modules/ruoyi-survey/src/main/java/com/ruoyi/survey/service/impl/SurveyTaskServiceImpl.java');
+  const svc = read('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/survey/service/impl/SurveyTaskServiceImpl.java');
   assert(
     svc.includes('只有已抽样任务允许发卷'),
     '1. dispatchTask: status guard added'
@@ -29,7 +29,7 @@ console.log('=== Code Review Fix Verification ===\n');
 
 // Bug 2: normalizeChannels must throw for unknown channels (write path)
 {
-  const svc = read('ruoyi-modules/ruoyi-survey/src/main/java/com/ruoyi/survey/service/impl/SurveyTaskServiceImpl.java');
+  const svc = read('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/survey/service/impl/SurveyTaskServiceImpl.java');
   const hasWriteThrow = svc.includes('不支持的发送渠道：');
   const splitChannelsLenient = svc.indexOf('splitChannels(String') > 0;
   assert(hasWriteThrow, '2a. normalizeChannels: throws ServiceException for unknown channels');
@@ -38,7 +38,7 @@ console.log('=== Code Review Fix Verification ===\n');
 
 // Bug 3: submitResponse must catch DataIntegrityViolationException
 {
-  const svc = read('ruoyi-modules/ruoyi-survey/src/main/java/com/ruoyi/survey/service/impl/SurveyResponseServiceImpl.java');
+  const svc = read('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/survey/service/impl/SurveyResponseServiceImpl.java');
   assert(
     svc.includes('DataIntegrityViolationException') && svc.includes('catch (DataIntegrityViolationException'),
     '3. submitResponse: catches DataIntegrityViolationException -> business error'
@@ -59,7 +59,7 @@ console.log('PASS: 4. importEnterprise: @Transactional already present (finding 
 
 // Bug 6: endQuestionnaire must have @Transactional
 {
-  const svc = read('ruoyi-modules/ruoyi-survey/src/main/java/com/ruoyi/survey/service/impl/SurveyQuestionnaireServiceImpl.java');
+  const svc = read('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/survey/service/impl/SurveyQuestionnaireServiceImpl.java');
   const endIdx = svc.indexOf('public int endQuestionnaire');
   const before = svc.substring(Math.max(0, endIdx - 80), endIdx);
   assert(
@@ -70,7 +70,7 @@ console.log('PASS: 4. importEnterprise: @Transactional already present (finding 
 
 // Bug 7: parseMatrix must log IOException
 {
-  const svc = read('ruoyi-modules/ruoyi-survey/src/main/java/com/ruoyi/survey/service/impl/SurveyAnalyticsServiceImpl.java');
+  const svc = read('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/survey/service/impl/SurveyAnalyticsServiceImpl.java');
   const catchIdx = svc.indexOf('catch (IOException e)');
   const after = svc.substring(catchIdx, catchIdx + 100);
   assert(
@@ -81,7 +81,7 @@ console.log('PASS: 4. importEnterprise: @Transactional already present (finding 
 
 // Bug 8: SurveyOverviewController must have @RequiresPermissions
 {
-  const ctrl = read('ruoyi-modules/ruoyi-survey/src/main/java/com/ruoyi/survey/controller/SurveyOverviewController.java');
+  const ctrl = read('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/survey/controller/SurveyOverviewController.java');
   assert(
     ctrl.includes('@RequiresPermissions'),
     '8. SurveyOverviewController: @RequiresPermissions added'
@@ -90,7 +90,7 @@ console.log('PASS: 4. importEnterprise: @Transactional already present (finding 
 
 // Bug 9: Gateway route comment must warn against /survey/**
 {
-  const yml = read('sql/kingbase/ruoyi-gateway-dev-survey-route.yml');
+  const yml = read('sql/kingbase/ruoyi-gateway-dev-nocontact-route.yml');
   assert(
     yml.includes('严禁'),
     '9. Gateway route: explicit warning against wildcard whitelist'

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.survey.mapper.SurveyResponseMapper">
+
+    <resultMap type="SurveyTaskSample" id="SurveyTaskSampleResult">
+        <id     property="sampleId"       column="sample_id"         />
+        <result property="taskId"         column="task_id"           />
+        <result property="enterpriseId"   column="enterprise_id"     />
+        <result property="enterpriseName" column="enterprise_name"   />
+        <result property="creditCode"     column="credit_code"       />
+        <result property="regionName"     column="region_name"       />
+        <result property="industryCategory" column="industry_category" />
+        <result property="enterpriseScale" column="enterprise_scale" />
+        <result property="contactPhone"   column="contact_phone"     />
+        <result property="token"          column="token"             />
+        <result property="tokenExpireTime" column="token_expire_time" />
+        <result property="qrContent"      column="qr_content"        />
+        <result property="status"         column="status"            />
+        <result property="createTime"     column="create_time"       />
+    </resultMap>
+
+    <resultMap type="SurveyResponse" id="SurveyResponseResult">
+        <id     property="responseId"      column="response_id"     />
+        <result property="taskId"          column="task_id"         />
+        <result property="sampleId"        column="sample_id"       />
+        <result property="enterpriseId"    column="enterprise_id"   />
+        <result property="questionnaireId" column="questionnaire_id" />
+        <result property="submitTime"      column="submit_time"     />
+        <result property="clientIp"        column="client_ip"       />
+        <result property="status"          column="status"          />
+        <result property="createTime"      column="create_time"     />
+    </resultMap>
+
+    <resultMap type="com.ruoyi.nocontact.survey.domain.vo.SurveyResponseAnswerRow" id="SurveyResponseAnswerRowResult">
+        <id     property="responseId"       column="response_id"       />
+        <result property="taskId"           column="task_id"           />
+        <result property="enterpriseId"     column="enterprise_id"     />
+        <result property="regionName"       column="region_name"       />
+        <result property="industryCategory" column="industry_category" />
+        <result property="enterpriseScale"  column="enterprise_scale"  />
+        <result property="questionId"       column="question_id"       />
+        <result property="questionType"     column="question_type"     />
+        <result property="answerText"       column="answer_text"       />
+        <result property="optionValue"      column="option_value"      />
+        <result property="scoreValue"       column="score_value"       />
+    </resultMap>
+
+    <select id="selectSampleByToken" parameterType="String" resultMap="SurveyTaskSampleResult">
+        select sample_id, task_id, enterprise_id, enterprise_name, credit_code,
+               region_name, industry_category, enterprise_scale, contact_phone,
+               token, token_expire_time, qr_content, status, create_time
+        from survey_task_sample
+        where token = #{token}
+        limit 1
+    </select>
+
+    <select id="selectResponseBySampleId" parameterType="Long" resultMap="SurveyResponseResult">
+        select response_id, task_id, sample_id, enterprise_id, questionnaire_id,
+               submit_time, client_ip, status, create_time
+        from survey_response
+        where sample_id = #{sampleId}
+        limit 1
+    </select>
+
+    <select id="selectAnswerRowsByTaskId" parameterType="Long" resultMap="SurveyResponseAnswerRowResult">
+        select r.response_id,
+               r.task_id,
+               r.enterprise_id,
+               s.region_name,
+               s.industry_category,
+               s.enterprise_scale,
+               a.question_id,
+               a.question_type,
+               a.answer_text,
+               a.option_value,
+               a.score_value
+        from survey_response r
+        inner join survey_response_answer a on a.response_id = r.response_id
+        left join survey_task_sample s on s.sample_id = r.sample_id
+        where r.task_id = #{taskId}
+        order by r.response_id, a.answer_id
+    </select>
+
+    <insert id="insertResponse" parameterType="SurveyResponse" useGeneratedKeys="true" keyProperty="responseId">
+        insert into survey_response(
+            task_id, sample_id, enterprise_id, questionnaire_id, submit_time,
+            client_ip, status, create_time
+        ) values (
+            #{taskId}, #{sampleId}, #{enterpriseId}, #{questionnaireId}, #{submitTime},
+            #{clientIp}, #{status}, #{submitTime}
+        )
+    </insert>
+
+    <insert id="batchResponseAnswer">
+        insert into survey_response_answer(
+            response_id, question_id, question_type, answer_text, option_value, score_value
+        ) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.responseId}, #{item.questionId}, #{item.questionType}, #{item.answerText}, #{item.optionValue}, #{item.scoreValue})
+        </foreach>
+    </insert>
+
+    <update id="updateSampleCompleted" parameterType="Long">
+        update survey_task_sample set status = '2' where sample_id = #{sampleId}
+    </update>
+
+</mapper>

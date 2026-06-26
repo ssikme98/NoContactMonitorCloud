@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.fusion.mapper.FusionIndicatorMapper">
+
+    <resultMap type="FusionIndicator" id="FusionIndicatorResult">
+        <id     property="indicatorId"     column="indicator_id"     />
+        <result property="yearName"        column="year_name"        />
+        <result property="firstLevel"      column="first_level"      />
+        <result property="secondLevel"     column="second_level"     />
+        <result property="indicatorName"   column="indicator_name"   />
+        <result property="scoringRule"     column="scoring_rule"     />
+        <result property="responsibleUnit" column="responsible_unit" />
+        <result property="dataSource"      column="data_source"      />
+        <result property="status"          column="status"           />
+        <result property="createBy"        column="create_by"        />
+        <result property="createTime"      column="create_time"      />
+        <result property="updateBy"        column="update_by"        />
+        <result property="updateTime"      column="update_time"      />
+        <result property="remark"          column="remark"           />
+    </resultMap>
+
+    <sql id="selectIndicatorVo">
+        select indicator_id, year_name, first_level, second_level, indicator_name,
+               scoring_rule, responsible_unit, data_source, status,
+               create_by, create_time, update_by, update_time, remark
+        from nc_fusion_indicator
+    </sql>
+
+    <select id="selectIndicatorList" parameterType="FusionIndicator" resultMap="FusionIndicatorResult">
+        <include refid="selectIndicatorVo"/>
+        <where>
+            del_flag = '0'
+            <if test="yearName != null and yearName != ''">
+                AND year_name = #{yearName}
+            </if>
+            <if test="firstLevel != null and firstLevel != ''">
+                AND first_level like '%' || #{firstLevel} || '%'
+            </if>
+            <if test="secondLevel != null and secondLevel != ''">
+                AND second_level like '%' || #{secondLevel} || '%'
+            </if>
+            <if test="indicatorName != null and indicatorName != ''">
+                AND indicator_name like '%' || #{indicatorName} || '%'
+            </if>
+            <if test="responsibleUnit != null and responsibleUnit != ''">
+                AND responsible_unit like '%' || #{responsibleUnit} || '%'
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        order by year_name desc, first_level, second_level, indicator_id
+    </select>
+
+    <select id="selectIndicatorById" parameterType="Long" resultMap="FusionIndicatorResult">
+        <include refid="selectIndicatorVo"/>
+        where indicator_id = #{indicatorId} and del_flag = '0'
+    </select>
+
+    <insert id="insertIndicator" parameterType="FusionIndicator" useGeneratedKeys="true" keyProperty="indicatorId">
+        insert into nc_fusion_indicator
+        (year_name, first_level, second_level, indicator_name, scoring_rule, responsible_unit,
+         data_source, status, create_by, create_time, remark)
+        values
+        (#{yearName}, #{firstLevel}, #{secondLevel}, #{indicatorName}, #{scoringRule}, #{responsibleUnit},
+         #{dataSource}, #{status}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateIndicator" parameterType="FusionIndicator">
+        update nc_fusion_indicator
+        <set>
+            <if test="yearName != null">year_name = #{yearName},</if>
+            <if test="firstLevel != null">first_level = #{firstLevel},</if>
+            <if test="secondLevel != null">second_level = #{secondLevel},</if>
+            <if test="indicatorName != null">indicator_name = #{indicatorName},</if>
+            <if test="scoringRule != null">scoring_rule = #{scoringRule},</if>
+            <if test="responsibleUnit != null">responsible_unit = #{responsibleUnit},</if>
+            <if test="dataSource != null">data_source = #{dataSource},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where indicator_id = #{indicatorId}
+    </update>
+
+    <update id="deleteIndicatorByIds" parameterType="Long">
+        update nc_fusion_indicator set del_flag = '2'
+        where indicator_id in
+        <foreach collection="array" item="indicatorId" open="(" separator="," close=")">
+            #{indicatorId}
+        </foreach>
+    </update>
+</mapper>

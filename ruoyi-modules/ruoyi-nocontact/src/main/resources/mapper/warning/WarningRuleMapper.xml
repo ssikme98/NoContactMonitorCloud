@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.warning.mapper.WarningRuleMapper">
+
+    <resultMap type="WarningRule" id="WarningRuleResult">
+        <id     property="ruleId"          column="rule_id"          />
+        <result property="ruleName"        column="rule_name"        />
+        <result property="indicatorId"     column="indicator_id"     />
+        <result property="indicatorName"   column="indicator_name"   />
+        <result property="warningLevel"    column="warning_level"    />
+        <result property="thresholdType"   column="threshold_type"   />
+        <result property="thresholdValue"  column="threshold_value"  />
+        <result property="triggerCondition" column="trigger_condition" />
+        <result property="triggerFrequency" column="trigger_frequency" />
+        <result property="pushChannels"    column="push_channels"    />
+        <result property="pushTargets"     column="push_targets"     />
+        <result property="contentTemplate" column="content_template" />
+        <result property="effectiveMode"   column="effective_mode"   />
+        <result property="effectiveTime"   column="effective_time"   />
+        <result property="status"          column="status"           />
+        <result property="createBy"        column="create_by"        />
+        <result property="createTime"      column="create_time"      />
+        <result property="updateBy"        column="update_by"        />
+        <result property="updateTime"      column="update_time"      />
+        <result property="remark"          column="remark"           />
+    </resultMap>
+
+    <sql id="selectRuleVo">
+        select r.rule_id, r.rule_name, r.indicator_id, coalesce(i.indicator_name, r.indicator_name) as indicator_name,
+               r.warning_level, r.threshold_type, r.threshold_value, r.trigger_condition, r.trigger_frequency,
+               r.push_channels, r.push_targets, r.content_template, r.effective_mode, r.effective_time,
+               r.status, r.create_by, r.create_time, r.update_by, r.update_time, r.remark
+        from nc_warning_rule r
+        left join nc_fusion_indicator i on i.indicator_id = r.indicator_id
+    </sql>
+
+    <select id="selectRuleList" parameterType="WarningRule" resultMap="WarningRuleResult">
+        <include refid="selectRuleVo"/>
+        <where>
+            r.del_flag = '0'
+            <if test="ruleName != null and ruleName != ''">
+                AND r.rule_name like '%' || #{ruleName} || '%'
+            </if>
+            <if test="status != null and status != ''">
+                AND r.status = #{status}
+            </if>
+            <if test="warningLevel != null and warningLevel != ''">
+                AND r.warning_level = #{warningLevel}
+            </if>
+            <if test="indicatorName != null and indicatorName != ''">
+                AND coalesce(i.indicator_name, r.indicator_name) like '%' || #{indicatorName} || '%'
+            </if>
+        </where>
+        order by r.create_time desc, r.rule_id desc
+    </select>
+
+    <select id="selectRuleById" parameterType="Long" resultMap="WarningRuleResult">
+        <include refid="selectRuleVo"/>
+        where r.rule_id = #{ruleId} and r.del_flag = '0'
+    </select>
+
+    <insert id="insertRule" parameterType="WarningRule" useGeneratedKeys="true" keyProperty="ruleId">
+        insert into nc_warning_rule
+        (rule_name, indicator_id, indicator_name, warning_level, threshold_type, threshold_value,
+         trigger_condition, trigger_frequency, push_channels, push_targets, content_template,
+         effective_mode, effective_time, status, create_by, create_time, remark)
+        values
+        (#{ruleName}, #{indicatorId}, #{indicatorName}, #{warningLevel}, #{thresholdType}, #{thresholdValue},
+         #{triggerCondition}, #{triggerFrequency}, #{pushChannels}, #{pushTargets}, #{contentTemplate},
+         #{effectiveMode}, #{effectiveTime}, #{status}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateRule" parameterType="WarningRule">
+        update nc_warning_rule
+        <set>
+            <if test="ruleName != null">rule_name = #{ruleName},</if>
+            <if test="indicatorId != null">indicator_id = #{indicatorId},</if>
+            <if test="indicatorName != null">indicator_name = #{indicatorName},</if>
+            <if test="warningLevel != null">warning_level = #{warningLevel},</if>
+            <if test="thresholdType != null">threshold_type = #{thresholdType},</if>
+            <if test="thresholdValue != null">threshold_value = #{thresholdValue},</if>
+            <if test="triggerCondition != null">trigger_condition = #{triggerCondition},</if>
+            <if test="triggerFrequency != null">trigger_frequency = #{triggerFrequency},</if>
+            <if test="pushChannels != null">push_channels = #{pushChannels},</if>
+            <if test="pushTargets != null">push_targets = #{pushTargets},</if>
+            <if test="contentTemplate != null">content_template = #{contentTemplate},</if>
+            <if test="effectiveMode != null">effective_mode = #{effectiveMode},</if>
+            <if test="effectiveTime != null">effective_time = #{effectiveTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where rule_id = #{ruleId}
+    </update>
+
+    <update id="updateRuleStatus" parameterType="WarningRule">
+        update nc_warning_rule
+        set status = #{status}, update_by = #{updateBy}, update_time = #{updateTime}
+        where rule_id = #{ruleId}
+    </update>
+
+    <update id="deleteRuleByIds" parameterType="Long">
+        update nc_warning_rule set del_flag = '2'
+        where rule_id in
+        <foreach collection="array" item="ruleId" open="(" separator="," close=")">
+            #{ruleId}
+        </foreach>
+    </update>
+</mapper>

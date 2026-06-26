@@ -93,8 +93,8 @@ services:
     ports:
       - "9203:9203"
     restart: unless-stopped
-  ruoyi-modules-survey:
-    container_name: ruoyi-modules-survey
+  ruoyi-modules-nocontact:
+    container_name: ruoyi-modules-nocontact
     build:
       context: ./ruoyi/modules/survey
       dockerfile: dockerfile
