@@ -254,3 +254,8 @@ WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3215);
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 SELECT 3224, '预警消息导出', 3220, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:message:export', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3224);
+
+UPDATE sys_menu
+SET perms = 'nocontact:' || perms, update_by = 'admin', update_time = current_timestamp
+WHERE menu_id BETWEEN 3000 AND 3299
+  AND (perms LIKE 'fusion' || ':%' OR perms LIKE 'warning' || ':%');

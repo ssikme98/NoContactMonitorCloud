@@ -180,7 +180,7 @@ WHERE NOT EXISTS (SELECT 1 FROM nc_warning_message WHERE message_id = 4003);
 
 -- 营商数据融合菜单
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3000, '营商数据融合', 0, 1, 'fusion', NULL, '', '', 1, 0, 'M', '0', '0', '', 'database', 'admin', current_timestamp, '', NULL, '营商数据融合目录'
+SELECT 3000, '营商数据融合', 0, 1, 'fusion', NULL, '', '', 1, 0, 'M', '0', '0', '', 'table', 'admin', current_timestamp, '', NULL, '营商数据融合目录'
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3000);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
@@ -193,7 +193,7 @@ WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3020);
 
 -- 检测预警中心菜单
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3200, '检测预警中心', 0, 3, 'warning', NULL, '', '', 1, 0, 'M', '0', '0', '', 'alert', 'admin', current_timestamp, '', NULL, '检测预警中心目录'
+SELECT 3200, '检测预警中心', 0, 3, 'warning', NULL, '', '', 1, 0, 'M', '0', '0', '', 'bell', 'admin', current_timestamp, '', NULL, '检测预警中心目录'
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3200);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
@@ -267,3 +267,16 @@ WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3222);
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 SELECT 3223, '预警消息删除', 3220, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:message:remove', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3223);
+
+UPDATE sys_menu
+SET icon = 'table', update_by = 'admin', update_time = current_timestamp
+WHERE menu_id = 3000;
+
+UPDATE sys_menu
+SET icon = 'bell', update_by = 'admin', update_time = current_timestamp
+WHERE menu_id = 3200;
+
+UPDATE sys_menu
+SET perms = 'nocontact:' || perms, update_by = 'admin', update_time = current_timestamp
+WHERE menu_id BETWEEN 3000 AND 3299
+  AND (perms LIKE 'fusion' || ':%' OR perms LIKE 'warning' || ':%');
