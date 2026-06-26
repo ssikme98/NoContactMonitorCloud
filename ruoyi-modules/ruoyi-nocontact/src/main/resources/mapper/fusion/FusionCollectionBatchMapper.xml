@@ -224,6 +224,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           </choose>
     </select>
 
+    <select id="countApprovedCurrentItemByScope" parameterType="FusionCollectionItem" resultType="int">
+        select count(1)
+        from nc_fusion_collection_item i
+        inner join nc_fusion_collection_batch b on b.batch_id = i.batch_id
+        where i.del_flag = '0'
+          and b.del_flag = '0'
+          and b.batch_status = 'approved'
+          and i.is_current = '1'
+          and i.indicator_id = #{indicatorId}
+          and i.responsible_unit_id = #{responsibleUnitId}
+          and i.period_key = #{periodKey}
+          <choose>
+              <when test="regionCode != null and regionCode != ''">
+                  and i.region_code = #{regionCode}
+              </when>
+              <otherwise>
+                  and (i.region_code is null or i.region_code = '')
+              </otherwise>
+          </choose>
+    </select>
+
     <select id="countDeptInScope" parameterType="FusionCollectionBatch" resultType="int">
         select count(1)
         from sys_dept d

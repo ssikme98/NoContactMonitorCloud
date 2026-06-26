@@ -179,6 +179,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and message_status not in ('closed', 'ignored', 'handled', 'archived')
     </update>
 
+    <update id="updateOpenMessageHitByBusinessKey" parameterType="WarningMessage">
+        update nc_warning_message
+        set current_value = #{currentValue},
+            threshold_value = #{thresholdValue},
+            hit_count = coalesce(hit_count, 0) + 1,
+            source_batch_id = #{sourceBatchId},
+            source_item_id = #{sourceItemId},
+            latest_hit_time = #{latestHitTime},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where business_key = #{businessKey}
+          and del_flag = '0'
+          and message_status not in ('closed', 'ignored', 'handled', 'archived')
+    </update>
+
     <update id="updateMessageStatus" parameterType="WarningMessage">
         update nc_warning_message
         <set>

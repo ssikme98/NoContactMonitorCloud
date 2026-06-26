@@ -9,10 +9,12 @@ public class WarningEvaluationInput
 {
     private Long indicatorId;
     private String indicatorName;
+    private Long deptId;
     private Long responsibleUnitId;
     private String responsibleUnitName;
     private String regionCode;
     private String regionName;
+    private String periodType;
     private String periodKey;
     private BigDecimal currentValue;
     private boolean valuePresent;
@@ -36,6 +38,16 @@ public class WarningEvaluationInput
     public void setIndicatorName(String indicatorName)
     {
         this.indicatorName = indicatorName;
+    }
+
+    public Long getDeptId()
+    {
+        return deptId;
+    }
+
+    public void setDeptId(Long deptId)
+    {
+        this.deptId = deptId;
     }
 
     public Long getResponsibleUnitId()
@@ -76,6 +88,16 @@ public class WarningEvaluationInput
     public void setRegionName(String regionName)
     {
         this.regionName = regionName;
+    }
+
+    public String getPeriodType()
+    {
+        return periodType;
+    }
+
+    public void setPeriodType(String periodType)
+    {
+        this.periodType = periodType;
     }
 
     public String getPeriodKey()

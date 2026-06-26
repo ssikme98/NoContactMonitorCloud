@@ -18,7 +18,7 @@ class NocontactDataScopeHelperTest
     void deptScopeUsesCurrentUserDept()
     {
         String sql = NocontactDataScopeHelper.buildDataScopeSql(userWithRole(Constants.Dept.DATA_SCOPE_DEPT), "b",
-                "dept_id", "b", "create_by", "fusion:collection:list");
+                "dept_id", "b", "create_by", "nocontact:fusion:collection:list");
 
         assertTrue(sql.contains("b.dept_id = 88"));
     }
@@ -28,7 +28,7 @@ class NocontactDataScopeHelperTest
     {
         String sql = NocontactDataScopeHelper.buildDataScopeSql(
                 userWithRole(Constants.Dept.DATA_SCOPE_DEPT_AND_CHILD), "b", "dept_id", "b", "create_by",
-                "fusion:collection:list");
+                "nocontact:fusion:collection:list");
 
         assertTrue(sql.contains("',' || ancestors || ',' LIKE '%,88,%'"));
     }
@@ -37,7 +37,7 @@ class NocontactDataScopeHelperTest
     void customScopeUsesRoleDeptMapping()
     {
         String sql = NocontactDataScopeHelper.buildDataScopeSql(userWithRole(Constants.Dept.DATA_SCOPE_CUSTOM), "f",
-                "dept_id", "f", "create_by", "fusion:collection:list");
+                "dept_id", "f", "create_by", "nocontact:fusion:collection:list");
 
         assertTrue(sql.contains("f.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = 20 )"));
     }
@@ -46,7 +46,7 @@ class NocontactDataScopeHelperTest
     void selfScopeUsesCreateBy()
     {
         String sql = NocontactDataScopeHelper.buildDataScopeSql(userWithRole(Constants.Dept.DATA_SCOPE_SELF), "m",
-                "dept_id", "m", "create_by", "warning:message:list");
+                "dept_id", "m", "create_by", "nocontact:warning:message:list");
 
         assertTrue(sql.contains("m.create_by = 'scope-user'"));
     }
@@ -55,7 +55,7 @@ class NocontactDataScopeHelperTest
     void allScopeReturnsEmptySql()
     {
         String sql = NocontactDataScopeHelper.buildDataScopeSql(userWithRole(Constants.Dept.DATA_SCOPE_ALL), "m",
-                "dept_id", "m", "create_by", "warning:message:list");
+                "dept_id", "m", "create_by", "nocontact:warning:message:list");
 
         assertEquals("", sql);
     }
@@ -66,7 +66,7 @@ class NocontactDataScopeHelperTest
         role.setRoleId(20L);
         role.setDataScope(dataScope);
         role.setStatus(UserConstants.ROLE_NORMAL);
-        role.setPermissions(new HashSet<String>(Arrays.asList("fusion:collection:list", "warning:message:list")));
+        role.setPermissions(new HashSet<String>(Arrays.asList("nocontact:fusion:collection:list", "nocontact:warning:message:list")));
         SysUser user = new SysUser();
         user.setUserId(2L);
         user.setUserName("scope-user");

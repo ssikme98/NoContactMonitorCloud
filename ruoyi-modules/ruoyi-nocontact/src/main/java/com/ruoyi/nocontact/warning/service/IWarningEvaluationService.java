@@ -6,4 +6,6 @@ package com.ruoyi.nocontact.warning.service;
 public interface IWarningEvaluationService
 {
     public int evaluateApprovedBatch(Long batchId, String operName);
+
+    public int evaluateScheduledRules(String periodKey, String operName);
 }

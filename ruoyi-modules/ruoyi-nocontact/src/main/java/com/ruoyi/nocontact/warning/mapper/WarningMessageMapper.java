@@ -26,6 +26,8 @@ public interface WarningMessageMapper
 
     public int updateMessageHit(WarningMessage message);
 
+    public int updateOpenMessageHitByBusinessKey(WarningMessage message);
+
     public int updateMessageStatus(WarningMessage message);
 
     public int insertHandleLog(WarningMessageHandleLog handleLog);

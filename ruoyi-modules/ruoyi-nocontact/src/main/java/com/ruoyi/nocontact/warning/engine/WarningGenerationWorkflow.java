@@ -32,35 +32,72 @@ public class WarningGenerationWorkflow
         {
             for (WarningRule rule : rules)
             {
-                if (!matchesIndicator(rule, item))
-                {
-                    continue;
-                }
                 WarningEvaluationInput input = toInput(batch, item);
-                WarningEvaluationResult result = evaluator.evaluate(rule, input);
-                if (!result.isMatched())
-                {
-                    continue;
-                }
-                String businessKey = buildBusinessKey(rule, batch, item);
-                WarningMessage existing = findOpenMessage(openMessages, businessKey);
-                if (existing == null)
-                {
-                    plan.getMessagesToInsert().add(toMessage(rule, batch, item, businessKey));
-                }
-                else
-                {
-                    plan.getMessagesToUpdate().add(toUpdatedMessage(existing, rule, batch, item));
-                }
+                evaluateInput(plan, rule, input, batch.getBatchId(), item.getItemId(), openMessages);
             }
         }
         return plan;
     }
 
-    private boolean matchesIndicator(WarningRule rule, FusionCollectionItem item)
+    public WarningGenerationPlan evaluateScheduled(List<WarningEvaluationInput> inputs, List<WarningRule> rules,
+            List<WarningMessage> openMessages)
     {
-        return rule != null && item != null && rule.getIndicatorId() != null
-                && rule.getIndicatorId().equals(item.getIndicatorId());
+        WarningGenerationPlan plan = new WarningGenerationPlan();
+        if (inputs == null || rules == null)
+        {
+            return plan;
+        }
+        for (WarningEvaluationInput input : inputs)
+        {
+            for (WarningRule rule : rules)
+            {
+                evaluateInput(plan, rule, input, null, null, openMessages);
+            }
+        }
+        return plan;
+    }
+
+    private void evaluateInput(WarningGenerationPlan plan, WarningRule rule, WarningEvaluationInput input,
+            Long sourceBatchId, Long sourceItemId, List<WarningMessage> openMessages)
+    {
+        if (!matchesRule(rule, input))
+        {
+            return;
+        }
+        WarningEvaluationResult result = evaluator.evaluate(rule, input);
+        if (!result.isMatched())
+        {
+            return;
+        }
+        String businessKey = buildBusinessKey(rule, input);
+        WarningMessage existing = findOpenMessage(openMessages, businessKey);
+        if (existing == null)
+        {
+            plan.getMessagesToInsert().add(toMessage(rule, input, businessKey, sourceBatchId, sourceItemId));
+        }
+        else
+        {
+            plan.getMessagesToUpdate().add(toUpdatedMessage(existing, rule, input, sourceBatchId, sourceItemId));
+        }
+    }
+
+    private boolean matchesRule(WarningRule rule, WarningEvaluationInput input)
+    {
+        if (rule == null || input == null || rule.getIndicatorId() == null
+                || !rule.getIndicatorId().equals(input.getIndicatorId()))
+        {
+            return false;
+        }
+        if (rule.getResponsibleUnitId() != null && !rule.getResponsibleUnitId().equals(input.getResponsibleUnitId()))
+        {
+            return false;
+        }
+        if (StringUtils.isNotBlank(rule.getRegionCode())
+                && !StringUtils.equals(rule.getRegionCode(), input.getRegionCode()))
+        {
+            return false;
+        }
+        return StringUtils.isBlank(rule.getPeriodType()) || StringUtils.equals(rule.getPeriodType(), input.getPeriodType());
     }
 
     private WarningEvaluationInput toInput(FusionCollectionBatch batch, FusionCollectionItem item)
@@ -68,10 +105,12 @@ public class WarningGenerationWorkflow
         WarningEvaluationInput input = new WarningEvaluationInput();
         input.setIndicatorId(item.getIndicatorId());
         input.setIndicatorName(item.getIndicatorName());
+        input.setDeptId(batch.getDeptId());
         input.setResponsibleUnitId(batch.getResponsibleUnitId());
         input.setResponsibleUnitName(batch.getResponsibleUnitName());
         input.setRegionCode(batch.getRegionCode());
         input.setRegionName(batch.getRegionName());
+        input.setPeriodType(batch.getPeriodType());
         input.setPeriodKey(batch.getPeriodKey());
         input.setCurrentValue(item.getValueDecimal());
         input.setValuePresent(item.getValueDecimal() != null || StringUtils.isNotBlank(item.getRawValue()));
@@ -79,40 +118,40 @@ public class WarningGenerationWorkflow
         return input;
     }
 
-    private WarningMessage toMessage(WarningRule rule, FusionCollectionBatch batch, FusionCollectionItem item,
-            String businessKey)
+    private WarningMessage toMessage(WarningRule rule, WarningEvaluationInput input, String businessKey,
+            Long sourceBatchId, Long sourceItemId)
     {
         Date now = new Date();
         WarningMessage message = new WarningMessage();
         message.setRuleId(rule.getRuleId());
         message.setRuleName(rule.getRuleName());
-        message.setIndicatorId(item.getIndicatorId());
-        message.setIndicatorName(StringUtils.defaultIfBlank(item.getIndicatorName(), rule.getIndicatorName()));
+        message.setIndicatorId(input.getIndicatorId());
+        message.setIndicatorName(StringUtils.defaultIfBlank(input.getIndicatorName(), rule.getIndicatorName()));
         message.setWarningLevel(rule.getWarningLevel());
-        message.setDeptId(batch.getDeptId());
-        message.setResponsibleUnitId(batch.getResponsibleUnitId());
-        message.setResponsibleUnitName(batch.getResponsibleUnitName());
-        message.setRegionCode(batch.getRegionCode());
-        message.setRegionName(batch.getRegionName());
-        message.setPeriodKey(batch.getPeriodKey());
-        message.setCurrentValue(item.getValueDecimal());
+        message.setDeptId(input.getDeptId());
+        message.setResponsibleUnitId(input.getResponsibleUnitId());
+        message.setResponsibleUnitName(input.getResponsibleUnitName());
+        message.setRegionCode(input.getRegionCode());
+        message.setRegionName(input.getRegionName());
+        message.setPeriodKey(input.getPeriodKey());
+        message.setCurrentValue(input.getCurrentValue());
         message.setThresholdValue(rule.getThresholdValue());
         message.setPushChannels(rule.getPushChannels());
         message.setReceivers(rule.getPushTargets());
         message.setMessageStatus("pending");
         message.setBusinessKey(businessKey);
         message.setHitCount(1);
-        message.setSourceBatchId(batch.getBatchId());
-        message.setSourceItemId(item.getItemId());
+        message.setSourceBatchId(sourceBatchId);
+        message.setSourceItemId(sourceItemId);
         message.setTriggerTime(now);
         message.setLatestHitTime(now);
         return message;
     }
 
-    private WarningMessage toUpdatedMessage(WarningMessage existing, WarningRule rule, FusionCollectionBatch batch,
-            FusionCollectionItem item)
+    private WarningMessage toUpdatedMessage(WarningMessage existing, WarningRule rule, WarningEvaluationInput input,
+            Long sourceBatchId, Long sourceItemId)
     {
-        WarningMessage update = toMessage(rule, batch, item, existing.getBusinessKey());
+        WarningMessage update = toMessage(rule, input, existing.getBusinessKey(), sourceBatchId, sourceItemId);
         update.setMessageId(existing.getMessageId());
         update.setHitCount(existing.getHitCount() == null ? 1 : existing.getHitCount() + 1);
         return update;
@@ -140,9 +179,9 @@ public class WarningGenerationWorkflow
                 && !"archived".equals(status);
     }
 
-    private String buildBusinessKey(WarningRule rule, FusionCollectionBatch batch, FusionCollectionItem item)
+    private String buildBusinessKey(WarningRule rule, WarningEvaluationInput input)
     {
-        return rule.getRuleId() + ":" + item.getIndicatorId() + ":" + batch.getResponsibleUnitId() + ":"
-                + StringUtils.defaultString(batch.getRegionCode()) + ":" + batch.getPeriodKey();
+        return rule.getRuleId() + ":" + input.getIndicatorId() + ":" + input.getResponsibleUnitId() + ":"
+                + StringUtils.defaultString(input.getRegionCode()) + ":" + input.getPeriodKey();
     }
 }

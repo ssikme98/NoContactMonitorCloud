@@ -298,17 +298,17 @@ class FusionCollectionBatchServiceImplTest
     {
         SecurityContextHolder.setUserId("2");
         SecurityContextHolder.setUserName("scope-user");
-        SecurityContextHolder.setPermission("fusion:collection:add");
+        SecurityContextHolder.setPermission("nocontact:fusion:collection:add");
         SysRole collectionRole = new SysRole();
         collectionRole.setRoleId(20L);
         collectionRole.setDataScope(Constants.Dept.DATA_SCOPE_DEPT);
         collectionRole.setStatus(UserConstants.ROLE_NORMAL);
-        collectionRole.setPermissions(new HashSet<String>(Collections.singletonList("fusion:collection:add")));
+        collectionRole.setPermissions(new HashSet<String>(Collections.singletonList("nocontact:fusion:collection:add")));
         SysRole unrelatedAllRole = new SysRole();
         unrelatedAllRole.setRoleId(21L);
         unrelatedAllRole.setDataScope(Constants.Dept.DATA_SCOPE_ALL);
         unrelatedAllRole.setStatus(UserConstants.ROLE_NORMAL);
-        unrelatedAllRole.setPermissions(new HashSet<String>(Collections.singletonList("warning:message:list")));
+        unrelatedAllRole.setPermissions(new HashSet<String>(Collections.singletonList("nocontact:warning:message:list")));
         SysUser user = new SysUser();
         user.setUserId(2L);
         user.setUserName("scope-user");
@@ -527,13 +527,13 @@ class FusionCollectionBatchServiceImplTest
     {
         SecurityContextHolder.setUserId(String.valueOf(userId));
         SecurityContextHolder.setUserName("scope-user");
-        SecurityContextHolder.setPermission("fusion:collection:query");
+        SecurityContextHolder.setPermission("nocontact:fusion:collection:query");
         SysRole role = new SysRole();
         role.setRoleId(20L);
         role.setDataScope(dataScope);
         role.setStatus(UserConstants.ROLE_NORMAL);
-        role.setPermissions(new HashSet<String>(Arrays.asList("fusion:collection:list", "fusion:collection:query",
-                "fusion:collection:audit")));
+        role.setPermissions(new HashSet<String>(Arrays.asList("nocontact:fusion:collection:list", "nocontact:fusion:collection:query",
+                "nocontact:fusion:collection:audit")));
         SysUser user = new SysUser();
         user.setUserId(userId);
         user.setUserName("scope-user");

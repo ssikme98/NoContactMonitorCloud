@@ -34,7 +34,7 @@ public class WarningMessageController extends BaseController
     @Autowired
     private IWarningMessageService messageService;
 
-    @RequiresPermissions("warning:message:list")
+    @RequiresPermissions("nocontact:warning:message:list")
     @GetMapping("/list")
     public TableDataInfo list(WarningMessage message)
     {
@@ -43,14 +43,14 @@ public class WarningMessageController extends BaseController
         return getDataTable(list);
     }
 
-    @RequiresPermissions("warning:message:query")
+    @RequiresPermissions("nocontact:warning:message:query")
     @GetMapping("/{messageId}")
     public AjaxResult getInfo(@PathVariable Long messageId)
     {
         return success(messageService.selectMessageById(messageId));
     }
 
-    @RequiresPermissions("warning:dashboard:query")
+    @RequiresPermissions("nocontact:warning:dashboard:query")
     @GetMapping("/dashboard")
     public AjaxResult dashboard()
     {
@@ -58,7 +58,7 @@ public class WarningMessageController extends BaseController
     }
 
     @Log(title = "预警消息", businessType = BusinessType.EXPORT)
-    @RequiresPermissions("warning:message:export")
+    @RequiresPermissions("nocontact:warning:message:export")
     @PostMapping("/export")
     public void export(HttpServletResponse response, WarningMessage message)
     {
@@ -67,7 +67,7 @@ public class WarningMessageController extends BaseController
         util.exportExcel(response, list, "预警消息");
     }
 
-    @RequiresPermissions("warning:message:edit")
+    @RequiresPermissions("nocontact:warning:message:edit")
     @Log(title = "预警消息状态", businessType = BusinessType.UPDATE)
     @PutMapping("/{messageId}/status/{status}")
     public AjaxResult changeStatus(@PathVariable Long messageId, @PathVariable String status,
@@ -76,7 +76,7 @@ public class WarningMessageController extends BaseController
         return toAjax(messageService.updateMessageStatus(messageId, status, opinion, SecurityUtils.getUsername()));
     }
 
-    @RequiresPermissions("warning:message:remove")
+    @RequiresPermissions("nocontact:warning:message:remove")
     @Log(title = "预警消息", businessType = BusinessType.DELETE)
     @DeleteMapping("/{messageIds}")
     public AjaxResult remove(@PathVariable Long[] messageIds)

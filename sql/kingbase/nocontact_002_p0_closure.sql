@@ -147,21 +147,21 @@ CREATE INDEX IF NOT EXISTS idx_nc_warning_handle_message ON nc_warning_message_h
 
 -- 采集批次审核菜单
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3030, '采集批次审核', 3000, 3, 'collection', 'nocontact/fusion/collection/index', '', '', 1, 0, 'C', '0', '0', 'fusion:collection:list', 'form', 'admin', current_timestamp, '', NULL, '采集批次审核'
+SELECT 3030, '采集批次审核', 3000, 3, 'collection', 'nocontact/fusion/collection/index', '', '', 1, 0, 'C', '0', '0', 'nocontact:fusion:collection:list', 'form', 'admin', current_timestamp, '', NULL, '采集批次审核'
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3030);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3031, '采集批次查询', 3030, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:collection:query', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3031, '采集批次查询', 3030, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:collection:query', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3031);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3032, '采集批次提交', 3030, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:collection:add', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3032, '采集批次提交', 3030, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:collection:add', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3032);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3033, '采集批次审核', 3030, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:collection:audit', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3033, '采集批次审核', 3030, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:collection:audit', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3033);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3223, '预警消息删除', 3220, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'warning:message:remove', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3223, '预警消息删除', 3220, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:message:remove', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3223);

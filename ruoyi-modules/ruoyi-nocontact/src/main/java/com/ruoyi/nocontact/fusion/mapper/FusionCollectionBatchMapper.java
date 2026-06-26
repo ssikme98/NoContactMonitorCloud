@@ -32,6 +32,8 @@ public interface FusionCollectionBatchMapper
 
     public int countActiveItemByScope(FusionCollectionItem item);
 
+    public int countApprovedCurrentItemByScope(FusionCollectionItem item);
+
     public int countDeptInScope(FusionCollectionBatch batch);
 
     public String selectDeptNameById(Long deptId);

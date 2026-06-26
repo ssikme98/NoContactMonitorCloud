@@ -10,6 +10,7 @@ import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WarningGenerationWorkflowTest
@@ -33,6 +34,8 @@ class WarningGenerationWorkflowTest
         assertEquals("2026-06", message.getPeriodKey());
         assertEquals(new BigDecimal("72"), message.getCurrentValue());
         assertEquals(Integer.valueOf(1), message.getHitCount());
+        assertEquals(Long.valueOf(5001L), message.getSourceBatchId());
+        assertEquals(Long.valueOf(6001L), message.getSourceItemId());
     }
 
     @Test
@@ -81,6 +84,41 @@ class WarningGenerationWorkflowTest
         assertEquals("3002:1003:200:433100:2026-06", plan.getMessagesToInsert().get(0).getBusinessKey());
     }
 
+    @Test
+    void scopedRuleDoesNotMatchDifferentResponsibleUnit()
+    {
+        WarningRule rule = rule();
+        rule.setResponsibleUnitId(201L);
+
+        WarningGenerationPlan plan = workflow.evaluate(batch("approved"), Collections.singletonList(item("70")),
+                Collections.singletonList(rule), Collections.<WarningMessage>emptyList());
+
+        assertTrue(plan.getMessagesToInsert().isEmpty());
+        assertTrue(plan.getMessagesToUpdate().isEmpty());
+    }
+
+    @Test
+    void scheduledMissingInputCreatesPendingWarningMessage()
+    {
+        WarningRule rule = rule();
+        rule.setTriggerCondition("missing");
+        rule.setThresholdValue(BigDecimal.ZERO);
+        rule.setResponsibleUnitId(200L);
+        rule.setPeriodType("month");
+
+        WarningGenerationPlan plan = workflow.evaluateScheduled(Collections.singletonList(scheduledInput(false)),
+                Collections.singletonList(rule), Collections.<WarningMessage>emptyList());
+
+        assertEquals(1, plan.getMessagesToInsert().size());
+        WarningMessage message = plan.getMessagesToInsert().get(0);
+        assertEquals("pending", message.getMessageStatus());
+        assertEquals("3002:1003:200:433100:2026-06", message.getBusinessKey());
+        assertEquals(Long.valueOf(200L), message.getDeptId());
+        assertEquals("湘西州", message.getRegionName());
+        assertNull(message.getSourceBatchId());
+        assertNull(message.getSourceItemId());
+    }
+
     private FusionCollectionBatch batch(String status)
     {
         FusionCollectionBatch batch = new FusionCollectionBatch();
@@ -126,5 +164,22 @@ class WarningGenerationWorkflowTest
         rule.setPushTargets("监测项负责人");
         rule.setStatus("0");
         return rule;
+    }
+
+    private WarningEvaluationInput scheduledInput(boolean overdue)
+    {
+        WarningEvaluationInput input = new WarningEvaluationInput();
+        input.setIndicatorId(1003L);
+        input.setIndicatorName("数字政务能力");
+        input.setDeptId(200L);
+        input.setResponsibleUnitId(200L);
+        input.setResponsibleUnitName("省数据局");
+        input.setRegionCode("433100");
+        input.setRegionName("湘西州");
+        input.setPeriodType("month");
+        input.setPeriodKey("2026-06");
+        input.setValuePresent(false);
+        input.setOverdue(overdue);
+        return input;
     }
 }

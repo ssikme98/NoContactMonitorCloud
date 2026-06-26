@@ -23,13 +23,13 @@
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleSubmitBatch" v-hasPermi="['fusion:collection:add']">提交采集数据</el-button>
+        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleSubmitBatch" v-hasPermi="['nocontact:fusion:collection:add']">提交采集数据</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['fusion:collection:import']">导入Excel</el-button>
+        <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['nocontact:fusion:collection:import']">导入Excel</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="warning" plain icon="el-icon-document" size="mini" @click="handleImportFailures" v-hasPermi="['fusion:collection:query']">失败明细</el-button>
+        <el-button type="warning" plain icon="el-icon-document" size="mini" @click="handleImportFailures" v-hasPermi="['nocontact:fusion:collection:query']">失败明细</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" />
     </el-row>
@@ -52,9 +52,9 @@
       <el-table-column label="提交时间" prop="submitTime" width="160" />
       <el-table-column label="操作" align="center" width="260">
         <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-view" @click="handleDetail(scope.row)" v-hasPermi="['fusion:collection:query']">详情</el-button>
-          <el-button v-if="scope.row.batchStatus === 'pending_audit'" size="mini" type="text" icon="el-icon-check" @click="handleApprove(scope.row)" v-hasPermi="['fusion:collection:audit']">通过</el-button>
-          <el-button v-if="scope.row.batchStatus === 'pending_audit'" size="mini" type="text" icon="el-icon-close" @click="handleReject(scope.row)" v-hasPermi="['fusion:collection:audit']">驳回</el-button>
+          <el-button size="mini" type="text" icon="el-icon-view" @click="handleDetail(scope.row)" v-hasPermi="['nocontact:fusion:collection:query']">详情</el-button>
+          <el-button v-if="scope.row.batchStatus === 'pending_audit'" size="mini" type="text" icon="el-icon-check" @click="handleApprove(scope.row)" v-hasPermi="['nocontact:fusion:collection:audit']">通过</el-button>
+          <el-button v-if="scope.row.batchStatus === 'pending_audit'" size="mini" type="text" icon="el-icon-close" @click="handleReject(scope.row)" v-hasPermi="['nocontact:fusion:collection:audit']">驳回</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -203,7 +203,7 @@
       <div slot="footer" class="dialog-footer"><el-button @click="failureOpen = false">关 闭</el-button></div>
     </el-dialog>
 
-    <excel-import-dialog ref="importDialog" title="采集数据导入" action="/nocontact/fusion/collection/importData" template-action="/nocontact/fusion/collection/importTemplate" template-file-name="采集导入模板" update-support-label="导入不会覆盖已审核数据" @success="getList" />
+    <excel-import-dialog ref="importDialog" title="采集数据导入" action="/nocontact/fusion/collection/importData" template-action="/nocontact/fusion/collection/importTemplate" template-file-name="采集导入模板" :show-update-support="false" @success="getList" />
   </div>
 </template>
 

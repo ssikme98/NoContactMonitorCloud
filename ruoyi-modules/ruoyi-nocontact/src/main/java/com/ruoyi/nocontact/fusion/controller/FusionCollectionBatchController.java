@@ -37,7 +37,7 @@ public class FusionCollectionBatchController extends BaseController
     @Autowired
     private IFusionCollectionBatchService batchService;
 
-    @RequiresPermissions("fusion:collection:list")
+    @RequiresPermissions("nocontact:fusion:collection:list")
     @GetMapping("/list")
     public TableDataInfo list(FusionCollectionBatch batch)
     {
@@ -46,21 +46,21 @@ public class FusionCollectionBatchController extends BaseController
         return getDataTable(list);
     }
 
-    @RequiresPermissions("fusion:collection:query")
+    @RequiresPermissions("nocontact:fusion:collection:query")
     @GetMapping("/{batchId}")
     public AjaxResult getInfo(@PathVariable Long batchId)
     {
         return success(batchService.selectBatchById(batchId));
     }
 
-    @RequiresPermissions("fusion:collection:query")
+    @RequiresPermissions("nocontact:fusion:collection:query")
     @GetMapping("/summary")
     public AjaxResult summary()
     {
         return success(batchService.selectBatchSummary());
     }
 
-    @RequiresPermissions("fusion:collection:query")
+    @RequiresPermissions("nocontact:fusion:collection:query")
     @GetMapping("/importFailures")
     public TableDataInfo importFailures(FusionCollectionImportFailure failure)
     {
@@ -69,7 +69,7 @@ public class FusionCollectionBatchController extends BaseController
         return getDataTable(list);
     }
 
-    @RequiresPermissions("fusion:collection:add")
+    @RequiresPermissions("nocontact:fusion:collection:add")
     @Log(title = "数据采集批次", businessType = BusinessType.INSERT)
     @PostMapping("/submit")
     public AjaxResult submit(@RequestBody FusionCollectionBatch batch)
@@ -77,10 +77,10 @@ public class FusionCollectionBatchController extends BaseController
         return toAjax(batchService.submitBatch(batch, SecurityUtils.getUsername()));
     }
 
-    @RequiresPermissions("fusion:collection:import")
+    @RequiresPermissions("nocontact:fusion:collection:import")
     @Log(title = "数据采集导入", businessType = BusinessType.IMPORT)
     @PostMapping("/importData")
-    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
+    public AjaxResult importData(MultipartFile file) throws Exception
     {
         ExcelUtil<FusionCollectionImportRow> util = new ExcelUtil<FusionCollectionImportRow>(FusionCollectionImportRow.class);
         List<FusionCollectionImportRow> rows = util.importExcel(file.getInputStream());
@@ -94,7 +94,7 @@ public class FusionCollectionBatchController extends BaseController
         return AjaxResult.success(msg, result);
     }
 
-    @RequiresPermissions("fusion:collection:import")
+    @RequiresPermissions("nocontact:fusion:collection:import")
     @PostMapping("/importTemplate")
     public void importTemplate(HttpServletResponse response) throws IOException
     {
@@ -102,7 +102,7 @@ public class FusionCollectionBatchController extends BaseController
         util.importTemplateExcel(response, "采集导入模板");
     }
 
-    @RequiresPermissions("fusion:collection:audit")
+    @RequiresPermissions("nocontact:fusion:collection:audit")
     @Log(title = "数据采集审核通过", businessType = BusinessType.UPDATE)
     @PutMapping("/{batchId}/approve")
     public AjaxResult approve(@PathVariable Long batchId, @RequestParam(required = false) String opinion)
@@ -110,7 +110,7 @@ public class FusionCollectionBatchController extends BaseController
         return toAjax(batchService.approveBatch(batchId, opinion, SecurityUtils.getUsername()));
     }
 
-    @RequiresPermissions("fusion:collection:audit")
+    @RequiresPermissions("nocontact:fusion:collection:audit")
     @Log(title = "数据采集审核驳回", businessType = BusinessType.UPDATE)
     @PutMapping("/{batchId}/reject")
     public AjaxResult reject(@PathVariable Long batchId, @RequestParam(required = false) String opinion)

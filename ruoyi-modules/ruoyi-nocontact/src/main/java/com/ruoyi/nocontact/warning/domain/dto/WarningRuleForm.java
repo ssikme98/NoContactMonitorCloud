@@ -1,7 +1,6 @@
-package com.ruoyi.nocontact.warning.domain;
+package com.ruoyi.nocontact.warning.domain.dto;
 
-import com.ruoyi.common.core.annotation.Excel;
-import com.ruoyi.common.core.web.domain.BaseEntity;
+import com.ruoyi.nocontact.warning.domain.WarningRule;
 import java.math.BigDecimal;
 import java.util.Date;
 import javax.validation.constraints.NotBlank;
@@ -9,59 +8,42 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 /**
- * 预警规则对象 nc_warning_rule
- *
- * @author ruoyi
+ * 预警规则写入表单。
  */
-public class WarningRule extends BaseEntity
+public class WarningRuleForm
 {
-    private static final long serialVersionUID = 1L;
-
     private Long ruleId;
 
-    @Excel(name = "规则名称")
     private String ruleName;
 
     private Long indicatorId;
 
-    @Excel(name = "关联指标")
     private String indicatorName;
 
     private Long responsibleUnitId;
 
-    @Excel(name = "责任单位")
     private String responsibleUnitName;
 
     private String regionCode;
 
-    @Excel(name = "地区")
     private String regionName;
 
-    @Excel(name = "周期类型")
     private String periodType;
 
-    @Excel(name = "预警级别")
     private String warningLevel;
 
-    @Excel(name = "阈值类型")
     private String thresholdType;
 
-    @Excel(name = "阈值")
     private BigDecimal thresholdValue;
 
-    @Excel(name = "阈值上限")
     private BigDecimal thresholdValueMax;
 
-    @Excel(name = "触发条件")
     private String triggerCondition;
 
-    @Excel(name = "触发频率")
     private String triggerFrequency;
 
-    @Excel(name = "推送渠道")
     private String pushChannels;
 
-    @Excel(name = "推送对象")
     private String pushTargets;
 
     private String contentTemplate;
@@ -70,8 +52,34 @@ public class WarningRule extends BaseEntity
 
     private Date effectiveTime;
 
-    @Excel(name = "状态")
     private String status;
+
+    public WarningRule toEntity()
+    {
+        WarningRule rule = new WarningRule();
+        rule.setRuleId(ruleId);
+        rule.setRuleName(ruleName);
+        rule.setIndicatorId(indicatorId);
+        rule.setIndicatorName(indicatorName);
+        rule.setResponsibleUnitId(responsibleUnitId);
+        rule.setResponsibleUnitName(responsibleUnitName);
+        rule.setRegionCode(regionCode);
+        rule.setRegionName(regionName);
+        rule.setPeriodType(periodType);
+        rule.setWarningLevel(warningLevel);
+        rule.setThresholdType(thresholdType);
+        rule.setThresholdValue(thresholdValue);
+        rule.setThresholdValueMax(thresholdValueMax);
+        rule.setTriggerCondition(triggerCondition);
+        rule.setTriggerFrequency(triggerFrequency);
+        rule.setPushChannels(pushChannels);
+        rule.setPushTargets(pushTargets);
+        rule.setContentTemplate(contentTemplate);
+        rule.setEffectiveMode(effectiveMode);
+        rule.setEffectiveTime(effectiveTime);
+        rule.setStatus(status);
+        return rule;
+    }
 
     public Long getRuleId()
     {

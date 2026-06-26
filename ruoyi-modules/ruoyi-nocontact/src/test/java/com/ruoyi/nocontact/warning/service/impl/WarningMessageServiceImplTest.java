@@ -131,7 +131,7 @@ class WarningMessageServiceImplTest
     void deleteRejectsMessageOutsideRoleDataScope()
     {
         loginAsScopedUser(2L, 88L, Constants.Dept.DATA_SCOPE_DEPT);
-        SecurityContextHolder.setPermission("warning:message:remove");
+        SecurityContextHolder.setPermission("nocontact:warning:message:remove");
         when(messageMapper.selectMessageByScope(any(WarningMessage.class))).thenReturn(null);
 
         assertThrows(ServiceException.class, () -> service.deleteMessageByIds(new Long[] {4001L}));
@@ -163,13 +163,13 @@ class WarningMessageServiceImplTest
     {
         SecurityContextHolder.setUserId(String.valueOf(userId));
         SecurityContextHolder.setUserName("scope-user");
-        SecurityContextHolder.setPermission("warning:message:list");
+        SecurityContextHolder.setPermission("nocontact:warning:message:list");
         SysRole role = new SysRole();
         role.setRoleId(20L);
         role.setDataScope(dataScope);
         role.setStatus(UserConstants.ROLE_NORMAL);
-        role.setPermissions(new HashSet<String>(Arrays.asList("warning:message:list", "warning:message:query",
-                "warning:message:edit", "warning:message:remove", "warning:dashboard:query")));
+        role.setPermissions(new HashSet<String>(Arrays.asList("nocontact:warning:message:list", "nocontact:warning:message:query",
+                "nocontact:warning:message:edit", "nocontact:warning:message:remove", "nocontact:warning:dashboard:query")));
         SysUser user = new SysUser();
         user.setUserId(userId);
         user.setUserName("scope-user");

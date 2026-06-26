@@ -8,6 +8,8 @@ import com.ruoyi.nocontact.warning.domain.WarningRule;
 import com.ruoyi.nocontact.warning.mapper.WarningMessageMapper;
 import com.ruoyi.nocontact.warning.mapper.WarningRuleMapper;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,10 +17,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -67,6 +71,80 @@ class WarningEvaluationServiceImplTest
         assertEquals(Integer.valueOf(1), captor.getValue().getHitCount());
     }
 
+    @Test
+    void scheduledMissingRuleCreatesMessageWhenCurrentItemAbsent()
+    {
+        when(ruleMapper.selectScheduledRules()).thenReturn(Collections.singletonList(missingRule()));
+        when(batchMapper.countApprovedCurrentItemByScope(any(FusionCollectionItem.class))).thenReturn(0);
+        when(batchMapper.selectDeptNameById(200L)).thenReturn("省数据局");
+        when(messageMapper.selectOpenMessagesByScope(any(WarningMessage.class))).thenReturn(Collections.emptyList());
+        when(messageMapper.insertMessage(any(WarningMessage.class))).thenReturn(1);
+
+        int rows = service.evaluateScheduledRules("2035-06", "job");
+
+        assertEquals(1, rows);
+        ArgumentCaptor<WarningMessage> captor = ArgumentCaptor.forClass(WarningMessage.class);
+        verify(messageMapper).insertMessage(captor.capture());
+        assertEquals("3003:1003:200:433100:2035-06", captor.getValue().getBusinessKey());
+        assertEquals(Long.valueOf(200L), captor.getValue().getDeptId());
+        assertEquals("省数据局", captor.getValue().getResponsibleUnitName());
+    }
+
+    @Test
+    void scheduledRuleSkipsWhenCurrentItemExists()
+    {
+        when(ruleMapper.selectScheduledRules()).thenReturn(Collections.singletonList(missingRule()));
+        when(batchMapper.countApprovedCurrentItemByScope(any(FusionCollectionItem.class))).thenReturn(1);
+
+        int rows = service.evaluateScheduledRules("2035-06", "job");
+
+        assertEquals(0, rows);
+        verify(messageMapper, never()).insertMessage(any(WarningMessage.class));
+    }
+
+    @Test
+    void scheduledOverdueRuleSkipsCurrentPeriodBeforeDueDate()
+    {
+        when(ruleMapper.selectScheduledRules()).thenReturn(Collections.singletonList(overdueRule()));
+
+        int rows = service.evaluateScheduledRules(YearMonth.from(LocalDate.now()).toString(), "job");
+
+        assertEquals(0, rows);
+        verify(batchMapper, never()).countApprovedCurrentItemByScope(any(FusionCollectionItem.class));
+        verify(messageMapper, never()).insertMessage(any(WarningMessage.class));
+    }
+
+    @Test
+    void scheduledOverdueRuleCreatesMessageAfterDueDate()
+    {
+        when(ruleMapper.selectScheduledRules()).thenReturn(Collections.singletonList(overdueRule()));
+        when(batchMapper.countApprovedCurrentItemByScope(any(FusionCollectionItem.class))).thenReturn(0);
+        when(batchMapper.selectDeptNameById(200L)).thenReturn("省数据局");
+        when(messageMapper.selectOpenMessagesByScope(any(WarningMessage.class))).thenReturn(Collections.emptyList());
+        when(messageMapper.insertMessage(any(WarningMessage.class))).thenReturn(1);
+
+        int rows = service.evaluateScheduledRules(YearMonth.from(LocalDate.now()).minusMonths(1).toString(), "job");
+
+        assertEquals(1, rows);
+        verify(messageMapper).insertMessage(any(WarningMessage.class));
+    }
+
+    @Test
+    void duplicateOpenBusinessKeyFallsBackToAtomicHitUpdate()
+    {
+        when(ruleMapper.selectScheduledRules()).thenReturn(Collections.singletonList(missingRule()));
+        when(batchMapper.countApprovedCurrentItemByScope(any(FusionCollectionItem.class))).thenReturn(0);
+        when(batchMapper.selectDeptNameById(200L)).thenReturn("省数据局");
+        when(messageMapper.selectOpenMessagesByScope(any(WarningMessage.class))).thenReturn(Collections.emptyList());
+        when(messageMapper.insertMessage(any(WarningMessage.class))).thenThrow(new DuplicateKeyException("duplicate"));
+        when(messageMapper.updateOpenMessageHitByBusinessKey(any(WarningMessage.class))).thenReturn(1);
+
+        int rows = service.evaluateScheduledRules("2035-06", "job");
+
+        assertEquals(1, rows);
+        verify(messageMapper).updateOpenMessageHitByBusinessKey(any(WarningMessage.class));
+    }
+
     private FusionCollectionBatch batch()
     {
         FusionCollectionBatch batch = new FusionCollectionBatch();
@@ -105,6 +183,29 @@ class WarningEvaluationServiceImplTest
         rule.setThresholdValue(new BigDecimal("80"));
         rule.setPushChannels("site,email");
         rule.setPushTargets("监测项负责人");
+        return rule;
+    }
+
+    private WarningRule missingRule()
+    {
+        WarningRule rule = rule();
+        rule.setRuleId(3003L);
+        rule.setRuleName("数字政务能力缺报预警");
+        rule.setTriggerCondition("missing");
+        rule.setThresholdValue(BigDecimal.ZERO);
+        rule.setResponsibleUnitId(200L);
+        rule.setRegionCode("433100");
+        rule.setRegionName("湘西州");
+        rule.setPeriodType("month");
+        return rule;
+    }
+
+    private WarningRule overdueRule()
+    {
+        WarningRule rule = missingRule();
+        rule.setRuleId(3004L);
+        rule.setRuleName("数字政务能力逾期预警");
+        rule.setTriggerCondition("overdue");
         return rule;
     }
 

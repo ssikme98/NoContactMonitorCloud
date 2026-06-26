@@ -16,7 +16,7 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['warning:message:remove']">删除</el-button></el-col>
+      <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['nocontact:warning:message:remove']">删除</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" />
     </el-row>
 
@@ -36,10 +36,10 @@
       <el-table-column label="触发时间" prop="triggerTime" width="160" />
       <el-table-column label="操作" align="center" width="190">
         <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-view" @click="handleDetail(scope.row)" v-hasPermi="['warning:message:query']">详情</el-button>
-          <el-button v-if="scope.row.messageStatus === 'pending'" size="mini" type="text" icon="el-icon-loading" @click="changeStatus(scope.row, 'processing')" v-hasPermi="['warning:message:edit']">处理</el-button>
-          <el-button v-if="scope.row.messageStatus !== 'closed' && scope.row.messageStatus !== 'ignored'" size="mini" type="text" icon="el-icon-check" @click="changeStatus(scope.row, 'closed')" v-hasPermi="['warning:message:edit']">关闭</el-button>
-          <el-button v-if="scope.row.messageStatus !== 'closed' && scope.row.messageStatus !== 'ignored'" size="mini" type="text" icon="el-icon-close" @click="changeStatus(scope.row, 'ignored')" v-hasPermi="['warning:message:edit']">忽略</el-button>
+          <el-button size="mini" type="text" icon="el-icon-view" @click="handleDetail(scope.row)" v-hasPermi="['nocontact:warning:message:query']">详情</el-button>
+          <el-button v-if="scope.row.messageStatus === 'pending'" size="mini" type="text" icon="el-icon-loading" @click="changeStatus(scope.row, 'processing')" v-hasPermi="['nocontact:warning:message:edit']">处理</el-button>
+          <el-button v-if="scope.row.messageStatus !== 'closed' && scope.row.messageStatus !== 'ignored'" size="mini" type="text" icon="el-icon-check" @click="changeStatus(scope.row, 'closed')" v-hasPermi="['nocontact:warning:message:edit']">关闭</el-button>
+          <el-button v-if="scope.row.messageStatus !== 'closed' && scope.row.messageStatus !== 'ignored'" size="mini" type="text" icon="el-icon-close" @click="changeStatus(scope.row, 'ignored')" v-hasPermi="['nocontact:warning:message:edit']">忽略</el-button>
         </template>
       </el-table-column>
     </el-table>

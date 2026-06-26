@@ -35,7 +35,7 @@ public class FusionCollectionTaskController extends BaseController
     @Autowired
     private IFusionCollectionTaskService taskService;
 
-    @RequiresPermissions("fusion:task:list")
+    @RequiresPermissions("nocontact:fusion:task:list")
     @GetMapping("/list")
     public TableDataInfo list(FusionCollectionTask task)
     {
@@ -44,14 +44,14 @@ public class FusionCollectionTaskController extends BaseController
         return getDataTable(list);
     }
 
-    @RequiresPermissions("fusion:task:query")
+    @RequiresPermissions("nocontact:fusion:task:query")
     @GetMapping("/{taskId}")
     public AjaxResult getInfo(@PathVariable Long taskId)
     {
         return success(taskService.selectTaskById(taskId));
     }
 
-    @RequiresPermissions("fusion:task:query")
+    @RequiresPermissions("nocontact:fusion:task:query")
     @GetMapping("/summary")
     public AjaxResult summary()
     {
@@ -59,7 +59,7 @@ public class FusionCollectionTaskController extends BaseController
     }
 
     @Log(title = "数据采集任务", businessType = BusinessType.EXPORT)
-    @RequiresPermissions("fusion:task:export")
+    @RequiresPermissions("nocontact:fusion:task:export")
     @PostMapping("/export")
     public void export(HttpServletResponse response, FusionCollectionTask task)
     {
@@ -68,7 +68,7 @@ public class FusionCollectionTaskController extends BaseController
         util.exportExcel(response, list, "数据采集任务");
     }
 
-    @RequiresPermissions("fusion:task:add")
+    @RequiresPermissions("nocontact:fusion:task:add")
     @Log(title = "数据采集任务", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@Validated @RequestBody FusionCollectionTask task)
@@ -77,7 +77,7 @@ public class FusionCollectionTaskController extends BaseController
         return toAjax(taskService.insertTask(task));
     }
 
-    @RequiresPermissions("fusion:task:edit")
+    @RequiresPermissions("nocontact:fusion:task:edit")
     @Log(title = "数据采集任务", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@Validated @RequestBody FusionCollectionTask task)
@@ -86,7 +86,7 @@ public class FusionCollectionTaskController extends BaseController
         return toAjax(taskService.updateTask(task));
     }
 
-    @RequiresPermissions("fusion:task:edit")
+    @RequiresPermissions("nocontact:fusion:task:edit")
     @Log(title = "数据采集任务状态", businessType = BusinessType.UPDATE)
     @PutMapping("/{taskId}/status/{status}")
     public AjaxResult changeStatus(@PathVariable Long taskId, @PathVariable String status)
@@ -94,7 +94,7 @@ public class FusionCollectionTaskController extends BaseController
         return toAjax(taskService.updateTaskStatus(taskId, status, SecurityUtils.getUsername()));
     }
 
-    @RequiresPermissions("fusion:task:remove")
+    @RequiresPermissions("nocontact:fusion:task:remove")
     @Log(title = "数据采集任务", businessType = BusinessType.DELETE)
     @DeleteMapping("/{taskIds}")
     public AjaxResult remove(@PathVariable Long[] taskIds)

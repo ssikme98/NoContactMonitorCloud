@@ -58,6 +58,11 @@ CREATE TABLE IF NOT EXISTS nc_warning_rule (
   rule_name varchar(120) not null,
   indicator_id bigint not null,
   indicator_name varchar(200) default '',
+  responsible_unit_id bigint,
+  responsible_unit_name varchar(160) default '',
+  region_code varchar(32) default '',
+  region_name varchar(64) default '',
+  period_type varchar(24) default '',
   warning_level char(1) not null,
   threshold_type varchar(32) default 'target',
   threshold_value numeric(18,4) not null,
@@ -113,6 +118,7 @@ CREATE INDEX IF NOT EXISTS idx_nc_fusion_indicator_name ON nc_fusion_indicator(i
 CREATE INDEX IF NOT EXISTS idx_nc_fusion_indicator_unit ON nc_fusion_indicator(responsible_unit);
 CREATE INDEX IF NOT EXISTS idx_nc_fusion_task_status ON nc_fusion_collection_task(task_status);
 CREATE INDEX IF NOT EXISTS idx_nc_warning_rule_indicator ON nc_warning_rule(indicator_id);
+CREATE INDEX IF NOT EXISTS idx_nc_warning_rule_scope ON nc_warning_rule(responsible_unit_id, region_code, period_type);
 CREATE INDEX IF NOT EXISTS idx_nc_warning_message_level ON nc_warning_message(warning_level);
 CREATE INDEX IF NOT EXISTS idx_nc_warning_message_trigger ON nc_warning_message(trigger_time);
 
@@ -152,12 +158,12 @@ INSERT INTO nc_fusion_collection_task(task_id, task_name, task_type, task_status
 SELECT 2003, '涉企行政检查数据月度导入', 'fill', 'done', 'city', 1005, '规范涉企行政检查', '市州及县市区', 'excel', 'month', 'manual', '', '1', '省司法厅', 560, current_timestamp, 'admin', current_timestamp
 WHERE NOT EXISTS (SELECT 1 FROM nc_fusion_collection_task WHERE task_id = 2003);
 
-INSERT INTO nc_warning_rule(rule_id, rule_name, indicator_id, indicator_name, warning_level, threshold_type, threshold_value, trigger_condition, trigger_frequency, push_channels, push_targets, content_template, effective_mode, status, create_by, create_time)
-SELECT 3001, '监测数据逾期未报红色预警', 1001, '监测工作开展情况', '1', 'custom', 1, 'gt', 'daily', 'site,sms', '监测项负责人,管理人员', '{{指标名称}}存在逾期未报，请立即核查。', 'now', '0', 'admin', current_timestamp
+INSERT INTO nc_warning_rule(rule_id, rule_name, indicator_id, indicator_name, responsible_unit_id, responsible_unit_name, period_type, warning_level, threshold_type, threshold_value, trigger_condition, trigger_frequency, push_channels, push_targets, content_template, effective_mode, status, create_by, create_time)
+SELECT 3001, '监测数据逾期未报红色预警', 1001, '监测工作开展情况', 200, '省数据局', 'month', '1', 'custom', 0, 'overdue', 'daily', 'site,sms', '监测项负责人,管理人员', '{{指标名称}}存在逾期未报，请立即核查。', 'now', '0', 'admin', current_timestamp
 WHERE NOT EXISTS (SELECT 1 FROM nc_warning_rule WHERE rule_id = 3001);
 
-INSERT INTO nc_warning_rule(rule_id, rule_name, indicator_id, indicator_name, warning_level, threshold_type, threshold_value, trigger_condition, trigger_frequency, push_channels, push_targets, content_template, effective_mode, status, create_by, create_time)
-SELECT 3002, '数字政务能力低于基准橙色预警', 1003, '数字政务能力', '2', 'target', 80, 'lt', 'daily', 'site,email', '监测项负责人', '{{地区}}数字政务能力当前值{{当前值}}低于阈值{{阈值}}。', 'now', '0', 'admin', current_timestamp
+INSERT INTO nc_warning_rule(rule_id, rule_name, indicator_id, indicator_name, period_type, warning_level, threshold_type, threshold_value, trigger_condition, trigger_frequency, push_channels, push_targets, content_template, effective_mode, status, create_by, create_time)
+SELECT 3002, '数字政务能力低于基准橙色预警', 1003, '数字政务能力', 'month', '2', 'target', 80, 'lt', 'daily', 'site,email', '监测项负责人', '{{地区}}数字政务能力当前值{{当前值}}低于阈值{{阈值}}。', 'now', '0', 'admin', current_timestamp
 WHERE NOT EXISTS (SELECT 1 FROM nc_warning_rule WHERE rule_id = 3002);
 
 INSERT INTO nc_warning_message(message_id, rule_id, rule_name, indicator_id, indicator_name, warning_level, region_name, current_value, threshold_value, push_channels, receivers, message_status, trigger_time, create_by, create_time)
@@ -178,11 +184,11 @@ SELECT 3000, '营商数据融合', 0, 1, 'fusion', NULL, '', '', 1, 0, 'M', '0',
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3000);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3010, '采集任务管理', 3000, 1, 'task', 'nocontact/fusion/task/index', '', '', 1, 0, 'C', '0', '0', 'fusion:task:list', 'list', 'admin', current_timestamp, '', NULL, '采集任务管理'
+SELECT 3010, '采集任务管理', 3000, 1, 'task', 'nocontact/fusion/task/index', '', '', 1, 0, 'C', '0', '0', 'nocontact:fusion:task:list', 'list', 'admin', current_timestamp, '', NULL, '采集任务管理'
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3010);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3020, '指标目录', 3000, 2, 'indicator', 'nocontact/fusion/indicator/index', '', '', 1, 0, 'C', '0', '0', 'fusion:indicator:list', 'tree-table', 'admin', current_timestamp, '', NULL, '指标目录'
+SELECT 3020, '指标目录', 3000, 2, 'indicator', 'nocontact/fusion/indicator/index', '', '', 1, 0, 'C', '0', '0', 'nocontact:fusion:indicator:list', 'tree-table', 'admin', current_timestamp, '', NULL, '指标目录'
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3020);
 
 -- 检测预警中心菜单
@@ -191,73 +197,73 @@ SELECT 3200, '检测预警中心', 0, 3, 'warning', NULL, '', '', 1, 0, 'M', '0'
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3200);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3210, '预警规则管理', 3200, 1, 'rule', 'nocontact/warning/rule/index', '', '', 1, 0, 'C', '0', '0', 'warning:rule:list', 'dict', 'admin', current_timestamp, '', NULL, '预警规则管理'
+SELECT 3210, '预警规则管理', 3200, 1, 'rule', 'nocontact/warning/rule/index', '', '', 1, 0, 'C', '0', '0', 'nocontact:warning:rule:list', 'dict', 'admin', current_timestamp, '', NULL, '预警规则管理'
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3210);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3220, '预警消息管理', 3200, 2, 'message', 'nocontact/warning/message/index', '', '', 1, 0, 'C', '0', '0', 'warning:message:list', 'message', 'admin', current_timestamp, '', NULL, '预警消息管理'
+SELECT 3220, '预警消息管理', 3200, 2, 'message', 'nocontact/warning/message/index', '', '', 1, 0, 'C', '0', '0', 'nocontact:warning:message:list', 'message', 'admin', current_timestamp, '', NULL, '预警消息管理'
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3220);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3230, '分级预警看板', 3200, 3, 'dashboard', 'nocontact/warning/dashboard/index', '', '', 1, 0, 'C', '0', '0', 'warning:dashboard:query', 'dashboard', 'admin', current_timestamp, '', NULL, '分级预警看板'
+SELECT 3230, '分级预警看板', 3200, 3, 'dashboard', 'nocontact/warning/dashboard/index', '', '', 1, 0, 'C', '0', '0', 'nocontact:warning:dashboard:query', 'dashboard', 'admin', current_timestamp, '', NULL, '分级预警看板'
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3230);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3011, '采集任务查询', 3010, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:task:query', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3011, '采集任务查询', 3010, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:task:query', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3011);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3012, '采集任务新增', 3010, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:task:add', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3012, '采集任务新增', 3010, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:task:add', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3012);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3013, '采集任务修改', 3010, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:task:edit', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3013, '采集任务修改', 3010, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:task:edit', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3013);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3014, '采集任务删除', 3010, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:task:remove', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3014, '采集任务删除', 3010, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:task:remove', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3014);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3021, '指标查询', 3020, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:indicator:query', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3021, '指标查询', 3020, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:indicator:query', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3021);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3022, '指标新增', 3020, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:indicator:add', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3022, '指标新增', 3020, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:indicator:add', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3022);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3023, '指标修改', 3020, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:indicator:edit', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3023, '指标修改', 3020, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:indicator:edit', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3023);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3024, '指标删除', 3020, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:indicator:remove', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3024, '指标删除', 3020, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:indicator:remove', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3024);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3211, '预警规则查询', 3210, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'warning:rule:query', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3211, '预警规则查询', 3210, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:rule:query', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3211);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3212, '预警规则新增', 3210, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'warning:rule:add', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3212, '预警规则新增', 3210, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:rule:add', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3212);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3213, '预警规则修改', 3210, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'warning:rule:edit', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3213, '预警规则修改', 3210, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:rule:edit', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3213);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3214, '预警规则删除', 3210, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'warning:rule:remove', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3214, '预警规则删除', 3210, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:rule:remove', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3214);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3221, '预警消息查询', 3220, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'warning:message:query', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3221, '预警消息查询', 3220, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:message:query', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3221);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3222, '预警消息处理', 3220, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'warning:message:edit', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3222, '预警消息处理', 3220, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:message:edit', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3222);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3223, '预警消息删除', 3220, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'warning:message:remove', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3223, '预警消息删除', 3220, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:message:remove', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3223);

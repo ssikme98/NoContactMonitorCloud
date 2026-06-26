@@ -22,10 +22,10 @@
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['fusion:task:add']">新增采集任务</el-button>
+        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['nocontact:fusion:task:add']">新增采集任务</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['fusion:task:remove']">删除</el-button>
+        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['nocontact:fusion:task:remove']">删除</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" />
     </el-row>
@@ -55,10 +55,10 @@
       <el-table-column label="最后执行时间" prop="lastRunTime" width="160" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="240">
         <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['fusion:task:edit']">编辑</el-button>
-          <el-button size="mini" type="text" icon="el-icon-video-play" @click="changeStatus(scope.row, 'running')" v-hasPermi="['fusion:task:edit']">执行</el-button>
-          <el-button size="mini" type="text" icon="el-icon-check" @click="changeStatus(scope.row, 'done')" v-hasPermi="['fusion:task:edit']">完成</el-button>
-          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['fusion:task:remove']">删除</el-button>
+          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['nocontact:fusion:task:edit']">编辑</el-button>
+          <el-button size="mini" type="text" icon="el-icon-video-play" @click="changeStatus(scope.row, 'running')" v-hasPermi="['nocontact:fusion:task:edit']">执行</el-button>
+          <el-button size="mini" type="text" icon="el-icon-check" @click="changeStatus(scope.row, 'done')" v-hasPermi="['nocontact:fusion:task:edit']">完成</el-button>
+          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['nocontact:fusion:task:remove']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>

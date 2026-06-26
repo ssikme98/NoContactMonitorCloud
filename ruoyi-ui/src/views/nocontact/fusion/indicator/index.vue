@@ -30,10 +30,10 @@
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['fusion:indicator:add']">新增指标</el-button>
+        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['nocontact:fusion:indicator:add']">新增指标</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['fusion:indicator:remove']">删除</el-button>
+        <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['nocontact:fusion:indicator:remove']">删除</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" />
     </el-row>
@@ -60,9 +60,9 @@
       </el-table-column>
       <el-table-column label="操作" align="center" width="220">
         <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['fusion:indicator:edit']">编辑</el-button>
-          <el-button size="mini" type="text" icon="el-icon-copy-document" @click="handleCopyDraft(scope.row)" v-hasPermi="['fusion:indicator:add']">复制草稿</el-button>
-          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['fusion:indicator:remove']">删除</el-button>
+          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['nocontact:fusion:indicator:edit']">编辑</el-button>
+          <el-button size="mini" type="text" icon="el-icon-copy-document" @click="handleCopyDraft(scope.row)" v-hasPermi="['nocontact:fusion:indicator:add']">复制草稿</el-button>
+          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['nocontact:fusion:indicator:remove']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>

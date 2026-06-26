@@ -10,6 +10,7 @@ import com.ruoyi.common.security.annotation.Logical;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.nocontact.fusion.domain.FusionIndicator;
+import com.ruoyi.nocontact.fusion.domain.dto.FusionIndicatorForm;
 import com.ruoyi.nocontact.fusion.service.IFusionIndicatorService;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -36,7 +37,7 @@ public class FusionIndicatorController extends BaseController
     @Autowired
     private IFusionIndicatorService indicatorService;
 
-    @RequiresPermissions("fusion:indicator:list")
+    @RequiresPermissions("nocontact:fusion:indicator:list")
     @GetMapping("/list")
     public TableDataInfo list(FusionIndicator indicator)
     {
@@ -45,7 +46,7 @@ public class FusionIndicatorController extends BaseController
         return getDataTable(list);
     }
 
-    @RequiresPermissions(value = {"fusion:indicator:list", "fusion:task:list", "warning:rule:list"}, logical = Logical.OR)
+    @RequiresPermissions(value = {"nocontact:fusion:indicator:list", "nocontact:fusion:task:list", "nocontact:warning:rule:list"}, logical = Logical.OR)
     @GetMapping("/options")
     public AjaxResult options(FusionIndicator indicator)
     {
@@ -54,7 +55,7 @@ public class FusionIndicatorController extends BaseController
         return success(indicatorService.selectIndicatorList(indicator));
     }
 
-    @RequiresPermissions("fusion:indicator:query")
+    @RequiresPermissions("nocontact:fusion:indicator:query")
     @GetMapping("/{indicatorId}")
     public AjaxResult getInfo(@PathVariable Long indicatorId)
     {
@@ -62,7 +63,7 @@ public class FusionIndicatorController extends BaseController
     }
 
     @Log(title = "营商监测指标", businessType = BusinessType.EXPORT)
-    @RequiresPermissions("fusion:indicator:export")
+    @RequiresPermissions("nocontact:fusion:indicator:export")
     @PostMapping("/export")
     public void export(HttpServletResponse response, FusionIndicator indicator)
     {
@@ -71,25 +72,32 @@ public class FusionIndicatorController extends BaseController
         util.exportExcel(response, list, "营商监测指标");
     }
 
-    @RequiresPermissions("fusion:indicator:add")
+    @RequiresPermissions("nocontact:fusion:indicator:add")
     @Log(title = "营商监测指标", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@Validated @RequestBody FusionIndicator indicator)
+    public AjaxResult add(@Validated @RequestBody FusionIndicatorForm form)
     {
+        FusionIndicator indicator = form.toEntity();
+        indicator.setIndicatorId(null);
         indicator.setCreateBy(SecurityUtils.getUsername());
         return toAjax(indicatorService.insertIndicator(indicator));
     }
 
-    @RequiresPermissions("fusion:indicator:edit")
+    @RequiresPermissions("nocontact:fusion:indicator:edit")
     @Log(title = "营商监测指标", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@Validated @RequestBody FusionIndicator indicator)
+    public AjaxResult edit(@Validated @RequestBody FusionIndicatorForm form)
     {
+        FusionIndicator indicator = form.toEntity();
+        if (indicator.getIndicatorId() == null)
+        {
+            return error("指标ID不能为空");
+        }
         indicator.setUpdateBy(SecurityUtils.getUsername());
         return toAjax(indicatorService.updateIndicator(indicator));
     }
 
-    @RequiresPermissions("fusion:indicator:add")
+    @RequiresPermissions("nocontact:fusion:indicator:add")
     @Log(title = "营商监测指标复制草稿", businessType = BusinessType.INSERT)
     @PostMapping("/{indicatorId}/copyDraft")
     public AjaxResult copyDraft(@PathVariable Long indicatorId)
@@ -97,7 +105,7 @@ public class FusionIndicatorController extends BaseController
         return success(indicatorService.copyIndicatorDraft(indicatorId, SecurityUtils.getUsername()));
     }
 
-    @RequiresPermissions("fusion:indicator:remove")
+    @RequiresPermissions("nocontact:fusion:indicator:remove")
     @Log(title = "营商监测指标", businessType = BusinessType.DELETE)
     @DeleteMapping("/{indicatorIds}")
     public AjaxResult remove(@PathVariable Long[] indicatorIds)

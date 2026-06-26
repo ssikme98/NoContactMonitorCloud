@@ -16,6 +16,8 @@ public interface WarningRuleMapper
 
     public List<WarningRule> selectEnabledRulesByIndicator(Long indicatorId);
 
+    public List<WarningRule> selectScheduledRules();
+
     public int insertRule(WarningRule rule);
 
     public int updateRule(WarningRule rule);

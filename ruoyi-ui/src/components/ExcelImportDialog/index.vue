@@ -5,7 +5,7 @@
       <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
       <div class="el-upload__tip text-center" slot="tip">
         <div class="el-upload__tip" slot="tip">
-          <el-checkbox v-model="updateSupport"> {{ updateSupportLabel }} </el-checkbox>
+          <el-checkbox v-if="showUpdateSupport" v-model="updateSupport"> {{ updateSupportLabel }} </el-checkbox>
         </div>
         <span>仅允许导入xls、xlsx格式文件。</span>
         <el-link v-if="templateUrl" type="primary" :underline="false" style="font-size: 12px; vertical-align: baseline" @click="handleDownloadTemplate">下载模板</el-link>
@@ -52,6 +52,11 @@ export default {
     updateSupportLabel: {
       type: String,
       default: '是否更新已经存在的数据'
+    },
+    // 后端没有覆盖更新语义的导入接口不要展示该开关
+    showUpdateSupport: {
+      type: Boolean,
+      default: true
     }
   },
   data() {
@@ -64,7 +69,8 @@ export default {
   },
   computed: {
     uploadUrl() {
-      return process.env.VUE_APP_BASE_API + this.action + '?updateSupport=' + (this.updateSupport ? 1 : 0)
+      const url = process.env.VUE_APP_BASE_API + this.action
+      return this.showUpdateSupport ? url + '?updateSupport=' + (this.updateSupport ? 1 : 0) : url
     },
     templateUrl() {
       return !!this.templateAction

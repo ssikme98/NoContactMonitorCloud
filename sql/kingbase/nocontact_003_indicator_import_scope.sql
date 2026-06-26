@@ -126,6 +126,22 @@ UPDATE nc_warning_message
 SET dept_id = responsible_unit_id
 WHERE dept_id IS NULL;
 
+ALTER TABLE nc_warning_rule ADD COLUMN IF NOT EXISTS responsible_unit_id bigint;
+ALTER TABLE nc_warning_rule ADD COLUMN IF NOT EXISTS responsible_unit_name varchar(160) default '';
+ALTER TABLE nc_warning_rule ADD COLUMN IF NOT EXISTS region_code varchar(32) default '';
+ALTER TABLE nc_warning_rule ADD COLUMN IF NOT EXISTS region_name varchar(64) default '';
+ALTER TABLE nc_warning_rule ADD COLUMN IF NOT EXISTS period_type varchar(24) default '';
+
+UPDATE nc_warning_rule
+SET trigger_condition = 'overdue',
+    threshold_value = 0,
+    responsible_unit_id = coalesce(responsible_unit_id, 200),
+    responsible_unit_name = case when coalesce(responsible_unit_name, '') = '' then '省数据局' else responsible_unit_name end,
+    period_type = case when coalesce(period_type, '') = '' then 'month' else period_type end,
+    update_time = current_timestamp
+WHERE rule_id = 3001
+  AND trigger_condition <> 'overdue';
+
 UPDATE nc_warning_message
 SET business_key = rule_id || ':' || indicator_id || ':' || coalesce(responsible_unit_id, 0)
                    || ':' || coalesce(region_code, '') || ':' || coalesce(period_key, '')
@@ -202,6 +218,7 @@ ON nc_fusion_collection_item(indicator_id, responsible_unit_id, coalesce(region_
 WHERE del_flag = '0'
   AND is_current = '1';
 CREATE INDEX IF NOT EXISTS idx_nc_warning_message_dept ON nc_warning_message(dept_id);
+CREATE INDEX IF NOT EXISTS idx_nc_warning_rule_scope ON nc_warning_rule(responsible_unit_id, region_code, period_type);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_nc_warning_message_open_business
 ON nc_warning_message(business_key)
 WHERE del_flag = '0'
@@ -210,10 +227,30 @@ WHERE del_flag = '0'
 CREATE INDEX IF NOT EXISTS idx_nc_fusion_import_failure_source ON nc_fusion_collection_import_failure(source_record_id);
 CREATE INDEX IF NOT EXISTS idx_nc_fusion_import_failure_dept ON nc_fusion_collection_import_failure(dept_id);
 
+INSERT INTO sys_job(job_id, job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status, create_by, create_time, update_by, update_time, remark)
+SELECT 3301, '营商无感缺报逾期预警评估', 'SYSTEM', 'nocontactWarningTask.evaluateDueRules', '0 10 1 * * ?', '3', '1', '0', 'admin', current_timestamp, '', NULL, '按已到期周期评估缺报和逾期预警规则'
+WHERE NOT EXISTS (SELECT 1 FROM sys_job WHERE job_id = 3301 OR invoke_target = 'nocontactWarningTask.evaluateDueRules');
+
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3034, '采集Excel导入', 3030, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:collection:import', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3034, '采集Excel导入', 3030, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:collection:import', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3034);
 
 INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-SELECT 3025, '指标复制草稿', 3020, 5, '', '', '', '', 1, 0, 'F', '0', '0', 'fusion:indicator:add', '#', 'admin', current_timestamp, '', NULL, ''
+SELECT 3025, '指标复制草稿', 3020, 5, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:indicator:add', '#', 'admin', current_timestamp, '', NULL, ''
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3025);
+
+INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+SELECT 3015, '采集任务导出', 3010, 5, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:task:export', '#', 'admin', current_timestamp, '', NULL, ''
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3015);
+
+INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+SELECT 3026, '指标导出', 3020, 6, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:fusion:indicator:export', '#', 'admin', current_timestamp, '', NULL, ''
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3026);
+
+INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+SELECT 3215, '预警规则导出', 3210, 5, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:rule:export', '#', 'admin', current_timestamp, '', NULL, ''
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3215);
+
+INSERT INTO sys_menu(menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+SELECT 3224, '预警消息导出', 3220, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'nocontact:warning:message:export', '#', 'admin', current_timestamp, '', NULL, ''
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE menu_id = 3224);
