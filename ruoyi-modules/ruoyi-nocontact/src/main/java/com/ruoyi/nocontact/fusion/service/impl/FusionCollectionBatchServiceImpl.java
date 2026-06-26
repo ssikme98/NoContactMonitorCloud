@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -107,7 +108,7 @@ public class FusionCollectionBatchServiceImpl implements IFusionCollectionBatchS
                 }
                 item.setCreateBy(operName);
                 item.setCreateTime(DateUtils.getNowDate());
-                batchMapper.insertItem(item);
+                insertItemGuardingScope(item);
             }
         }
         insertAuditLog(batch.getBatchId(), "draft", "pending_audit", "提交审核", "提交采集数据", operName);
@@ -168,6 +169,7 @@ public class FusionCollectionBatchServiceImpl implements IFusionCollectionBatchS
             throw new ServiceException("采集批次状态已变化，请刷新后重试");
         }
         insertAuditLog(batchId, batch.getBatchStatus(), "rejected", "审核驳回", opinion, operName);
+        markBatchItemsCurrent(batchId, "0", operName);
         return rows;
     }
 
@@ -251,9 +253,13 @@ public class FusionCollectionBatchServiceImpl implements IFusionCollectionBatchS
                     "责任单位ID不能为空");
             return null;
         }
-        if (StringUtils.isBlank(row.getResponsibleUnitName()))
+        row.setRegionCode(StringUtils.trim(row.getRegionCode()));
+        row.setRegionName(StringUtils.trim(row.getRegionName()));
+        if ((StringUtils.isBlank(row.getRegionCode()) && StringUtils.isNotBlank(row.getRegionName()))
+                || (StringUtils.isNotBlank(row.getRegionCode()) && StringUtils.isBlank(row.getRegionName())))
         {
-            addFailure(failures, row, importBatchName, "责任单位", row.getResponsibleUnitName(), "责任单位不能为空");
+            addFailure(failures, row, importBatchName, "地区", row.getRegionCode() + "/" + row.getRegionName(),
+                    "地区编码和地区名称必须同时填写");
             return null;
         }
         if (!canWriteDept(row.getResponsibleUnitId()))
@@ -262,6 +268,14 @@ public class FusionCollectionBatchServiceImpl implements IFusionCollectionBatchS
                     "无权导入该责任单位数据");
             return null;
         }
+        String deptName = batchMapper.selectDeptNameById(row.getResponsibleUnitId());
+        if (StringUtils.isBlank(deptName))
+        {
+            addFailure(failures, row, importBatchName, "责任单位ID", String.valueOf(row.getResponsibleUnitId()),
+                    "责任单位不存在");
+            return null;
+        }
+        row.setResponsibleUnitName(deptName);
         if (!isAllowedPeriodType(row.getPeriodType()))
         {
             addFailure(failures, row, importBatchName, "周期类型", row.getPeriodType(), "周期类型必须是month、quarter或year");
@@ -481,6 +495,13 @@ public class FusionCollectionBatchServiceImpl implements IFusionCollectionBatchS
         {
             throw new ServiceException("无权提交该责任单位数据");
         }
+        String deptName = batchMapper.selectDeptNameById(batch.getResponsibleUnitId());
+        if (StringUtils.isBlank(deptName))
+        {
+            throw new ServiceException("责任单位不存在");
+        }
+        batch.setResponsibleUnitName(deptName);
+        normalizeRegionSnapshot(batch);
     }
 
     private void normalizeBatchPeriod(FusionCollectionBatch batch)
@@ -604,6 +625,39 @@ public class FusionCollectionBatchServiceImpl implements IFusionCollectionBatchS
         item.setRegionCode(batch.getRegionCode());
         item.setRegionName(batch.getRegionName());
         item.setPeriodKey(batch.getPeriodKey());
+    }
+
+    private void normalizeRegionSnapshot(FusionCollectionBatch batch)
+    {
+        batch.setRegionCode(StringUtils.trim(batch.getRegionCode()));
+        batch.setRegionName(StringUtils.trim(batch.getRegionName()));
+        if ((StringUtils.isBlank(batch.getRegionCode()) && StringUtils.isNotBlank(batch.getRegionName()))
+                || (StringUtils.isNotBlank(batch.getRegionCode()) && StringUtils.isBlank(batch.getRegionName())))
+        {
+            throw new ServiceException("地区编码和地区名称必须同时填写");
+        }
+    }
+
+    private void insertItemGuardingScope(FusionCollectionItem item)
+    {
+        try
+        {
+            batchMapper.insertItem(item);
+        }
+        catch (DuplicateKeyException e)
+        {
+            throw new ServiceException("同周期已存在未驳回采集数据");
+        }
+    }
+
+    private void markBatchItemsCurrent(Long batchId, String isCurrent, String operName)
+    {
+        FusionCollectionBatch update = new FusionCollectionBatch();
+        update.setBatchId(batchId);
+        update.setUpdateBy(operName);
+        update.setUpdateTime(DateUtils.getNowDate());
+        update.getParams().put("isCurrent", isCurrent);
+        batchMapper.updateItemsCurrentByBatchId(update);
     }
 
     private boolean canWriteDept(Long deptId)

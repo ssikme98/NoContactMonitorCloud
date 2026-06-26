@@ -232,6 +232,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ${params.dataScope}
     </select>
 
+    <select id="selectDeptNameById" parameterType="Long" resultType="String">
+        select dept_name
+        from sys_dept
+        where del_flag = '0'
+          and dept_id = #{deptId}
+    </select>
+
     <insert id="insertAuditLog" parameterType="FusionCollectionAuditLog" useGeneratedKeys="true" keyProperty="logId">
         insert into nc_fusion_collection_audit_log
         (batch_id, from_status, to_status, action_name, audit_by, audit_time,
@@ -240,6 +247,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         (#{batchId}, #{fromStatus}, #{toStatus}, #{actionName}, #{auditBy}, #{auditTime},
          #{auditOpinion}, #{createBy}, #{createTime}, #{remark})
     </insert>
+
+    <update id="updateItemsCurrentByBatchId" parameterType="FusionCollectionBatch">
+        update nc_fusion_collection_item
+        set is_current = #{params.isCurrent},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where batch_id = #{batchId}
+          and del_flag = '0'
+    </update>
 
     <insert id="insertImportFailure" parameterType="FusionCollectionImportFailure" useGeneratedKeys="true" keyProperty="failureId">
         insert into nc_fusion_collection_import_failure

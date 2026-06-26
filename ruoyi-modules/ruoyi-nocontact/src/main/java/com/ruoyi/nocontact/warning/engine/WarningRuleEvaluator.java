@@ -78,6 +78,10 @@ public class WarningRuleEvaluator
         {
             return result == 0;
         }
+        if ("ne".equals(condition))
+        {
+            return result != 0;
+        }
         return false;
     }
 }

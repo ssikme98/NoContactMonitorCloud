@@ -96,7 +96,7 @@ services:
   ruoyi-modules-nocontact:
     container_name: ruoyi-modules-nocontact
     build:
-      context: ./ruoyi/modules/survey
+      context: ./ruoyi/modules/nocontact
       dockerfile: dockerfile
     ports:
       - "9204:9204"

@@ -174,6 +174,33 @@ COMMENT ON COLUMN nc_fusion_collection_import_failure.row_num IS 'Excel行号';
 CREATE INDEX IF NOT EXISTS idx_nc_fusion_batch_dept ON nc_fusion_collection_batch(dept_id);
 CREATE INDEX IF NOT EXISTS idx_nc_fusion_item_scope ON nc_fusion_collection_item(indicator_id, responsible_unit_id, region_code, period_key);
 CREATE INDEX IF NOT EXISTS idx_nc_fusion_item_dept ON nc_fusion_collection_item(dept_id);
+UPDATE nc_fusion_collection_item i
+SET is_current = '0',
+    update_time = current_timestamp
+FROM nc_fusion_collection_batch b
+WHERE b.batch_id = i.batch_id
+  AND b.batch_status = 'rejected'
+  AND i.is_current = '1';
+WITH dedupe_current_items AS (
+  SELECT item_id,
+         row_number() OVER (
+           PARTITION BY indicator_id, responsible_unit_id, coalesce(region_code, ''), period_key
+           ORDER BY update_time DESC NULLS LAST, create_time DESC NULLS LAST, item_id DESC
+         ) AS rn
+  FROM nc_fusion_collection_item
+  WHERE del_flag = '0'
+    AND is_current = '1'
+)
+UPDATE nc_fusion_collection_item i
+SET is_current = '0',
+    update_time = current_timestamp
+FROM dedupe_current_items d
+WHERE d.item_id = i.item_id
+  AND d.rn > 1;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_nc_fusion_item_active_scope
+ON nc_fusion_collection_item(indicator_id, responsible_unit_id, coalesce(region_code, ''), period_key)
+WHERE del_flag = '0'
+  AND is_current = '1';
 CREATE INDEX IF NOT EXISTS idx_nc_warning_message_dept ON nc_warning_message(dept_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_nc_warning_message_open_business
 ON nc_warning_message(business_key)

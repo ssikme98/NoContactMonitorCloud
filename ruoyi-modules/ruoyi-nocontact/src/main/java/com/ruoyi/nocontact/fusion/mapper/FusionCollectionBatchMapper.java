@@ -34,7 +34,11 @@ public interface FusionCollectionBatchMapper
 
     public int countDeptInScope(FusionCollectionBatch batch);
 
+    public String selectDeptNameById(Long deptId);
+
     public int insertAuditLog(FusionCollectionAuditLog auditLog);
+
+    public int updateItemsCurrentByBatchId(FusionCollectionBatch batch);
 
     public int insertImportFailure(FusionCollectionImportFailure failure);
 

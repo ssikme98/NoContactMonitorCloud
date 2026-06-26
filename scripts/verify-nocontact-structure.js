@@ -50,6 +50,8 @@ const checks = [
   () => assertContains('sql/kingbase/ruoyi-gateway-dev-nocontact-route.yml', 'Path=/survey/**'),
   () => assertContains('sql/kingbase/ruoyi-gateway-dev-nocontact-route.yml', 'Path=/nocontact/**'),
   () => assertContains('docker/docker-compose.yml', 'ruoyi-modules-nocontact'),
+  () => assertContains('docker/docker-compose.yml', 'context: ./ruoyi/modules/nocontact'),
+  () => assertContains('docker/copy.sh', './ruoyi/modules/nocontact/jar'),
   () => assert(exists('docker/ruoyi/modules/nocontact/dockerfile'), 'missing nocontact dockerfile')
 ]
 

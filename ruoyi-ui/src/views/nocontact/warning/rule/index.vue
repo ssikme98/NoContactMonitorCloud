@@ -47,7 +47,7 @@
       </el-table-column>
       <el-table-column label="推送渠道" prop="pushChannels" width="130" />
       <el-table-column label="状态" prop="status" width="90" align="center">
-        <template slot-scope="scope"><el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="changeStatus(scope.row)" /></template>
+        <template slot-scope="scope"><el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="changeStatus(scope.row)" v-hasPermi="['warning:rule:edit']" /></template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="160">
         <template slot-scope="scope">
@@ -121,7 +121,7 @@ export default {
       form: {},
       levelOptions: [{ label: '一级红色', value: '1' }, { label: '二级橙色', value: '2' }, { label: '三级黄色', value: '3' }],
       thresholdOptions: [{ label: '目标值对比', value: 'target' }, { label: '国内普遍值对比', value: 'common' }, { label: '自定义阈值', value: 'custom' }, { label: '同比环比', value: 'trend' }],
-      conditionOptions: [{ label: '大于', value: 'gt' }, { label: '小于', value: 'lt' }, { label: '等于', value: 'eq' }, { label: '在范围内', value: 'between' }, { label: '不在范围内', value: 'not_between' }],
+      conditionOptions: [{ label: '大于', value: 'gt' }, { label: '大于等于', value: 'gte' }, { label: '小于', value: 'lt' }, { label: '小于等于', value: 'lte' }, { label: '等于', value: 'eq' }, { label: '不等于', value: 'ne' }, { label: '缺失', value: 'missing' }, { label: '逾期', value: 'overdue' }],
       rules: {
         ruleName: [{ required: true, message: '规则名称不能为空', trigger: 'blur' }],
         indicatorId: [{ required: true, message: '关联指标不能为空', trigger: 'change' }],

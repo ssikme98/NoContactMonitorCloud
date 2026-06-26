@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 预警消息Service业务层处理
@@ -43,6 +44,7 @@ public class WarningMessageServiceImpl implements IWarningMessageService
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int updateMessageStatus(Long messageId, String status, String opinion, String operName)
     {
         WarningMessage existing = selectScopedMessage(messageId);

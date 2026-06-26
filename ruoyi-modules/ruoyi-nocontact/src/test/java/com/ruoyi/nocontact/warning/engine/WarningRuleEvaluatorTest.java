@@ -23,6 +23,17 @@ class WarningRuleEvaluatorTest
     }
 
     @Test
+    void notEqualRuleMatchesDifferentValue()
+    {
+        WarningRule rule = rule("ne", new BigDecimal("80"), null);
+        WarningEvaluationInput input = input(new BigDecimal("72"), true, false);
+
+        WarningEvaluationResult result = evaluator.evaluate(rule, input);
+
+        assertTrue(result.isMatched());
+    }
+
+    @Test
     void disabledRuleDoesNotMatch()
     {
         WarningRule rule = rule("lt", new BigDecimal("80"), null);

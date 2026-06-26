@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.ArgumentCaptor;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -60,6 +61,7 @@ class FusionCollectionBatchServiceImplTest
         ReflectionTestUtils.setField(service, "batchMapper", batchMapper);
         ReflectionTestUtils.setField(service, "indicatorMapper", indicatorMapper);
         ReflectionTestUtils.setField(service, "warningEvaluationService", warningEvaluationService);
+        lenient().when(batchMapper.selectDeptNameById(200L)).thenReturn("省数据局");
         loginAsAdmin();
     }
 
@@ -183,6 +185,41 @@ class FusionCollectionBatchServiceImplTest
 
         verify(indicatorMapper).selectEnabledIndicatorByCode("NC-1003");
         verify(indicatorMapper, never()).selectIndicatorByCode("NC-1003");
+    }
+
+    @Test
+    void importCollectionBackfillsResponsibleUnitNameFromDept()
+    {
+        FusionCollectionImportRow row = validRow();
+        row.setResponsibleUnitName("");
+        when(indicatorMapper.selectEnabledIndicatorByCode("NC-1003")).thenReturn(indicator());
+        when(indicatorMapper.selectIndicatorById(1003L)).thenReturn(indicator());
+        when(batchMapper.insertBatch(any(FusionCollectionBatch.class))).thenAnswer(invocation -> {
+            FusionCollectionBatch batch = invocation.getArgument(0);
+            batch.setBatchId(7001L);
+            return 1;
+        });
+
+        Map<String, Object> result = service.importCollection(Collections.singletonList(row), "admin");
+
+        assertEquals(1, result.get("successRows"));
+        ArgumentCaptor<FusionCollectionBatch> batchCaptor = ArgumentCaptor.forClass(FusionCollectionBatch.class);
+        verify(batchMapper).insertBatch(batchCaptor.capture());
+        assertEquals("省数据局", batchCaptor.getValue().getResponsibleUnitName());
+    }
+
+    @Test
+    void importCollectionRecordsRegionPairErrorAsRowFailure()
+    {
+        FusionCollectionImportRow row = validRow();
+        row.setRegionName("");
+
+        Map<String, Object> result = service.importCollection(Collections.singletonList(row), "admin");
+
+        assertEquals(0, result.get("successRows"));
+        assertEquals(1, result.get("failureRows"));
+        verify(batchMapper).insertImportFailure(any(FusionCollectionImportFailure.class));
+        verify(batchMapper, never()).insertBatch(any(FusionCollectionBatch.class));
     }
 
     @Test
@@ -319,6 +356,7 @@ class FusionCollectionBatchServiceImplTest
     void submitBatchNormalizesPeriodAndNumberValue()
     {
         FusionCollectionBatch batch = writableBatch();
+        batch.setResponsibleUnitName("客户端伪造单位");
         batch.setPeriodQuarter(2);
         batch.getItems().get(0).setRawValue("abc");
         when(indicatorMapper.selectIndicatorById(1003L)).thenReturn(indicator());
@@ -336,8 +374,10 @@ class FusionCollectionBatchServiceImplTest
         assertEquals(Integer.valueOf(2026), batchCaptor.getValue().getPeriodYear());
         assertEquals(Integer.valueOf(6), batchCaptor.getValue().getPeriodMonth());
         assertNull(batchCaptor.getValue().getPeriodQuarter());
+        assertEquals("省数据局", batchCaptor.getValue().getResponsibleUnitName());
         ArgumentCaptor<FusionCollectionItem> itemCaptor = ArgumentCaptor.forClass(FusionCollectionItem.class);
         verify(batchMapper).insertItem(itemCaptor.capture());
+        assertEquals("省数据局", itemCaptor.getValue().getResponsibleUnitName());
         assertEquals(new BigDecimal("72"), itemCaptor.getValue().getValueDecimal());
         assertEquals("72", itemCaptor.getValue().getRawValue());
     }
@@ -358,6 +398,17 @@ class FusionCollectionBatchServiceImplTest
     {
         FusionCollectionBatch batch = writableBatch();
         batch.setPeriodKey("2026-13");
+
+        assertThrows(ServiceException.class, () -> service.submitBatch(batch, "admin"));
+
+        verify(batchMapper, never()).insertBatch(any(FusionCollectionBatch.class));
+    }
+
+    @Test
+    void submitBatchRejectsRegionCodeWithoutRegionName()
+    {
+        FusionCollectionBatch batch = writableBatch();
+        batch.setRegionName(" ");
 
         assertThrows(ServiceException.class, () -> service.submitBatch(batch, "admin"));
 

@@ -25,6 +25,10 @@ function assertNotMatches(file, pattern, message) {
   assert(!pattern.test(read(file)), `${file} ${message}`)
 }
 
+function assertNotContains(file, text) {
+  assert(!read(file).includes(text), `${file} must not contain ${text}`)
+}
+
 const files = [
   'ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/fusion/controller/FusionCollectionTaskController.java',
   'ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/fusion/controller/FusionCollectionBatchController.java',
@@ -90,6 +94,9 @@ assertContains('sql/kingbase/nocontact_003_indicator_import_scope.sql', 'CREATE 
 assertContains('sql/kingbase/nocontact_003_indicator_import_scope.sql', 'uk_nc_fusion_indicator_enabled_code')
 assertContains('sql/kingbase/nocontact_003_indicator_import_scope.sql', 'uk_nc_fusion_indicator_code_version')
 assertContains('sql/kingbase/nocontact_003_indicator_import_scope.sql', 'uk_nc_warning_message_open_business')
+assertContains('sql/kingbase/nocontact_003_indicator_import_scope.sql', 'uk_nc_fusion_item_active_scope')
+assertContains('sql/kingbase/nocontact_003_indicator_import_scope.sql', 'dedupe_current_items')
+assertContains('sql/kingbase/nocontact_003_indicator_import_scope.sql', "PARTITION BY indicator_id, responsible_unit_id, coalesce(region_code, ''), period_key")
 assertContains('sql/kingbase/nocontact_003_indicator_import_scope.sql', 'ALTER TABLE nc_fusion_collection_batch ADD COLUMN IF NOT EXISTS dept_id')
 assertContains('sql/kingbase/nocontact_003_indicator_import_scope.sql', 'ALTER TABLE nc_warning_message ADD COLUMN IF NOT EXISTS dept_id')
 assertContains('sql/kingbase/nocontact_003_indicator_import_scope.sql', 'fusion:collection:import')
@@ -105,6 +112,13 @@ assertContains('ruoyi-ui/src/views/nocontact/fusion/indicator/index.vue', '指�
 assertContains('ruoyi-ui/src/views/nocontact/fusion/indicator/index.vue', '复制草稿')
 assertContains('ruoyi-ui/src/views/nocontact/fusion/indicator/index.vue', '生命周期')
 assertContains('ruoyi-ui/src/views/nocontact/warning/rule/index.vue', '新增预警规则')
+assertContains('ruoyi-ui/src/views/nocontact/warning/rule/index.vue', "value: 'ne'")
+assertContains('ruoyi-ui/src/views/nocontact/warning/rule/index.vue', "value: 'lte'")
+assertContains('ruoyi-ui/src/views/nocontact/warning/rule/index.vue', "value: 'gte'")
+assertContains('ruoyi-ui/src/views/nocontact/warning/rule/index.vue', "value: 'missing'")
+assertContains('ruoyi-ui/src/views/nocontact/warning/rule/index.vue', "value: 'overdue'")
+assertNotContains('ruoyi-ui/src/views/nocontact/warning/rule/index.vue', "value: 'between'")
+assertNotContains('ruoyi-ui/src/views/nocontact/warning/rule/index.vue', "value: 'not_between'")
 assertContains('ruoyi-ui/src/views/nocontact/warning/dashboard/index.vue', '分级预警看板')
 assertContains('ruoyi-ui/src/views/nocontact/warning/message/index.vue', '处理日志')
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/resources/mapper/warning/WarningMessageMapper.xml', 'insertHandleLog')
@@ -114,13 +128,17 @@ assertContains('ruoyi-modules/ruoyi-nocontact/src/main/resources/mapper/warning/
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/resources/mapper/fusion/FusionCollectionBatchMapper.xml', 'selectAuditLogsByBatchId')
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/resources/mapper/fusion/FusionCollectionBatchMapper.xml', 'batch_status = #{expectedStatus}')
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/resources/mapper/fusion/FusionCollectionBatchMapper.xml', 'insertImportFailure')
+assertContains('ruoyi-modules/ruoyi-nocontact/src/main/resources/mapper/fusion/FusionCollectionBatchMapper.xml', 'selectDeptNameById')
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/resources/mapper/fusion/FusionIndicatorMapper.xml', 'indicator_code')
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/resources/mapper/fusion/FusionIndicatorMapper.xml', 'selectEnabledIndicatorByCode')
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/fusion/controller/FusionIndicatorController.java', 'logical = Logical.OR')
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/fusion/controller/FusionIndicatorController.java', 'warning:rule:list')
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/fusion/controller/FusionIndicatorController.java', 'indicator.setLifecycleStatus("enabled")')
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/fusion/service/impl/FusionCollectionBatchServiceImpl.java', '同批次存在重复指标')
+assertContains('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/fusion/service/impl/FusionCollectionBatchServiceImpl.java', 'selectDeptNameById')
+assertContains('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/fusion/service/impl/FusionCollectionBatchServiceImpl.java', '地区编码和地区名称必须同时填写')
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/fusion/service/impl/FusionCollectionBatchServiceImpl.java', 'toPlainString()')
+assertContains('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/warning/engine/WarningRuleEvaluator.java', '"ne".equals(condition)')
 assertContains('ruoyi-modules/ruoyi-nocontact/src/main/java/com/ruoyi/nocontact/common/NocontactDataScopeHelper.java', 'getParams().put(DATA_SCOPE')
 assertContains('ruoyi-modules/ruoyi-nocontact/pom.xml', 'maven-surefire-plugin')
 

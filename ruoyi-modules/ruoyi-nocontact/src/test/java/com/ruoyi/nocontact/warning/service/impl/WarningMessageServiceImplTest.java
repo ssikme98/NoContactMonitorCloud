@@ -13,6 +13,7 @@ import com.ruoyi.system.api.model.LoginUser;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.lang.reflect.Method;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -135,6 +137,18 @@ class WarningMessageServiceImplTest
         assertThrows(ServiceException.class, () -> service.deleteMessageByIds(new Long[] {4001L}));
 
         verify(messageMapper, never()).deleteMessageByIds(any());
+    }
+
+    @Test
+    void statusChangeIsTransactionalWithHandleLog() throws Exception
+    {
+        Method method = WarningMessageServiceImpl.class.getMethod("updateMessageStatus",
+                Long.class, String.class, String.class, String.class);
+
+        Transactional transactional = method.getAnnotation(Transactional.class);
+
+        assertTrue(transactional != null);
+        assertTrue(Arrays.asList(transactional.rollbackFor()).contains(Exception.class));
     }
 
     private WarningMessage message(String status)

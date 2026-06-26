@@ -32,7 +32,7 @@ echo "begin copy ruoyi-modules-job "
 cp ../ruoyi-modules/ruoyi-job/target/ruoyi-modules-job.jar ./ruoyi/modules/job/jar
 
 echo "begin copy ruoyi-modules-nocontact "
-cp ../ruoyi-modules/ruoyi-nocontact/target/ruoyi-modules-nocontact.jar ./ruoyi/modules/survey/jar
+cp ../ruoyi-modules/ruoyi-nocontact/target/ruoyi-modules-nocontact.jar ./ruoyi/modules/nocontact/jar
 
 echo "begin copy ruoyi-modules-gen "
 cp ../ruoyi-modules/ruoyi-gen/target/ruoyi-modules-gen.jar ./ruoyi/modules/gen/jar
