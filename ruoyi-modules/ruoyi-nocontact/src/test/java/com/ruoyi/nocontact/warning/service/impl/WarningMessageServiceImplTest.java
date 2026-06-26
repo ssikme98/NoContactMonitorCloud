@@ -1,8 +1,19 @@
 package com.ruoyi.nocontact.warning.service.impl;
 
+import com.ruoyi.common.core.constant.Constants;
+import com.ruoyi.common.core.constant.SecurityConstants;
+import com.ruoyi.common.core.constant.UserConstants;
+import com.ruoyi.common.core.context.SecurityContextHolder;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.nocontact.warning.domain.WarningMessage;
 import com.ruoyi.nocontact.warning.mapper.WarningMessageMapper;
+import com.ruoyi.system.api.domain.SysRole;
+import com.ruoyi.system.api.domain.SysUser;
+import com.ruoyi.system.api.model.LoginUser;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,7 +23,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,10 +45,16 @@ class WarningMessageServiceImplTest
         ReflectionTestUtils.setField(service, "messageMapper", messageMapper);
     }
 
+    @AfterEach
+    void tearDown()
+    {
+        SecurityContextHolder.remove();
+    }
+
     @Test
     void pendingWarningCanMoveToProcessingAndWritesHandleLog()
     {
-        when(messageMapper.selectMessageById(4001L)).thenReturn(message("pending"));
+        when(messageMapper.selectMessageByScope(any(WarningMessage.class))).thenReturn(message("pending"));
         when(messageMapper.updateMessageStatus(any(WarningMessage.class))).thenReturn(1);
 
         int rows = service.updateMessageStatus(4001L, "processing", "开始处理", "admin");
@@ -47,19 +66,35 @@ class WarningMessageServiceImplTest
     @Test
     void processingWarningCanClose()
     {
-        when(messageMapper.selectMessageById(4001L)).thenReturn(message("processing"));
+        when(messageMapper.selectMessageByScope(any(WarningMessage.class))).thenReturn(message("processing"));
         when(messageMapper.updateMessageStatus(any(WarningMessage.class))).thenReturn(1);
 
         int rows = service.updateMessageStatus(4001L, "closed", "已核查", "admin");
 
         assertEquals(1, rows);
+        ArgumentCaptor<WarningMessage> captor = ArgumentCaptor.forClass(WarningMessage.class);
+        verify(messageMapper).updateMessageStatus(captor.capture());
+        assertEquals("processing", captor.getValue().getExpectedStatus());
         verify(messageMapper).insertHandleLog(any());
+    }
+
+    @Test
+    void concurrentStatusChangeDoesNotWriteHandleLog()
+    {
+        when(messageMapper.selectMessageByScope(any(WarningMessage.class))).thenReturn(message("pending"));
+        when(messageMapper.updateMessageStatus(any(WarningMessage.class))).thenReturn(0);
+
+        assertThrows(ServiceException.class,
+                () -> service.updateMessageStatus(4001L, "processing", "开始处理", "admin"));
+
+        verify(messageMapper).updateMessageStatus(any());
+        verify(messageMapper, never()).insertHandleLog(any());
     }
 
     @Test
     void closedWarningCannotChangeAgain()
     {
-        when(messageMapper.selectMessageById(4001L)).thenReturn(message("closed"));
+        when(messageMapper.selectMessageByScope(any(WarningMessage.class))).thenReturn(message("closed"));
 
         assertThrows(ServiceException.class, () -> service.updateMessageStatus(4001L, "ignored", "忽略", "admin"));
 
@@ -70,11 +105,36 @@ class WarningMessageServiceImplTest
     @Test
     void unsupportedStatusIsRejected()
     {
-        when(messageMapper.selectMessageById(4001L)).thenReturn(message("pending"));
+        when(messageMapper.selectMessageByScope(any(WarningMessage.class))).thenReturn(message("pending"));
 
         assertThrows(ServiceException.class, () -> service.updateMessageStatus(4001L, "handled", "旧状态", "admin"));
 
         verify(messageMapper, never()).updateMessageStatus(any());
+    }
+
+    @Test
+    void nonAdminListIsScopedToCurrentUserDept()
+    {
+        loginAsScopedUser(2L, 88L, Constants.Dept.DATA_SCOPE_DEPT);
+        when(messageMapper.selectMessageList(any(WarningMessage.class))).thenReturn(Collections.<WarningMessage>emptyList());
+
+        service.selectMessageList(new WarningMessage());
+
+        ArgumentCaptor<WarningMessage> captor = ArgumentCaptor.forClass(WarningMessage.class);
+        verify(messageMapper).selectMessageList(captor.capture());
+        assertTrue(String.valueOf(captor.getValue().getParams().get("dataScope")).contains("m.dept_id = 88"));
+    }
+
+    @Test
+    void deleteRejectsMessageOutsideRoleDataScope()
+    {
+        loginAsScopedUser(2L, 88L, Constants.Dept.DATA_SCOPE_DEPT);
+        SecurityContextHolder.setPermission("warning:message:remove");
+        when(messageMapper.selectMessageByScope(any(WarningMessage.class))).thenReturn(null);
+
+        assertThrows(ServiceException.class, () -> service.deleteMessageByIds(new Long[] {4001L}));
+
+        verify(messageMapper, never()).deleteMessageByIds(any());
     }
 
     private WarningMessage message(String status)
@@ -83,5 +143,26 @@ class WarningMessageServiceImplTest
         message.setMessageId(4001L);
         message.setMessageStatus(status);
         return message;
+    }
+
+    private void loginAsScopedUser(Long userId, Long deptId, String dataScope)
+    {
+        SecurityContextHolder.setUserId(String.valueOf(userId));
+        SecurityContextHolder.setUserName("scope-user");
+        SecurityContextHolder.setPermission("warning:message:list");
+        SysRole role = new SysRole();
+        role.setRoleId(20L);
+        role.setDataScope(dataScope);
+        role.setStatus(UserConstants.ROLE_NORMAL);
+        role.setPermissions(new HashSet<String>(Arrays.asList("warning:message:list", "warning:message:query",
+                "warning:message:edit", "warning:message:remove", "warning:dashboard:query")));
+        SysUser user = new SysUser();
+        user.setUserId(userId);
+        user.setUserName("scope-user");
+        user.setDeptId(deptId);
+        user.setRoles(Collections.singletonList(role));
+        LoginUser loginUser = new LoginUser();
+        loginUser.setSysUser(user);
+        SecurityContextHolder.set(SecurityConstants.LOGIN_USER, loginUser);
     }
 }

@@ -13,6 +13,12 @@ public class FusionCollectionItem extends BaseEntity
 
     private Long itemId;
     private Long batchId;
+    private Long deptId;
+    private Long responsibleUnitId;
+    private String responsibleUnitName;
+    private String regionCode;
+    private String regionName;
+    private String periodKey;
     private Long indicatorId;
     private String indicatorName;
     private String indicatorCode;
@@ -42,6 +48,66 @@ public class FusionCollectionItem extends BaseEntity
     public void setBatchId(Long batchId)
     {
         this.batchId = batchId;
+    }
+
+    public Long getDeptId()
+    {
+        return deptId;
+    }
+
+    public void setDeptId(Long deptId)
+    {
+        this.deptId = deptId;
+    }
+
+    public Long getResponsibleUnitId()
+    {
+        return responsibleUnitId;
+    }
+
+    public void setResponsibleUnitId(Long responsibleUnitId)
+    {
+        this.responsibleUnitId = responsibleUnitId;
+    }
+
+    public String getResponsibleUnitName()
+    {
+        return responsibleUnitName;
+    }
+
+    public void setResponsibleUnitName(String responsibleUnitName)
+    {
+        this.responsibleUnitName = responsibleUnitName;
+    }
+
+    public String getRegionCode()
+    {
+        return regionCode;
+    }
+
+    public void setRegionCode(String regionCode)
+    {
+        this.regionCode = regionCode;
+    }
+
+    public String getRegionName()
+    {
+        return regionName;
+    }
+
+    public void setRegionName(String regionName)
+    {
+        this.regionName = regionName;
+    }
+
+    public String getPeriodKey()
+    {
+        return periodKey;
+    }
+
+    public void setPeriodKey(String periodKey)
+    {
+        this.periodKey = periodKey;
     }
 
     public Long getIndicatorId()

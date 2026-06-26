@@ -25,6 +25,12 @@
       <el-col :span="1.5">
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleSubmitBatch" v-hasPermi="['fusion:collection:add']">提交采集数据</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['fusion:collection:import']">导入Excel</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="warning" plain icon="el-icon-document" size="mini" @click="handleImportFailures" v-hasPermi="['fusion:collection:query']">失败明细</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" />
     </el-row>
 
@@ -174,24 +180,55 @@
       </el-table>
       <div slot="footer" class="dialog-footer"><el-button @click="detailOpen = false">关 闭</el-button></div>
     </el-dialog>
+
+    <el-dialog title="导入失败明细" :visible.sync="failureOpen" width="920px" append-to-body>
+      <el-form ref="failureQueryForm" :model="failureQuery" size="small" :inline="true">
+        <el-form-item label="导入批次" prop="importBatchName">
+          <el-input v-model="failureQuery.importBatchName" placeholder="请输入导入批次" clearable @keyup.enter.native="getFailureList" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-search" size="mini" @click="getFailureList">查询</el-button>
+          <el-button icon="el-icon-refresh" size="mini" @click="resetFailureQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+      <el-table v-loading="failureLoading" :data="failureList" border size="small">
+        <el-table-column label="导入批次" prop="importBatchName" min-width="170" show-overflow-tooltip />
+        <el-table-column label="行号" prop="rowNum" width="80" align="right" />
+        <el-table-column label="字段" prop="fieldName" width="120" />
+        <el-table-column label="原始值" prop="rawValue" min-width="140" show-overflow-tooltip />
+        <el-table-column label="失败原因" prop="failureReason" min-width="220" show-overflow-tooltip />
+        <el-table-column label="创建时间" prop="createTime" width="160" />
+      </el-table>
+      <pagination v-show="failureTotal > 0" :total="failureTotal" :page.sync="failureQuery.pageNum" :limit.sync="failureQuery.pageSize" @pagination="getFailureList" />
+      <div slot="footer" class="dialog-footer"><el-button @click="failureOpen = false">关 闭</el-button></div>
+    </el-dialog>
+
+    <excel-import-dialog ref="importDialog" title="采集数据导入" action="/nocontact/fusion/collection/importData" template-action="/nocontact/fusion/collection/importTemplate" template-file-name="采集导入模板" update-support-label="导入不会覆盖已审核数据" @success="getList" />
   </div>
 </template>
 
 <script>
-import { listCollection, getCollection, submitCollection, approveCollection, rejectCollection } from '@/api/nocontact/fusion/collection'
+import ExcelImportDialog from '@/components/ExcelImportDialog'
+import { listCollection, getCollection, listImportFailures, submitCollection, approveCollection, rejectCollection } from '@/api/nocontact/fusion/collection'
 
 export default {
   name: 'FusionCollection',
+  components: { ExcelImportDialog },
   data() {
     return {
       loading: false,
+      failureLoading: false,
       showSearch: true,
       total: 0,
+      failureTotal: 0,
       batchList: [],
+      failureList: [],
       submitOpen: false,
       detailOpen: false,
+      failureOpen: false,
       detail: {},
       queryParams: { pageNum: 1, pageSize: 10, batchName: undefined, batchStatus: undefined, responsibleUnitName: undefined, periodKey: undefined },
+      failureQuery: { pageNum: 1, pageSize: 10, importBatchName: undefined },
       form: {},
       statusOptions: [
         { label: '草稿', value: 'draft' },
@@ -257,6 +294,26 @@ export default {
     handleSubmitBatch() {
       this.reset()
       this.submitOpen = true
+    },
+    handleImport() {
+      this.$refs.importDialog.open()
+    },
+    handleImportFailures() {
+      this.failureOpen = true
+      this.getFailureList()
+    },
+    getFailureList() {
+      this.failureLoading = true
+      listImportFailures(this.failureQuery).then(response => {
+        this.failureList = response.rows
+        this.failureTotal = response.total
+        this.failureLoading = false
+      })
+    },
+    resetFailureQuery() {
+      this.resetForm('failureQueryForm')
+      this.failureQuery.pageNum = 1
+      this.getFailureList()
     },
     addItem() {
       this.form.items.push(this.emptyItem())

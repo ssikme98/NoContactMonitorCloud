@@ -130,7 +130,8 @@ SET hit_count = 1
 WHERE hit_count IS NULL;
 
 UPDATE nc_warning_message
-SET business_key = rule_id || ':' || indicator_id || ':' || coalesce(responsible_unit_id, 0) || ':' || coalesce(period_key, '')
+SET business_key = rule_id || ':' || indicator_id || ':' || coalesce(responsible_unit_id, 0)
+                   || ':' || coalesce(region_code, '') || ':' || coalesce(period_key, '')
 WHERE business_key IS NULL OR business_key = '';
 
 CREATE INDEX IF NOT EXISTS idx_nc_fusion_batch_status ON nc_fusion_collection_batch(batch_status);

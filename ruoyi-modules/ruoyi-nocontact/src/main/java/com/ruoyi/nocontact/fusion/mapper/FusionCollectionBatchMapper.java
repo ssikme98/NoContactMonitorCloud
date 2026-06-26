@@ -2,6 +2,7 @@ package com.ruoyi.nocontact.fusion.mapper;
 
 import com.ruoyi.nocontact.fusion.domain.FusionCollectionAuditLog;
 import com.ruoyi.nocontact.fusion.domain.FusionCollectionBatch;
+import com.ruoyi.nocontact.fusion.domain.FusionCollectionImportFailure;
 import com.ruoyi.nocontact.fusion.domain.FusionCollectionItem;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,8 @@ public interface FusionCollectionBatchMapper
 
     public FusionCollectionBatch selectBatchById(Long batchId);
 
+    public FusionCollectionBatch selectBatchByScope(FusionCollectionBatch batch);
+
     public List<FusionCollectionItem> selectItemsByBatchId(Long batchId);
 
     public List<FusionCollectionAuditLog> selectAuditLogsByBatchId(Long batchId);
@@ -27,7 +30,15 @@ public interface FusionCollectionBatchMapper
 
     public int updateBatchItemCount(FusionCollectionBatch batch);
 
+    public int countActiveItemByScope(FusionCollectionItem item);
+
+    public int countDeptInScope(FusionCollectionBatch batch);
+
     public int insertAuditLog(FusionCollectionAuditLog auditLog);
 
-    public List<Map<String, Object>> selectBatchStatusStats();
+    public int insertImportFailure(FusionCollectionImportFailure failure);
+
+    public List<FusionCollectionImportFailure> selectImportFailureList(FusionCollectionImportFailure failure);
+
+    public List<Map<String, Object>> selectBatchStatusStats(FusionCollectionBatch batch);
 }

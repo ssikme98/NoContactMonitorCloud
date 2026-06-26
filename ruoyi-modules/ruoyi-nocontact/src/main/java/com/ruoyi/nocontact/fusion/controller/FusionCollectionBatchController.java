@@ -1,5 +1,6 @@
 package com.ruoyi.nocontact.fusion.controller;
 
+import com.ruoyi.common.core.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.web.controller.BaseController;
 import com.ruoyi.common.core.web.domain.AjaxResult;
 import com.ruoyi.common.core.web.page.TableDataInfo;
@@ -8,8 +9,13 @@ import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.nocontact.fusion.domain.FusionCollectionBatch;
+import com.ruoyi.nocontact.fusion.domain.FusionCollectionImportFailure;
+import com.ruoyi.nocontact.fusion.domain.FusionCollectionImportRow;
 import com.ruoyi.nocontact.fusion.service.IFusionCollectionBatchService;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 数据采集批次Controller
@@ -53,12 +60,46 @@ public class FusionCollectionBatchController extends BaseController
         return success(batchService.selectBatchSummary());
     }
 
+    @RequiresPermissions("fusion:collection:query")
+    @GetMapping("/importFailures")
+    public TableDataInfo importFailures(FusionCollectionImportFailure failure)
+    {
+        startPage();
+        List<FusionCollectionImportFailure> list = batchService.selectImportFailures(failure);
+        return getDataTable(list);
+    }
+
     @RequiresPermissions("fusion:collection:add")
     @Log(title = "数据采集批次", businessType = BusinessType.INSERT)
     @PostMapping("/submit")
     public AjaxResult submit(@RequestBody FusionCollectionBatch batch)
     {
         return toAjax(batchService.submitBatch(batch, SecurityUtils.getUsername()));
+    }
+
+    @RequiresPermissions("fusion:collection:import")
+    @Log(title = "数据采集导入", businessType = BusinessType.IMPORT)
+    @PostMapping("/importData")
+    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
+    {
+        ExcelUtil<FusionCollectionImportRow> util = new ExcelUtil<FusionCollectionImportRow>(FusionCollectionImportRow.class);
+        List<FusionCollectionImportRow> rows = util.importExcel(file.getInputStream());
+        Map<String, Object> result = batchService.importCollection(rows, SecurityUtils.getUsername());
+        String msg = "导入完成：成功 " + result.get("successRows") + " 行，失败 " + result.get("failureRows")
+                + " 行，生成待审核批次 " + result.get("batchCount") + " 个。";
+        if (((Integer) result.get("failureRows")) > 0)
+        {
+            msg += "失败明细可在页面查看，导入批次号：" + result.get("importBatchName");
+        }
+        return AjaxResult.success(msg, result);
+    }
+
+    @RequiresPermissions("fusion:collection:import")
+    @PostMapping("/importTemplate")
+    public void importTemplate(HttpServletResponse response) throws IOException
+    {
+        ExcelUtil<FusionCollectionImportRow> util = new ExcelUtil<FusionCollectionImportRow>(FusionCollectionImportRow.class);
+        util.importTemplateExcel(response, "采集导入模板");
     }
 
     @RequiresPermissions("fusion:collection:audit")

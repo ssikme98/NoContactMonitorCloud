@@ -22,6 +22,14 @@ export function getCollectionSummary() {
   })
 }
 
+export function listImportFailures(query) {
+  return request({
+    url: '/nocontact/fusion/collection/importFailures',
+    method: 'get',
+    params: query
+  })
+}
+
 export function submitCollection(data) {
   return request({
     url: '/nocontact/fusion/collection/submit',

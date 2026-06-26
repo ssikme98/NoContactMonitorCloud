@@ -11,6 +11,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="sourceType"          column="source_type"          />
         <result property="sourceName"          column="source_name"          />
         <result property="sourceRecordId"      column="source_record_id"     />
+        <result property="deptId"              column="dept_id"              />
         <result property="responsibleUnitId"   column="responsible_unit_id"  />
         <result property="responsibleUnitName" column="responsible_unit_name"/>
         <result property="regionCode"          column="region_code"          />
@@ -37,6 +38,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="FusionCollectionItem" id="FusionCollectionItemResult">
         <id     property="itemId"            column="item_id"            />
         <result property="batchId"           column="batch_id"           />
+        <result property="deptId"            column="dept_id"            />
+        <result property="responsibleUnitId" column="responsible_unit_id"/>
+        <result property="responsibleUnitName" column="responsible_unit_name"/>
+        <result property="regionCode"        column="region_code"        />
+        <result property="regionName"        column="region_name"        />
+        <result property="periodKey"         column="period_key"         />
         <result property="indicatorId"       column="indicator_id"       />
         <result property="indicatorName"     column="indicator_name"     />
         <result property="indicatorCode"     column="indicator_code"     />
@@ -68,42 +75,73 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"       column="remark"        />
     </resultMap>
 
+    <resultMap type="FusionCollectionImportFailure" id="FusionCollectionImportFailureResult">
+        <id     property="failureId"       column="failure_id"        />
+        <result property="deptId"          column="dept_id"           />
+        <result property="importBatchName" column="import_batch_name" />
+        <result property="sourceRecordId"  column="source_record_id"  />
+        <result property="rowNum"          column="row_num"           />
+        <result property="fieldName"       column="field_name"        />
+        <result property="rawValue"        column="raw_value"         />
+        <result property="failureReason"   column="failure_reason"    />
+        <result property="createBy"        column="create_by"         />
+        <result property="createTime"      column="create_time"       />
+        <result property="remark"          column="remark"            />
+    </resultMap>
+
     <sql id="selectBatchVo">
-        select batch_id, task_id, batch_name, source_type, source_name, source_record_id,
-               responsible_unit_id, responsible_unit_name, region_code, region_name,
-               period_type, period_year, period_quarter, period_month, period_key,
-               batch_status, submit_by, submit_time, audit_by, audit_time, audit_opinion,
-               item_count, create_by, create_time, update_by, update_time, remark
-        from nc_fusion_collection_batch
+        select b.batch_id, b.task_id, b.batch_name, b.source_type, b.source_name, b.source_record_id,
+               b.dept_id, b.responsible_unit_id, b.responsible_unit_name, b.region_code, b.region_name,
+               b.period_type, b.period_year, b.period_quarter, b.period_month, b.period_key,
+               b.batch_status, b.submit_by, b.submit_time, b.audit_by, b.audit_time, b.audit_opinion,
+               b.item_count, b.create_by, b.create_time, b.update_by, b.update_time, b.remark
+        from nc_fusion_collection_batch b
     </sql>
 
     <select id="selectBatchList" parameterType="FusionCollectionBatch" resultMap="FusionCollectionBatchResult">
         <include refid="selectBatchVo"/>
         <where>
-            del_flag = '0'
+            b.del_flag = '0'
             <if test="batchName != null and batchName != ''">
-                AND batch_name like '%' || #{batchName} || '%'
+                AND b.batch_name like '%' || #{batchName} || '%'
             </if>
             <if test="batchStatus != null and batchStatus != ''">
-                AND batch_status = #{batchStatus}
+                AND b.batch_status = #{batchStatus}
             </if>
             <if test="responsibleUnitName != null and responsibleUnitName != ''">
-                AND responsible_unit_name like '%' || #{responsibleUnitName} || '%'
+                AND b.responsible_unit_name like '%' || #{responsibleUnitName} || '%'
+            </if>
+            <if test="deptId != null">
+                AND b.dept_id = #{deptId}
+            </if>
+            <if test="responsibleUnitId != null">
+                AND b.responsible_unit_id = #{responsibleUnitId}
+            </if>
+            <if test="regionCode != null and regionCode != ''">
+                AND b.region_code = #{regionCode}
             </if>
             <if test="periodKey != null and periodKey != ''">
-                AND period_key = #{periodKey}
+                AND b.period_key = #{periodKey}
             </if>
+            ${params.dataScope}
         </where>
-        order by create_time desc, batch_id desc
+        order by b.create_time desc, b.batch_id desc
     </select>
 
     <select id="selectBatchById" parameterType="Long" resultMap="FusionCollectionBatchResult">
         <include refid="selectBatchVo"/>
-        where batch_id = #{batchId} and del_flag = '0'
+        where b.batch_id = #{batchId} and b.del_flag = '0'
+    </select>
+
+    <select id="selectBatchByScope" parameterType="FusionCollectionBatch" resultMap="FusionCollectionBatchResult">
+        <include refid="selectBatchVo"/>
+        where b.batch_id = #{batchId} and b.del_flag = '0'
+        ${params.dataScope}
     </select>
 
     <select id="selectItemsByBatchId" parameterType="Long" resultMap="FusionCollectionItemResult">
-        select item_id, batch_id, indicator_id, indicator_name, indicator_code, raw_value,
+        select item_id, batch_id, dept_id, responsible_unit_id, responsible_unit_name,
+               region_code, region_name, period_key, indicator_id, indicator_name, indicator_code, raw_value,
                value_decimal, value_text, value_date, validation_status, validation_message,
                is_current, create_by, create_time, update_by, update_time, remark
         from nc_fusion_collection_item
@@ -122,23 +160,25 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <insert id="insertBatch" parameterType="FusionCollectionBatch" useGeneratedKeys="true" keyProperty="batchId">
         insert into nc_fusion_collection_batch
         (task_id, batch_name, source_type, source_name, source_record_id,
-         responsible_unit_id, responsible_unit_name, region_code, region_name,
+         dept_id, responsible_unit_id, responsible_unit_name, region_code, region_name,
          period_type, period_year, period_quarter, period_month, period_key,
          batch_status, submit_by, submit_time, item_count, create_by, create_time, remark)
         values
         (#{taskId}, #{batchName}, #{sourceType}, #{sourceName}, #{sourceRecordId},
-         #{responsibleUnitId}, #{responsibleUnitName}, #{regionCode}, #{regionName},
+         #{deptId}, #{responsibleUnitId}, #{responsibleUnitName}, #{regionCode}, #{regionName},
          #{periodType}, #{periodYear}, #{periodQuarter}, #{periodMonth}, #{periodKey},
          #{batchStatus}, #{submitBy}, #{submitTime}, #{itemCount}, #{createBy}, #{createTime}, #{remark})
     </insert>
 
     <insert id="insertItem" parameterType="FusionCollectionItem" useGeneratedKeys="true" keyProperty="itemId">
         insert into nc_fusion_collection_item
-        (batch_id, indicator_id, indicator_name, indicator_code, raw_value, value_decimal,
+        (batch_id, dept_id, responsible_unit_id, responsible_unit_name, region_code, region_name, period_key,
+         indicator_id, indicator_name, indicator_code, raw_value, value_decimal,
          value_text, value_date, validation_status, validation_message, is_current,
          create_by, create_time, remark)
         values
-        (#{batchId}, #{indicatorId}, #{indicatorName}, #{indicatorCode}, #{rawValue}, #{valueDecimal},
+        (#{batchId}, #{deptId}, #{responsibleUnitId}, #{responsibleUnitName}, #{regionCode}, #{regionName}, #{periodKey},
+         #{indicatorId}, #{indicatorName}, #{indicatorCode}, #{rawValue}, #{valueDecimal},
          #{valueText}, #{valueDate}, #{validationStatus}, #{validationMessage}, #{isCurrent},
          #{createBy}, #{createTime}, #{remark})
     </insert>
@@ -154,6 +194,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateTime != null">update_time = #{updateTime},</if>
         </set>
         where batch_id = #{batchId}
+          and del_flag = '0'
+          and batch_status = #{expectedStatus}
     </update>
 
     <update id="updateBatchItemCount" parameterType="FusionCollectionBatch">
@@ -161,6 +203,34 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         set item_count = #{itemCount}, update_by = #{updateBy}, update_time = #{updateTime}
         where batch_id = #{batchId}
     </update>
+
+    <select id="countActiveItemByScope" parameterType="FusionCollectionItem" resultType="int">
+        select count(1)
+        from nc_fusion_collection_item i
+        inner join nc_fusion_collection_batch b on b.batch_id = i.batch_id
+        where i.del_flag = '0'
+          and b.del_flag = '0'
+          and b.batch_status != 'rejected'
+          and i.indicator_id = #{indicatorId}
+          and i.responsible_unit_id = #{responsibleUnitId}
+          and i.period_key = #{periodKey}
+          <choose>
+              <when test="regionCode != null and regionCode != ''">
+                  and i.region_code = #{regionCode}
+              </when>
+              <otherwise>
+                  and (i.region_code is null or i.region_code = '')
+              </otherwise>
+          </choose>
+    </select>
+
+    <select id="countDeptInScope" parameterType="FusionCollectionBatch" resultType="int">
+        select count(1)
+        from sys_dept d
+        where d.del_flag = '0'
+          and d.dept_id = #{deptId}
+        ${params.dataScope}
+    </select>
 
     <insert id="insertAuditLog" parameterType="FusionCollectionAuditLog" useGeneratedKeys="true" keyProperty="logId">
         insert into nc_fusion_collection_audit_log
@@ -171,11 +241,40 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          #{auditOpinion}, #{createBy}, #{createTime}, #{remark})
     </insert>
 
-    <select id="selectBatchStatusStats" resultType="map">
-        select batch_status as stat_name, count(1) as count_value
-        from nc_fusion_collection_batch
-        where del_flag = '0'
-        group by batch_status
-        order by batch_status
+    <insert id="insertImportFailure" parameterType="FusionCollectionImportFailure" useGeneratedKeys="true" keyProperty="failureId">
+        insert into nc_fusion_collection_import_failure
+        (dept_id, import_batch_name, source_record_id, row_num, field_name, raw_value,
+         failure_reason, create_by, create_time, remark)
+        values
+        (#{deptId}, #{importBatchName}, #{sourceRecordId}, #{rowNum}, #{fieldName}, #{rawValue},
+         #{failureReason}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <select id="selectImportFailureList" parameterType="FusionCollectionImportFailure" resultMap="FusionCollectionImportFailureResult">
+        select f.failure_id, f.dept_id, f.import_batch_name, f.source_record_id, f.row_num,
+               f.field_name, f.raw_value, f.failure_reason, f.create_by, f.create_time, f.remark
+        from nc_fusion_collection_import_failure f
+        <where>
+            <if test="deptId != null">
+                AND f.dept_id = #{deptId}
+            </if>
+            <if test="importBatchName != null and importBatchName != ''">
+                AND f.import_batch_name like '%' || #{importBatchName} || '%'
+            </if>
+            <if test="sourceRecordId != null and sourceRecordId != ''">
+                AND f.source_record_id = #{sourceRecordId}
+            </if>
+            ${params.dataScope}
+        </where>
+        order by f.create_time desc, f.failure_id desc
+    </select>
+
+    <select id="selectBatchStatusStats" parameterType="FusionCollectionBatch" resultType="map">
+        select b.batch_status as stat_name, count(1) as count_value
+        from nc_fusion_collection_batch b
+        where b.del_flag = '0'
+        ${params.dataScope}
+        group by b.batch_status
+        order by b.batch_status
     </select>
 </mapper>

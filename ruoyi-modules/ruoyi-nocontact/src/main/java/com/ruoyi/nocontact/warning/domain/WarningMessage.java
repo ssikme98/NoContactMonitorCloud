@@ -33,6 +33,8 @@ public class WarningMessage extends BaseEntity
     @Excel(name = "地区")
     private String regionName;
 
+    private Long deptId;
+
     private Long responsibleUnitId;
 
     @Excel(name = "责任单位")
@@ -56,6 +58,8 @@ public class WarningMessage extends BaseEntity
 
     @Excel(name = "状态")
     private String messageStatus;
+
+    private String expectedStatus;
 
     private String businessKey;
 
@@ -148,6 +152,16 @@ public class WarningMessage extends BaseEntity
         this.regionName = regionName;
     }
 
+    public Long getDeptId()
+    {
+        return deptId;
+    }
+
+    public void setDeptId(Long deptId)
+    {
+        this.deptId = deptId;
+    }
+
     public Long getResponsibleUnitId()
     {
         return responsibleUnitId;
@@ -236,6 +250,16 @@ public class WarningMessage extends BaseEntity
     public void setMessageStatus(String messageStatus)
     {
         this.messageStatus = messageStatus;
+    }
+
+    public String getExpectedStatus()
+    {
+        return expectedStatus;
+    }
+
+    public void setExpectedStatus(String expectedStatus)
+    {
+        this.expectedStatus = expectedStatus;
     }
 
     public String getBusinessKey()

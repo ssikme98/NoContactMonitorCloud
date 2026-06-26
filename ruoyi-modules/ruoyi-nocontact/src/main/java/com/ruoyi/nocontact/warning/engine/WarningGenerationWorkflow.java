@@ -89,6 +89,7 @@ public class WarningGenerationWorkflow
         message.setIndicatorId(item.getIndicatorId());
         message.setIndicatorName(StringUtils.defaultIfBlank(item.getIndicatorName(), rule.getIndicatorName()));
         message.setWarningLevel(rule.getWarningLevel());
+        message.setDeptId(batch.getDeptId());
         message.setResponsibleUnitId(batch.getResponsibleUnitId());
         message.setResponsibleUnitName(batch.getResponsibleUnitName());
         message.setRegionCode(batch.getRegionCode());
@@ -111,17 +112,9 @@ public class WarningGenerationWorkflow
     private WarningMessage toUpdatedMessage(WarningMessage existing, WarningRule rule, FusionCollectionBatch batch,
             FusionCollectionItem item)
     {
-        WarningMessage update = new WarningMessage();
+        WarningMessage update = toMessage(rule, batch, item, existing.getBusinessKey());
         update.setMessageId(existing.getMessageId());
-        update.setBusinessKey(existing.getBusinessKey());
-        update.setRuleId(rule.getRuleId());
-        update.setIndicatorId(item.getIndicatorId());
-        update.setCurrentValue(item.getValueDecimal());
-        update.setThresholdValue(rule.getThresholdValue());
-        update.setSourceBatchId(batch.getBatchId());
-        update.setSourceItemId(item.getItemId());
         update.setHitCount(existing.getHitCount() == null ? 1 : existing.getHitCount() + 1);
-        update.setLatestHitTime(new Date());
         return update;
     }
 
@@ -150,6 +143,6 @@ public class WarningGenerationWorkflow
     private String buildBusinessKey(WarningRule rule, FusionCollectionBatch batch, FusionCollectionItem item)
     {
         return rule.getRuleId() + ":" + item.getIndicatorId() + ":" + batch.getResponsibleUnitId() + ":"
-                + batch.getPeriodKey();
+                + StringUtils.defaultString(batch.getRegionCode()) + ":" + batch.getPeriodKey();
     }
 }

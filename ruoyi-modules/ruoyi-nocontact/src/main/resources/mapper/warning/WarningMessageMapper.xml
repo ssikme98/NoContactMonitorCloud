@@ -11,6 +11,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="indicatorId"    column="indicator_id"    />
         <result property="indicatorName"  column="indicator_name"  />
         <result property="warningLevel"   column="warning_level"   />
+        <result property="deptId"         column="dept_id"         />
         <result property="responsibleUnitId" column="responsible_unit_id" />
         <result property="responsibleUnitName" column="responsible_unit_name" />
         <result property="regionCode"     column="region_code"     />
@@ -52,7 +53,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <sql id="selectMessageVo">
         select m.message_id, m.rule_id, coalesce(r.rule_name, m.rule_name) as rule_name,
                m.indicator_id, coalesce(i.indicator_name, m.indicator_name) as indicator_name,
-               m.warning_level, m.responsible_unit_id, m.responsible_unit_name,
+               m.warning_level, m.dept_id, m.responsible_unit_id, m.responsible_unit_name,
                m.region_code, m.region_name, m.period_key, m.current_value, m.threshold_value,
                m.push_channels, m.receivers, m.message_status, m.business_key, m.hit_count,
                m.source_batch_id, m.source_item_id, m.trigger_time, m.latest_hit_time,
@@ -82,6 +83,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="regionName != null and regionName != ''">
                 AND m.region_name like '%' || #{regionName} || '%'
             </if>
+            <if test="deptId != null">
+                AND m.dept_id = #{deptId}
+            </if>
             <if test="responsibleUnitId != null">
                 AND m.responsible_unit_id = #{responsibleUnitId}
             </if>
@@ -94,6 +98,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="periodKey != null and periodKey != ''">
                 AND m.period_key = #{periodKey}
             </if>
+            ${params.dataScope}
         </where>
         order by m.trigger_time desc, m.message_id desc
     </select>
@@ -101,6 +106,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectMessageById" parameterType="Long" resultMap="WarningMessageResult">
         <include refid="selectMessageVo"/>
         where m.message_id = #{messageId} and m.del_flag = '0'
+    </select>
+
+    <select id="selectMessageByScope" parameterType="WarningMessage" resultMap="WarningMessageResult">
+        <include refid="selectMessageVo"/>
+        where m.message_id = #{messageId} and m.del_flag = '0'
+        ${params.dataScope}
     </select>
 
     <select id="selectHandleLogsByMessageId" parameterType="Long" resultMap="WarningMessageHandleLogResult">
@@ -116,9 +127,20 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <where>
             m.del_flag = '0'
             and m.message_status not in ('closed', 'ignored', 'handled', 'archived')
+            <if test="deptId != null">
+                AND m.dept_id = #{deptId}
+            </if>
             <if test="responsibleUnitId != null">
                 AND m.responsible_unit_id = #{responsibleUnitId}
             </if>
+            <choose>
+                <when test="regionCode != null and regionCode != ''">
+                    AND m.region_code = #{regionCode}
+                </when>
+                <otherwise>
+                    AND (m.region_code is null or m.region_code = '')
+                </otherwise>
+            </choose>
             <if test="periodKey != null and periodKey != ''">
                 AND m.period_key = #{periodKey}
             </if>
@@ -128,13 +150,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <insert id="insertMessage" parameterType="WarningMessage" useGeneratedKeys="true" keyProperty="messageId">
         insert into nc_warning_message
         (rule_id, rule_name, indicator_id, indicator_name, warning_level,
-         responsible_unit_id, responsible_unit_name, region_code, region_name, period_key,
+         dept_id, responsible_unit_id, responsible_unit_name, region_code, region_name, period_key,
          current_value, threshold_value, push_channels, receivers, message_status,
          business_key, hit_count, source_batch_id, source_item_id,
          trigger_time, latest_hit_time, handle_time, create_by, create_time, remark)
         values
         (#{ruleId}, #{ruleName}, #{indicatorId}, #{indicatorName}, #{warningLevel},
-         #{responsibleUnitId}, #{responsibleUnitName}, #{regionCode}, #{regionName}, #{periodKey},
+         #{deptId}, #{responsibleUnitId}, #{responsibleUnitName}, #{regionCode}, #{regionName}, #{periodKey},
          #{currentValue}, #{thresholdValue}, #{pushChannels}, #{receivers}, #{messageStatus},
          #{businessKey}, #{hitCount}, #{sourceBatchId}, #{sourceItemId},
          #{triggerTime}, #{latestHitTime}, #{handleTime}, #{createBy}, #{createTime}, #{remark})
@@ -153,6 +175,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateTime != null">update_time = #{updateTime},</if>
         </set>
         where message_id = #{messageId}
+          and del_flag = '0'
+          and message_status not in ('closed', 'ignored', 'handled', 'archived')
     </update>
 
     <update id="updateMessageStatus" parameterType="WarningMessage">
@@ -165,6 +189,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             update_time = #{updateTime}
         </set>
         where message_id = #{messageId}
+          and del_flag = '0'
+          and message_status = #{expectedStatus}
     </update>
 
     <insert id="insertHandleLog" parameterType="WarningMessageHandleLog" useGeneratedKeys="true" keyProperty="logId">
@@ -184,47 +210,52 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </update>
 
-    <select id="selectDashboardSummary" resultType="map">
+    <select id="selectDashboardSummary" parameterType="WarningMessage" resultType="map">
         select count(1) as total_count,
-               sum(case when cast(trigger_time as date) = current_date then 1 else 0 end) as today_count,
-               sum(case when message_status in ('handled','archived','closed','ignored') then 1 else 0 end) as handled_count,
-               sum(case when message_status in ('sent','read','pending','processing') then 1 else 0 end) as pending_count
-        from nc_warning_message
-        where del_flag = '0'
+               sum(case when cast(m.trigger_time as date) = current_date then 1 else 0 end) as today_count,
+               sum(case when m.message_status in ('handled','archived','closed','ignored') then 1 else 0 end) as handled_count,
+               sum(case when m.message_status in ('sent','read','pending','processing') then 1 else 0 end) as pending_count
+        from nc_warning_message m
+        where m.del_flag = '0'
+        ${params.dataScope}
     </select>
 
-    <select id="selectLevelStats" resultType="map">
-        select warning_level as stat_name, count(1) as count_value
-        from nc_warning_message
-        where del_flag = '0'
-        group by warning_level
-        order by warning_level
+    <select id="selectLevelStats" parameterType="WarningMessage" resultType="map">
+        select m.warning_level as stat_name, count(1) as count_value
+        from nc_warning_message m
+        where m.del_flag = '0'
+        ${params.dataScope}
+        group by m.warning_level
+        order by m.warning_level
     </select>
 
-    <select id="selectRegionStats" resultType="map">
-        select region_name as stat_name, count(1) as count_value
-        from nc_warning_message
-        where del_flag = '0'
-        group by region_name
+    <select id="selectRegionStats" parameterType="WarningMessage" resultType="map">
+        select m.region_name as stat_name, count(1) as count_value
+        from nc_warning_message m
+        where m.del_flag = '0'
+        ${params.dataScope}
+        group by m.region_name
         order by count(1) desc
         limit 10
     </select>
 
-    <select id="selectIndicatorStats" resultType="map">
+    <select id="selectIndicatorStats" parameterType="WarningMessage" resultType="map">
         select coalesce(i.indicator_name, m.indicator_name) as stat_name, count(1) as count_value
         from nc_warning_message m
         left join nc_fusion_indicator i on i.indicator_id = m.indicator_id
         where m.del_flag = '0'
+        ${params.dataScope}
         group by coalesce(i.indicator_name, m.indicator_name)
         order by count(1) desc
         limit 10
     </select>
 
-    <select id="selectTrendStats" resultType="map">
-        select cast(trigger_time as date) as stat_name, count(1) as count_value
-        from nc_warning_message
-        where del_flag = '0' and trigger_time >= current_date - interval '29 days'
-        group by cast(trigger_time as date)
-        order by cast(trigger_time as date)
+    <select id="selectTrendStats" parameterType="WarningMessage" resultType="map">
+        select cast(m.trigger_time as date) as stat_name, count(1) as count_value
+        from nc_warning_message m
+        where m.del_flag = '0' and m.trigger_time >= current_date - interval '29 days'
+        ${params.dataScope}
+        group by cast(m.trigger_time as date)
+        order by cast(m.trigger_time as date)
     </select>
 </mapper>

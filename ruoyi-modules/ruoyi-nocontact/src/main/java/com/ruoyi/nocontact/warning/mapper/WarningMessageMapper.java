@@ -16,6 +16,8 @@ public interface WarningMessageMapper
 
     public WarningMessage selectMessageById(Long messageId);
 
+    public WarningMessage selectMessageByScope(WarningMessage message);
+
     public List<WarningMessageHandleLog> selectHandleLogsByMessageId(Long messageId);
 
     public List<WarningMessage> selectOpenMessagesByScope(WarningMessage message);
@@ -30,13 +32,13 @@ public interface WarningMessageMapper
 
     public int deleteMessageByIds(Long[] messageIds);
 
-    public Map<String, Object> selectDashboardSummary();
+    public Map<String, Object> selectDashboardSummary(WarningMessage message);
 
-    public List<Map<String, Object>> selectLevelStats();
+    public List<Map<String, Object>> selectLevelStats(WarningMessage message);
 
-    public List<Map<String, Object>> selectRegionStats();
+    public List<Map<String, Object>> selectRegionStats(WarningMessage message);
 
-    public List<Map<String, Object>> selectIndicatorStats();
+    public List<Map<String, Object>> selectIndicatorStats(WarningMessage message);
 
-    public List<Map<String, Object>> selectTrendStats();
+    public List<Map<String, Object>> selectTrendStats(WarningMessage message);
 }

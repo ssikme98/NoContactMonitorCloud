@@ -6,13 +6,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <resultMap type="FusionIndicator" id="FusionIndicatorResult">
         <id     property="indicatorId"     column="indicator_id"     />
+        <result property="indicatorCode"   column="indicator_code"   />
+        <result property="externalCode"    column="external_code"    />
+        <result property="systemName"      column="system_name"      />
+        <result property="categoryName"    column="category_name"    />
+        <result property="versionNo"       column="version_no"       />
+        <result property="lifecycleStatus" column="lifecycle_status" />
         <result property="yearName"        column="year_name"        />
         <result property="firstLevel"      column="first_level"      />
         <result property="secondLevel"     column="second_level"     />
         <result property="indicatorName"   column="indicator_name"   />
+        <result property="periodType"      column="period_type"      />
+        <result property="dataType"        column="data_type"        />
         <result property="scoringRule"     column="scoring_rule"     />
+        <result property="algorithmType"   column="algorithm_type"   />
+        <result property="algorithmParams" column="algorithm_params" />
         <result property="responsibleUnit" column="responsible_unit" />
+        <result property="regionCode"      column="region_code"      />
+        <result property="regionName"      column="region_name"      />
         <result property="dataSource"      column="data_source"      />
+        <result property="tagNames"        column="tag_names"        />
+        <result property="sortOrder"       column="sort_order"       />
         <result property="status"          column="status"           />
         <result property="createBy"        column="create_by"        />
         <result property="createTime"      column="create_time"      />
@@ -22,8 +36,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectIndicatorVo">
-        select indicator_id, year_name, first_level, second_level, indicator_name,
-               scoring_rule, responsible_unit, data_source, status,
+        select indicator_id, indicator_code, external_code, system_name, category_name,
+               version_no, lifecycle_status, year_name, first_level, second_level, indicator_name,
+               period_type, data_type, scoring_rule, algorithm_type, algorithm_params,
+               responsible_unit, region_code, region_name, data_source, tag_names, sort_order, status,
                create_by, create_time, update_by, update_time, remark
         from nc_fusion_indicator
     </sql>
@@ -34,6 +50,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             del_flag = '0'
             <if test="yearName != null and yearName != ''">
                 AND year_name = #{yearName}
+            </if>
+            <if test="indicatorCode != null and indicatorCode != ''">
+                AND indicator_code = #{indicatorCode}
+            </if>
+            <if test="systemName != null and systemName != ''">
+                AND system_name like '%' || #{systemName} || '%'
+            </if>
+            <if test="categoryName != null and categoryName != ''">
+                AND category_name like '%' || #{categoryName} || '%'
             </if>
             <if test="firstLevel != null and firstLevel != ''">
                 AND first_level like '%' || #{firstLevel} || '%'
@@ -47,11 +72,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="responsibleUnit != null and responsibleUnit != ''">
                 AND responsible_unit like '%' || #{responsibleUnit} || '%'
             </if>
+            <if test="periodType != null and periodType != ''">
+                AND period_type = #{periodType}
+            </if>
+            <if test="lifecycleStatus != null and lifecycleStatus != ''">
+                AND lifecycle_status = #{lifecycleStatus}
+            </if>
             <if test="status != null and status != ''">
                 AND status = #{status}
             </if>
         </where>
-        order by year_name desc, first_level, second_level, indicator_id
+        order by year_name desc, system_name, category_name, sort_order, indicator_id
     </select>
 
     <select id="selectIndicatorById" parameterType="Long" resultMap="FusionIndicatorResult">
@@ -59,25 +90,78 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where indicator_id = #{indicatorId} and del_flag = '0'
     </select>
 
+    <select id="selectIndicatorByCode" parameterType="String" resultMap="FusionIndicatorResult">
+        <include refid="selectIndicatorVo"/>
+        where indicator_code = #{indicatorCode} and del_flag = '0'
+        order by version_no desc, indicator_id desc
+        limit 1
+    </select>
+
+    <select id="selectEnabledIndicatorByCode" parameterType="String" resultMap="FusionIndicatorResult">
+        <include refid="selectIndicatorVo"/>
+        where indicator_code = #{indicatorCode}
+          and lifecycle_status = 'enabled'
+          and status = '0'
+          and del_flag = '0'
+        order by version_no desc, indicator_id desc
+        limit 1
+    </select>
+
+    <select id="selectMaxVersionNoByCode" parameterType="String" resultType="java.lang.Integer">
+        select max(version_no)
+        from nc_fusion_indicator
+        where indicator_code = #{indicatorCode} and del_flag = '0'
+    </select>
+
+    <select id="countEnabledIndicatorByCode" parameterType="FusionIndicator" resultType="int">
+        select count(1)
+        from nc_fusion_indicator
+        where indicator_code = #{indicatorCode}
+          and lifecycle_status = 'enabled'
+          and status = '0'
+          and del_flag = '0'
+          <if test="indicatorId != null">
+              and indicator_id != #{indicatorId}
+          </if>
+    </select>
+
     <insert id="insertIndicator" parameterType="FusionIndicator" useGeneratedKeys="true" keyProperty="indicatorId">
         insert into nc_fusion_indicator
-        (year_name, first_level, second_level, indicator_name, scoring_rule, responsible_unit,
-         data_source, status, create_by, create_time, remark)
+        (indicator_code, external_code, system_name, category_name, version_no, lifecycle_status,
+         year_name, first_level, second_level, indicator_name, period_type, data_type, scoring_rule,
+         algorithm_type, algorithm_params, responsible_unit, region_code, region_name, data_source,
+         tag_names, sort_order, status, create_by, create_time, remark)
         values
-        (#{yearName}, #{firstLevel}, #{secondLevel}, #{indicatorName}, #{scoringRule}, #{responsibleUnit},
-         #{dataSource}, #{status}, #{createBy}, #{createTime}, #{remark})
+        (#{indicatorCode}, #{externalCode}, #{systemName}, #{categoryName}, #{versionNo}, #{lifecycleStatus},
+         #{yearName}, #{firstLevel}, #{secondLevel}, #{indicatorName}, #{periodType}, #{dataType}, #{scoringRule},
+         #{algorithmType}, #{algorithmParams}, #{responsibleUnit}, #{regionCode}, #{regionName}, #{dataSource},
+         #{tagNames}, #{sortOrder}, #{status}, #{createBy}, #{createTime}, #{remark})
     </insert>
 
     <update id="updateIndicator" parameterType="FusionIndicator">
         update nc_fusion_indicator
         <set>
+            <if test="indicatorCode != null">indicator_code = #{indicatorCode},</if>
+            <if test="externalCode != null">external_code = #{externalCode},</if>
+            <if test="systemName != null">system_name = #{systemName},</if>
+            <if test="categoryName != null">category_name = #{categoryName},</if>
+            <if test="versionNo != null">version_no = #{versionNo},</if>
+            <if test="lifecycleStatus != null">lifecycle_status = #{lifecycleStatus},</if>
             <if test="yearName != null">year_name = #{yearName},</if>
             <if test="firstLevel != null">first_level = #{firstLevel},</if>
             <if test="secondLevel != null">second_level = #{secondLevel},</if>
             <if test="indicatorName != null">indicator_name = #{indicatorName},</if>
+            <if test="periodType != null">period_type = #{periodType},</if>
+            <if test="dataType != null">data_type = #{dataType},</if>
             <if test="scoringRule != null">scoring_rule = #{scoringRule},</if>
+            <if test="algorithmType != null">algorithm_type = #{algorithmType},</if>
+            <if test="algorithmParams != null">algorithm_params = #{algorithmParams},</if>
             <if test="responsibleUnit != null">responsible_unit = #{responsibleUnit},</if>
+            <if test="regionCode != null">region_code = #{regionCode},</if>
+            <if test="regionName != null">region_name = #{regionName},</if>
             <if test="dataSource != null">data_source = #{dataSource},</if>
+            <if test="tagNames != null">tag_names = #{tagNames},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
             <if test="status != null">status = #{status},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>

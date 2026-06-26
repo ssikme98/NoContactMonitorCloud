@@ -17,6 +17,7 @@ public class FusionCollectionBatch extends BaseEntity
     private String sourceType;
     private String sourceName;
     private String sourceRecordId;
+    private Long deptId;
     private Long responsibleUnitId;
     private String responsibleUnitName;
     private String regionCode;
@@ -27,6 +28,7 @@ public class FusionCollectionBatch extends BaseEntity
     private Integer periodMonth;
     private String periodKey;
     private String batchStatus;
+    private String expectedStatus;
     private String submitBy;
     private Date submitTime;
     private String auditBy;
@@ -94,6 +96,16 @@ public class FusionCollectionBatch extends BaseEntity
     public void setSourceRecordId(String sourceRecordId)
     {
         this.sourceRecordId = sourceRecordId;
+    }
+
+    public Long getDeptId()
+    {
+        return deptId;
+    }
+
+    public void setDeptId(Long deptId)
+    {
+        this.deptId = deptId;
     }
 
     public Long getResponsibleUnitId()
@@ -194,6 +206,16 @@ public class FusionCollectionBatch extends BaseEntity
     public void setBatchStatus(String batchStatus)
     {
         this.batchStatus = batchStatus;
+    }
+
+    public String getExpectedStatus()
+    {
+        return expectedStatus;
+    }
+
+    public void setExpectedStatus(String expectedStatus)
+    {
+        this.expectedStatus = expectedStatus;
     }
 
     public String getSubmitBy()

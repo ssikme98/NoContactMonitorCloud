@@ -18,5 +18,7 @@ public interface IFusionIndicatorService
 
     public int updateIndicator(FusionIndicator indicator);
 
+    public FusionIndicator copyIndicatorDraft(Long indicatorId, String operName);
+
     public int deleteIndicatorByIds(Long[] indicatorIds);
 }

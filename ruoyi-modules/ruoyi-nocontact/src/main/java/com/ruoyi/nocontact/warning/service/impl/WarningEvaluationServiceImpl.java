@@ -47,7 +47,9 @@ public class WarningEvaluationServiceImpl implements IWarningEvaluationService
         List<FusionCollectionItem> items = batchMapper.selectItemsByBatchId(batchId);
         List<WarningRule> rules = selectRules(items);
         WarningMessage query = new WarningMessage();
+        query.setDeptId(batch.getDeptId());
         query.setResponsibleUnitId(batch.getResponsibleUnitId());
+        query.setRegionCode(batch.getRegionCode());
         query.setPeriodKey(batch.getPeriodKey());
         List<WarningMessage> existing = messageMapper.selectOpenMessagesByScope(query);
         WarningGenerationPlan plan = workflow.evaluate(batch, items, rules, existing);
@@ -62,7 +64,20 @@ public class WarningEvaluationServiceImpl implements IWarningEvaluationService
         {
             message.setUpdateBy(operName);
             message.setUpdateTime(DateUtils.getNowDate());
-            rows += messageMapper.updateMessageHit(message);
+            int updated = messageMapper.updateMessageHit(message);
+            if (updated == 0)
+            {
+                message.setMessageId(null);
+                message.setMessageStatus("pending");
+                message.setHitCount(1);
+                message.setCreateBy(operName);
+                message.setCreateTime(DateUtils.getNowDate());
+                rows += messageMapper.insertMessage(message);
+            }
+            else
+            {
+                rows += updated;
+            }
         }
         return rows;
     }

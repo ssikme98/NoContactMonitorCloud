@@ -6,6 +6,7 @@ import com.ruoyi.common.core.web.domain.AjaxResult;
 import com.ruoyi.common.core.web.page.TableDataInfo;
 import com.ruoyi.common.log.annotation.Log;
 import com.ruoyi.common.log.enums.BusinessType;
+import com.ruoyi.common.security.annotation.Logical;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.nocontact.fusion.domain.FusionIndicator;
@@ -44,9 +45,12 @@ public class FusionIndicatorController extends BaseController
         return getDataTable(list);
     }
 
+    @RequiresPermissions(value = {"fusion:indicator:list", "fusion:task:list", "warning:rule:list"}, logical = Logical.OR)
     @GetMapping("/options")
     public AjaxResult options(FusionIndicator indicator)
     {
+        indicator.setLifecycleStatus("enabled");
+        indicator.setStatus("0");
         return success(indicatorService.selectIndicatorList(indicator));
     }
 
@@ -83,6 +87,14 @@ public class FusionIndicatorController extends BaseController
     {
         indicator.setUpdateBy(SecurityUtils.getUsername());
         return toAjax(indicatorService.updateIndicator(indicator));
+    }
+
+    @RequiresPermissions("fusion:indicator:add")
+    @Log(title = "营商监测指标复制草稿", businessType = BusinessType.INSERT)
+    @PostMapping("/{indicatorId}/copyDraft")
+    public AjaxResult copyDraft(@PathVariable Long indicatorId)
+    {
+        return success(indicatorService.copyIndicatorDraft(indicatorId, SecurityUtils.getUsername()));
     }
 
     @RequiresPermissions("fusion:indicator:remove")

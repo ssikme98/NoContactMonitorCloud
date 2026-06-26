@@ -14,6 +14,14 @@ public interface FusionIndicatorMapper
 
     public FusionIndicator selectIndicatorById(Long indicatorId);
 
+    public FusionIndicator selectIndicatorByCode(String indicatorCode);
+
+    public FusionIndicator selectEnabledIndicatorByCode(String indicatorCode);
+
+    public Integer selectMaxVersionNoByCode(String indicatorCode);
+
+    public int countEnabledIndicatorByCode(FusionIndicator indicator);
+
     public int insertIndicator(FusionIndicator indicator);
 
     public int updateIndicator(FusionIndicator indicator);

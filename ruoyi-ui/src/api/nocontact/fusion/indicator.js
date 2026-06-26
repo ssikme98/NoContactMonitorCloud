@@ -39,6 +39,13 @@ export function updateIndicator(data) {
   })
 }
 
+export function copyIndicatorDraft(indicatorId) {
+  return request({
+    url: '/nocontact/fusion/indicator/' + indicatorId + '/copyDraft',
+    method: 'post'
+  })
+}
+
 export function delIndicator(indicatorId) {
   return request({
     url: '/nocontact/fusion/indicator/' + indicatorId,

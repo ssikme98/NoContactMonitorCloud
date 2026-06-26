@@ -25,7 +25,8 @@ class WarningGenerationWorkflowTest
         assertEquals(1, plan.getMessagesToInsert().size());
         WarningMessage message = plan.getMessagesToInsert().get(0);
         assertEquals("pending", message.getMessageStatus());
-        assertEquals("3002:1003:200:2026-06", message.getBusinessKey());
+        assertEquals("3002:1003:200:433100:2026-06", message.getBusinessKey());
+        assertEquals(Long.valueOf(200L), message.getDeptId());
         assertEquals(Long.valueOf(200L), message.getResponsibleUnitId());
         assertEquals("省数据局", message.getResponsibleUnitName());
         assertEquals("433100", message.getRegionCode());
@@ -49,7 +50,7 @@ class WarningGenerationWorkflowTest
     {
         WarningMessage existing = new WarningMessage();
         existing.setMessageId(4002L);
-        existing.setBusinessKey("3002:1003:200:2026-06");
+        existing.setBusinessKey("3002:1003:200:433100:2026-06");
         existing.setMessageStatus("pending");
         existing.setHitCount(1);
 
@@ -63,12 +64,30 @@ class WarningGenerationWorkflowTest
         assertEquals(new BigDecimal("70"), plan.getMessagesToUpdate().get(0).getCurrentValue());
     }
 
+    @Test
+    void sameUnitAndPeriodDifferentRegionCreatesSeparateMessage()
+    {
+        WarningMessage existing = new WarningMessage();
+        existing.setMessageId(4002L);
+        existing.setBusinessKey("3002:1003:200:433101:2026-06");
+        existing.setMessageStatus("pending");
+        existing.setHitCount(1);
+
+        WarningGenerationPlan plan = workflow.evaluate(batch("approved"), Collections.singletonList(item("70")),
+                Collections.singletonList(rule()), Arrays.asList(existing));
+
+        assertEquals(1, plan.getMessagesToInsert().size());
+        assertTrue(plan.getMessagesToUpdate().isEmpty());
+        assertEquals("3002:1003:200:433100:2026-06", plan.getMessagesToInsert().get(0).getBusinessKey());
+    }
+
     private FusionCollectionBatch batch(String status)
     {
         FusionCollectionBatch batch = new FusionCollectionBatch();
         batch.setBatchId(5001L);
         batch.setTaskId(2002L);
         batch.setBatchStatus(status);
+        batch.setDeptId(200L);
         batch.setResponsibleUnitId(200L);
         batch.setResponsibleUnitName("省数据局");
         batch.setRegionCode("433100");
