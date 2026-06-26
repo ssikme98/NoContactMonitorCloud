@@ -15,7 +15,7 @@ public interface IWarningMessageService
 
     public WarningMessage selectMessageById(Long messageId);
 
-    public int updateMessageStatus(Long messageId, String status, String operName);
+    public int updateMessageStatus(Long messageId, String status, String opinion, String operName);
 
     public int deleteMessageByIds(Long[] messageIds);
 

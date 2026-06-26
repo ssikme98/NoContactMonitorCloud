@@ -12,6 +12,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="warningLevel"    column="warning_level"    />
         <result property="thresholdType"   column="threshold_type"   />
         <result property="thresholdValue"  column="threshold_value"  />
+        <result property="thresholdValueMax" column="threshold_value_max" />
         <result property="triggerCondition" column="trigger_condition" />
         <result property="triggerFrequency" column="trigger_frequency" />
         <result property="pushChannels"    column="push_channels"    />
@@ -30,6 +31,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <sql id="selectRuleVo">
         select r.rule_id, r.rule_name, r.indicator_id, coalesce(i.indicator_name, r.indicator_name) as indicator_name,
                r.warning_level, r.threshold_type, r.threshold_value, r.trigger_condition, r.trigger_frequency,
+               r.threshold_value_max,
                r.push_channels, r.push_targets, r.content_template, r.effective_mode, r.effective_time,
                r.status, r.create_by, r.create_time, r.update_by, r.update_time, r.remark
         from nc_warning_rule r
@@ -61,13 +63,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where r.rule_id = #{ruleId} and r.del_flag = '0'
     </select>
 
+    <select id="selectEnabledRulesByIndicator" parameterType="Long" resultMap="WarningRuleResult">
+        <include refid="selectRuleVo"/>
+        where r.indicator_id = #{indicatorId} and r.status = '0' and r.del_flag = '0'
+        order by r.warning_level, r.rule_id
+    </select>
+
     <insert id="insertRule" parameterType="WarningRule" useGeneratedKeys="true" keyProperty="ruleId">
         insert into nc_warning_rule
-        (rule_name, indicator_id, indicator_name, warning_level, threshold_type, threshold_value,
+        (rule_name, indicator_id, indicator_name, warning_level, threshold_type, threshold_value, threshold_value_max,
          trigger_condition, trigger_frequency, push_channels, push_targets, content_template,
          effective_mode, effective_time, status, create_by, create_time, remark)
         values
-        (#{ruleName}, #{indicatorId}, #{indicatorName}, #{warningLevel}, #{thresholdType}, #{thresholdValue},
+        (#{ruleName}, #{indicatorId}, #{indicatorName}, #{warningLevel}, #{thresholdType}, #{thresholdValue}, #{thresholdValueMax},
          #{triggerCondition}, #{triggerFrequency}, #{pushChannels}, #{pushTargets}, #{contentTemplate},
          #{effectiveMode}, #{effectiveTime}, #{status}, #{createBy}, #{createTime}, #{remark})
     </insert>
@@ -81,6 +89,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="warningLevel != null">warning_level = #{warningLevel},</if>
             <if test="thresholdType != null">threshold_type = #{thresholdType},</if>
             <if test="thresholdValue != null">threshold_value = #{thresholdValue},</if>
+            <if test="thresholdValueMax != null">threshold_value_max = #{thresholdValueMax},</if>
             <if test="triggerCondition != null">trigger_condition = #{triggerCondition},</if>
             <if test="triggerFrequency != null">trigger_frequency = #{triggerFrequency},</if>
             <if test="pushChannels != null">push_channels = #{pushChannels},</if>

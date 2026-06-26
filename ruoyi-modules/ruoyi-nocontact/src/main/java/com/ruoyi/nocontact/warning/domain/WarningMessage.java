@@ -4,6 +4,7 @@ import com.ruoyi.common.core.annotation.Excel;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 预警消息对象 nc_warning_message
@@ -32,6 +33,15 @@ public class WarningMessage extends BaseEntity
     @Excel(name = "地区")
     private String regionName;
 
+    private Long responsibleUnitId;
+
+    @Excel(name = "责任单位")
+    private String responsibleUnitName;
+
+    private String regionCode;
+
+    private String periodKey;
+
     @Excel(name = "当前值")
     private BigDecimal currentValue;
 
@@ -47,11 +57,26 @@ public class WarningMessage extends BaseEntity
     @Excel(name = "状态")
     private String messageStatus;
 
+    private String businessKey;
+
+    private Integer hitCount;
+
+    private Long sourceBatchId;
+
+    private Long sourceItemId;
+
     @Excel(name = "触发时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date triggerTime;
 
+    @Excel(name = "最近命中时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    private Date latestHitTime;
+
     @Excel(name = "处理时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date handleTime;
+
+    private String handleOpinion;
+
+    private List<WarningMessageHandleLog> handleLogs;
 
     public Long getMessageId()
     {
@@ -123,6 +148,46 @@ public class WarningMessage extends BaseEntity
         this.regionName = regionName;
     }
 
+    public Long getResponsibleUnitId()
+    {
+        return responsibleUnitId;
+    }
+
+    public void setResponsibleUnitId(Long responsibleUnitId)
+    {
+        this.responsibleUnitId = responsibleUnitId;
+    }
+
+    public String getResponsibleUnitName()
+    {
+        return responsibleUnitName;
+    }
+
+    public void setResponsibleUnitName(String responsibleUnitName)
+    {
+        this.responsibleUnitName = responsibleUnitName;
+    }
+
+    public String getRegionCode()
+    {
+        return regionCode;
+    }
+
+    public void setRegionCode(String regionCode)
+    {
+        this.regionCode = regionCode;
+    }
+
+    public String getPeriodKey()
+    {
+        return periodKey;
+    }
+
+    public void setPeriodKey(String periodKey)
+    {
+        this.periodKey = periodKey;
+    }
+
     public BigDecimal getCurrentValue()
     {
         return currentValue;
@@ -173,6 +238,46 @@ public class WarningMessage extends BaseEntity
         this.messageStatus = messageStatus;
     }
 
+    public String getBusinessKey()
+    {
+        return businessKey;
+    }
+
+    public void setBusinessKey(String businessKey)
+    {
+        this.businessKey = businessKey;
+    }
+
+    public Integer getHitCount()
+    {
+        return hitCount;
+    }
+
+    public void setHitCount(Integer hitCount)
+    {
+        this.hitCount = hitCount;
+    }
+
+    public Long getSourceBatchId()
+    {
+        return sourceBatchId;
+    }
+
+    public void setSourceBatchId(Long sourceBatchId)
+    {
+        this.sourceBatchId = sourceBatchId;
+    }
+
+    public Long getSourceItemId()
+    {
+        return sourceItemId;
+    }
+
+    public void setSourceItemId(Long sourceItemId)
+    {
+        this.sourceItemId = sourceItemId;
+    }
+
     public Date getTriggerTime()
     {
         return triggerTime;
@@ -183,6 +288,16 @@ public class WarningMessage extends BaseEntity
         this.triggerTime = triggerTime;
     }
 
+    public Date getLatestHitTime()
+    {
+        return latestHitTime;
+    }
+
+    public void setLatestHitTime(Date latestHitTime)
+    {
+        this.latestHitTime = latestHitTime;
+    }
+
     public Date getHandleTime()
     {
         return handleTime;
@@ -191,5 +306,25 @@ public class WarningMessage extends BaseEntity
     public void setHandleTime(Date handleTime)
     {
         this.handleTime = handleTime;
+    }
+
+    public String getHandleOpinion()
+    {
+        return handleOpinion;
+    }
+
+    public void setHandleOpinion(String handleOpinion)
+    {
+        this.handleOpinion = handleOpinion;
+    }
+
+    public List<WarningMessageHandleLog> getHandleLogs()
+    {
+        return handleLogs;
+    }
+
+    public void setHandleLogs(List<WarningMessageHandleLog> handleLogs)
+    {
+        this.handleLogs = handleLogs;
     }
 }

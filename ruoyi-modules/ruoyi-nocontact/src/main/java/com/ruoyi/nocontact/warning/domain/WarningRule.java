@@ -36,6 +36,9 @@ public class WarningRule extends BaseEntity
     @Excel(name = "阈值")
     private BigDecimal thresholdValue;
 
+    @Excel(name = "阈值上限")
+    private BigDecimal thresholdValueMax;
+
     @Excel(name = "触发条件")
     private String triggerCondition;
 
@@ -128,6 +131,16 @@ public class WarningRule extends BaseEntity
     public void setThresholdValue(BigDecimal thresholdValue)
     {
         this.thresholdValue = thresholdValue;
+    }
+
+    public BigDecimal getThresholdValueMax()
+    {
+        return thresholdValueMax;
+    }
+
+    public void setThresholdValueMax(BigDecimal thresholdValueMax)
+    {
+        this.thresholdValueMax = thresholdValueMax;
     }
 
     public String getTriggerCondition()

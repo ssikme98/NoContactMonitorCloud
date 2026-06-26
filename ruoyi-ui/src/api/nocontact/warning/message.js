@@ -22,10 +22,11 @@ export function getWarningDashboard() {
   })
 }
 
-export function updateMessageStatus(messageId, status) {
+export function updateMessageStatus(messageId, status, opinion) {
   return request({
     url: '/nocontact/warning/message/' + messageId + '/status/' + status,
-    method: 'put'
+    method: 'put',
+    params: { opinion }
   })
 }
 
