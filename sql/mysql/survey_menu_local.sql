@@ -61,7 +61,7 @@ VALUES
 (3030, '数据填报入口', 3000, 3, 'fill', 'nocontact/collection/fill/index', '', '', 1, 0, 'C', '0', '0', 'nocontact:fusion:collection:list', 'form', 'admin', NOW(), 'admin', NOW(), '数据填报入口'),
 (3035, '数据审核中心', 3000, 4, 'audit', 'nocontact/collection/audit/index', '', '', 1, 0, 'C', '0', '0', 'nocontact:fusion:collection:audit', 'validCode', 'admin', NOW(), 'admin', NOW(), '数据审核中心'),
 (3040, '采集监控看板', 3000, 5, 'monitor', 'nocontact/collection/monitor/index', '', '', 1, 0, 'C', '0', '0', 'nocontact:fusion:task:query', 'dashboard', 'admin', NOW(), 'admin', NOW(), '采集监控看板'),
-(3050, '作业调度管理', 3000, 6, 'schedule', 'nocontact/collection/schedule/index', '', '', 1, 0, 'C', '0', '0', 'monitor:job:list', 'job', 'admin', NOW(), 'admin', NOW(), '作业调度管理'),
+(3050, '采集计划管理', 3000, 6, 'schedule', 'nocontact/collection/schedule/index', '', '', 1, 0, 'C', '0', '0', 'monitor:job:list', 'job', 'admin', NOW(), 'admin', NOW(), '采集计划管理'),
 (3060, '资源目录管理', 3000, 7, 'resource', 'nocontact/collection/resource/index', '', '', 1, 0, 'C', '0', '0', 'nocontact:fusion:resource:list', 'tree', 'admin', NOW(), 'admin', NOW(), '资源目录管理'),
 (3100, '指标体系管理', 0, 2, 'indicator-system', NULL, '', '', 1, 0, 'M', '0', '0', '', 'tree-table', 'admin', NOW(), 'admin', NOW(), '指标体系管理'),
 (3020, '指标体系列表', 3100, 1, 'list', 'nocontact/indicator/list/index', '', '', 1, 0, 'C', '0', '0', 'nocontact:fusion:indicator:list', 'tree-table', 'admin', NOW(), 'admin', NOW(), '指标体系列表'),
