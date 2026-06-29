@@ -14,7 +14,9 @@
         <el-card shadow="never">
           <div slot="header">任务状态</div>
           <el-table :data="taskStats" size="small" border>
-            <el-table-column label="状态" prop="stat_name" />
+            <el-table-column label="状态">
+              <template slot-scope="scope">{{ taskStatusText(scope.row.stat_name) }}</template>
+            </el-table-column>
             <el-table-column label="数量" prop="count_value" width="100" align="right" />
           </el-table>
         </el-card>
@@ -23,7 +25,9 @@
         <el-card shadow="never">
           <div slot="header">采集批次状态</div>
           <el-table :data="batchStats" size="small" border>
-            <el-table-column label="状态" prop="stat_name" />
+            <el-table-column label="状态">
+              <template slot-scope="scope">{{ batchStatusText(scope.row.stat_name) }}</template>
+            </el-table-column>
             <el-table-column label="数量" prop="count_value" width="100" align="right" />
           </el-table>
         </el-card>
@@ -69,6 +73,25 @@ export default {
       getCollectionSummary().then(response => {
         this.batchStats = (response.data && response.data.statusStats) || []
       })
+    },
+    taskStatusText(status) {
+      const map = {
+        draft: '草稿',
+        published: '已发布',
+        running: '执行中',
+        done: '已完成',
+        error: '异常'
+      }
+      return map[status] || status || '-'
+    },
+    batchStatusText(status) {
+      const map = {
+        draft: '草稿',
+        pending_audit: '待审核',
+        approved: '已审核',
+        rejected: '已驳回'
+      }
+      return map[status] || status || '-'
     }
   }
 }

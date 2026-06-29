@@ -114,14 +114,15 @@
       </el-table-column>
       <el-table-column label="启用状态" width="110" align="center">
         <template slot-scope="scope">
-          <el-switch
-            v-model="scope.row.status"
-            active-value="0"
-            inactive-value="1"
-            active-text="启用"
-            inactive-text="暂停"
-            @change="handleStatusChange(scope.row)"
-          />
+          <div class="plan-status-switch">
+            <el-switch
+              v-model="scope.row.status"
+              active-value="0"
+              inactive-value="1"
+              @change="handleStatusChange(scope.row)"
+            />
+            <span class="plan-status-switch__text">{{ statusLabel(scope.row.status) }}</span>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="280" align="center" class-name="small-padding fixed-width">
@@ -666,5 +667,19 @@ export default {
 
 .advanced-config {
   margin-top: 8px;
+}
+
+.plan-status-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.plan-status-switch__text {
+  color: #606266;
+  font-size: 12px;
+  line-height: 20px;
 }
 </style>
