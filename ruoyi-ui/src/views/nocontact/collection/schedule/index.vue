@@ -88,7 +88,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="计划名称" min-width="190" :show-overflow-tooltip="true">
         <template slot-scope="scope">
-          <a class="link-type" style="cursor:pointer" @click="handleView(scope.row)">{{ scope.row.jobName }}</a>
+          <a class="link-type" style="cursor:pointer" @click="handleView(scope.row)">{{ displayJobName(scope.row) }}</a>
           <div v-if="scope.row.remark" class="plan-subtitle">{{ scope.row.remark }}</div>
         </template>
       </el-table-column>
@@ -273,7 +273,7 @@
 
     <el-dialog title="采集计划详情" :visible.sync="detailOpen" width="760px" append-to-body>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="计划名称">{{ detail.jobName }}</el-descriptions-item>
+        <el-descriptions-item label="计划名称">{{ displayJobName(detail) }}</el-descriptions-item>
         <el-descriptions-item label="采集类型">{{ jobGroupLabel(detail.jobGroup) }}</el-descriptions-item>
         <el-descriptions-item label="采集动作">{{ actionLabel(detail.invokeTarget) }}</el-descriptions-item>
         <el-descriptions-item label="执行频率">{{ frequencyLabel(detail.cronExpression) }}</el-descriptions-item>
@@ -312,7 +312,11 @@
             {{ formatTime(scope.row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="计划名称" prop="jobName" min-width="160" :show-overflow-tooltip="true" />
+        <el-table-column label="计划名称" min-width="160" :show-overflow-tooltip="true">
+          <template slot-scope="scope">
+            {{ displayJobName(scope.row) }}
+          </template>
+        </el-table-column>
         <el-table-column label="执行结果" prop="status" width="90" align="center">
           <template slot-scope="scope">
             <el-tag :type="scope.row.status === '0' ? 'success' : 'danger'" size="small">
@@ -342,6 +346,7 @@
 <script>
 import { listJob, getJob, delJob, addJob, updateJob, runJob, changeJobStatus } from '@/api/monitor/job'
 import { listJobLog } from '@/api/monitor/jobLog'
+import { formatJobName } from '@/utils/jobName'
 import { parseTime } from '@/utils/ruoyi'
 
 const DEFAULT_ACTION = 'standard'
@@ -447,6 +452,12 @@ export default {
     statusLabel(status) {
       return status === '0' ? '启用中' : '已暂停'
     },
+    displayJobName(row) {
+      return this.planNameLabel(row && row.jobName)
+    },
+    planNameLabel(jobName) {
+      return formatJobName(jobName)
+    },
     formatTime(time) {
       return parseTime(time) || '-'
     },
@@ -543,7 +554,8 @@ export default {
     },
     handleStatusChange(row) {
       const text = row.status === '0' ? '启用' : '暂停'
-      this.$modal.confirm('确认' + text + '采集计划"' + row.jobName + '"？').then(function() {
+      const jobName = this.displayJobName(row)
+      this.$modal.confirm('确认' + text + '采集计划"' + jobName + '"？').then(function() {
         return changeJobStatus(row.jobId, row.status)
       }).then(() => {
         this.$modal.msgSuccess(text + '成功')
@@ -552,7 +564,8 @@ export default {
       })
     },
     handleRun(row) {
-      this.$modal.confirm('确认立即启动一次"' + row.jobName + '"？').then(function() {
+      const jobName = this.displayJobName(row)
+      this.$modal.confirm('确认立即启动一次"' + jobName + '"？').then(function() {
         return runJob(row.jobId, row.jobGroup)
       }).then(() => {
         this.$modal.msgSuccess('采集已启动')
@@ -606,7 +619,7 @@ export default {
       }, `collection_plan_${new Date().getTime()}.xlsx`)
     },
     handleLogs(row) {
-      this.logTitle = '"' + row.jobName + '"执行记录'
+      this.logTitle = '"' + this.displayJobName(row) + '"执行记录'
       this.logQueryBase = {
         jobName: row.jobName,
         jobGroup: row.jobGroup

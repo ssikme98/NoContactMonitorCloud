@@ -104,7 +104,11 @@
     <el-table v-loading="loading" :data="jobLogList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="日志编号" width="80" align="center" prop="jobLogId" />
-      <el-table-column label="任务名称" align="center" prop="jobName" :show-overflow-tooltip="true" />
+      <el-table-column label="任务名称" align="center" :show-overflow-tooltip="true">
+        <template slot-scope="scope">
+          {{ displayJobName(scope.row) }}
+        </template>
+      </el-table-column>
       <el-table-column label="任务组名" align="center" prop="jobGroup" :show-overflow-tooltip="true">
         <template slot-scope="scope">
           <dict-tag :options="dict.type.sys_job_group" :value="scope.row.jobGroup"/>
@@ -151,6 +155,7 @@
 import { getJob} from "@/api/monitor/job"
 import { listJobLog, delJobLog, cleanJobLog } from "@/api/monitor/jobLog"
 import JobLogDetail from './detail'
+import { formatJobName } from '@/utils/jobName'
 
 export default {
   name: "JobLog",
@@ -229,6 +234,9 @@ export default {
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.jobLogId)
       this.multiple = !selection.length
+    },
+    displayJobName(row) {
+      return formatJobName(row && row.jobName)
     },
     /** 详细按钮操作 */
     handleView(row) {

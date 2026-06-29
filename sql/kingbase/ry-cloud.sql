@@ -744,9 +744,9 @@ COMMENT ON COLUMN "sys_job"."update_by" IS '更新者';
 COMMENT ON COLUMN "sys_job"."update_time" IS '更新时间';
 COMMENT ON COLUMN "sys_job"."remark" IS '备注信息';
 
-insert into sys_job values(1, '系统默认（无参）', 'DEFAULT', 'ryTask.ryNoParams',        '0/10 * * * * ?', '3', '1', '1', 'admin', current_timestamp, '', null, '');
-insert into sys_job values(2, '系统默认（有参）', 'DEFAULT', 'ryTask.ryParams(\'ry\')',  '0/15 * * * * ?', '3', '1', '1', 'admin', current_timestamp, '', null, '');
-insert into sys_job values(3, '系统默认（多参）', 'DEFAULT', 'ryTask.ryMultipleParams(\'ry\', true, 2000L, 316.50D, 100)',  '0/20 * * * * ?', '3', '1', '1', 'admin', current_timestamp, '', null, '');
+insert into sys_job values(1, '系统默认（标准采集）', 'DEFAULT', 'ryTask.ryNoParams',        '0/10 * * * * ?', '3', '1', '1', 'admin', current_timestamp, '', null, '');
+insert into sys_job values(2, '系统默认（条件采集）', 'DEFAULT', 'ryTask.ryParams(\'ry\')',  '0/15 * * * * ?', '3', '1', '1', 'admin', current_timestamp, '', null, '');
+insert into sys_job values(3, '系统默认（批量采集）', 'DEFAULT', 'ryTask.ryMultipleParams(\'ry\', true, 2000L, 316.50D, 100)',  '0/20 * * * * ?', '3', '1', '1', 'admin', current_timestamp, '', null, '');
 
 -- ----------------------------
 -- 16、定时任务调度日志表

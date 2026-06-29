@@ -96,7 +96,7 @@
       <el-table-column label="任务编号" width="100" align="center" prop="jobId" />
       <el-table-column label="任务名称" align="center" :show-overflow-tooltip="true">
         <template slot-scope="scope">
-          <a class="link-type" style="cursor:pointer" @click="handleView(scope.row)">{{ scope.row.jobName }}</a>
+          <a class="link-type" style="cursor:pointer" @click="handleView(scope.row)">{{ displayJobName(scope.row) }}</a>
         </template>
       </el-table-column>
       <el-table-column label="任务组名" align="center" prop="jobGroup">
@@ -251,6 +251,7 @@
 import { listJob, getJob, delJob, addJob, updateJob, runJob, changeJobStatus } from "@/api/monitor/job"
 import JobDetail from './detail'
 import Crontab from '@/components/Crontab'
+import { formatJobName } from '@/utils/jobName'
 
 export default {
   components: { Crontab, JobDetail },
@@ -323,6 +324,9 @@ export default {
     jobGroupFormat(row, column) {
       return this.selectDictLabel(this.dict.type.sys_job_group, row.jobGroup)
     },
+    displayJobName(row) {
+      return formatJobName(row && row.jobName)
+    },
     // 取消按钮
     cancel() {
       this.open = false
@@ -377,7 +381,8 @@ export default {
     // 任务状态修改
     handleStatusChange(row) {
       let text = row.status === "0" ? "启用" : "停用"
-      this.$modal.confirm('确认要"' + text + '""' + row.jobName + '"任务吗？').then(function() {
+      const jobName = this.displayJobName(row)
+      this.$modal.confirm('确认要"' + text + '""' + jobName + '"任务吗？').then(function() {
         return changeJobStatus(row.jobId, row.status)
       }).then(() => {
         this.$modal.msgSuccess(text + "成功")
@@ -387,7 +392,8 @@ export default {
     },
     /* 立即执行一次 */
     handleRun(row) {
-      this.$modal.confirm('确认要立即执行一次"' + row.jobName + '"任务吗？').then(function() {
+      const jobName = this.displayJobName(row)
+      this.$modal.confirm('确认要立即执行一次"' + jobName + '"任务吗？').then(function() {
         return runJob(row.jobId, row.jobGroup)
       }).then(() => {
         this.$modal.msgSuccess("执行成功")
