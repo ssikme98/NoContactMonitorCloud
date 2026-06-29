@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.integration.mapper.ExternalIntegrationMapper">
+
+    <resultMap type="ExternalIntegrationConfig" id="ExternalIntegrationConfigResult">
+        <id property="configId" column="config_id" />
+        <result property="integrationName" column="integration_name" />
+        <result property="platformName" column="platform_name" />
+        <result property="integrationType" column="integration_type" />
+        <result property="endpointUrl" column="endpoint_url" />
+        <result property="authType" column="auth_type" />
+        <result property="syncFrequency" column="sync_frequency" />
+        <result property="syncMode" column="sync_mode" />
+        <result property="mappingRule" column="mapping_rule" />
+        <result property="transformRule" column="transform_rule" />
+        <result property="retryPolicy" column="retry_policy" />
+        <result property="status" column="status" />
+        <result property="lastSyncTime" column="last_sync_time" />
+        <result property="lastSyncStatus" column="last_sync_status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <resultMap type="ExternalSyncLog" id="ExternalSyncLogResult">
+        <id property="logId" column="log_id" />
+        <result property="configId" column="config_id" />
+        <result property="integrationName" column="integration_name" />
+        <result property="requestSummary" column="request_summary" />
+        <result property="responseStatus" column="response_status" />
+        <result property="successCount" column="success_count" />
+        <result property="failureCount" column="failure_count" />
+        <result property="durationMs" column="duration_ms" />
+        <result property="errorMessage" column="error_message" />
+        <result property="retryCount" column="retry_count" />
+        <result property="syncTime" column="sync_time" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectConfigVo">
+        select config_id, integration_name, platform_name, integration_type, endpoint_url,
+               auth_type, sync_frequency, sync_mode, mapping_rule, transform_rule, retry_policy,
+               status, last_sync_time, last_sync_status,
+               create_by, create_time, update_by, update_time, remark
+        from nc_external_integration_config
+    </sql>
+
+    <select id="selectConfigList" parameterType="ExternalIntegrationConfig" resultMap="ExternalIntegrationConfigResult">
+        <include refid="selectConfigVo"/>
+        <where>
+            del_flag = '0'
+            <if test="integrationName != null and integrationName != ''">
+                AND integration_name like '%' || #{integrationName} || '%'
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="integrationType != null and integrationType != ''">
+                AND integration_type = #{integrationType}
+            </if>
+        </where>
+        order by create_time desc, config_id desc
+    </select>
+
+    <select id="selectConfigById" parameterType="Long" resultMap="ExternalIntegrationConfigResult">
+        <include refid="selectConfigVo"/>
+        where config_id = #{configId} and del_flag = '0'
+    </select>
+
+    <insert id="insertConfig" parameterType="ExternalIntegrationConfig" useGeneratedKeys="true" keyProperty="configId">
+        insert into nc_external_integration_config
+        (integration_name, platform_name, integration_type, endpoint_url, auth_type, sync_frequency,
+         sync_mode, mapping_rule, transform_rule, retry_policy, status, create_by, create_time, remark)
+        values
+        (#{integrationName}, #{platformName}, #{integrationType}, #{endpointUrl}, #{authType}, #{syncFrequency},
+         #{syncMode}, #{mappingRule}, #{transformRule}, #{retryPolicy}, #{status}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateConfig" parameterType="ExternalIntegrationConfig">
+        update nc_external_integration_config
+        <set>
+            <if test="integrationName != null">integration_name = #{integrationName},</if>
+            <if test="platformName != null">platform_name = #{platformName},</if>
+            <if test="integrationType != null">integration_type = #{integrationType},</if>
+            <if test="endpointUrl != null">endpoint_url = #{endpointUrl},</if>
+            <if test="authType != null">auth_type = #{authType},</if>
+            <if test="syncFrequency != null">sync_frequency = #{syncFrequency},</if>
+            <if test="syncMode != null">sync_mode = #{syncMode},</if>
+            <if test="mappingRule != null">mapping_rule = #{mappingRule},</if>
+            <if test="transformRule != null">transform_rule = #{transformRule},</if>
+            <if test="retryPolicy != null">retry_policy = #{retryPolicy},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="lastSyncTime != null">last_sync_time = #{lastSyncTime},</if>
+            <if test="lastSyncStatus != null">last_sync_status = #{lastSyncStatus},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where config_id = #{configId}
+    </update>
+
+    <update id="deleteConfigByIds" parameterType="Long">
+        update nc_external_integration_config set del_flag = '2'
+        where config_id in
+        <foreach collection="array" item="configId" open="(" separator="," close=")">
+            #{configId}
+        </foreach>
+    </update>
+
+    <insert id="insertLog" parameterType="ExternalSyncLog" useGeneratedKeys="true" keyProperty="logId">
+        insert into nc_external_sync_log
+        (config_id, integration_name, request_summary, response_status, success_count,
+         failure_count, duration_ms, error_message, retry_count, sync_time, create_by, create_time, remark)
+        values
+        (#{configId}, #{integrationName}, #{requestSummary}, #{responseStatus}, #{successCount},
+         #{failureCount}, #{durationMs}, #{errorMessage}, #{retryCount}, #{syncTime}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <select id="selectLogList" parameterType="ExternalSyncLog" resultMap="ExternalSyncLogResult">
+        select log_id, config_id, integration_name, request_summary, response_status,
+               success_count, failure_count, duration_ms, error_message, retry_count,
+               sync_time, create_by, create_time, remark
+        from nc_external_sync_log
+        <where>
+            <if test="integrationName != null and integrationName != ''">
+                AND integration_name like '%' || #{integrationName} || '%'
+            </if>
+            <if test="responseStatus != null and responseStatus != ''">
+                AND response_status = #{responseStatus}
+            </if>
+            <if test="configId != null">
+                AND config_id = #{configId}
+            </if>
+        </where>
+        order by sync_time desc, log_id desc
+    </select>
+</mapper>

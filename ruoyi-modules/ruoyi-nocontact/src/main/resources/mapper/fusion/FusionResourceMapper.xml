@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.fusion.mapper.FusionResourceMapper">
+
+    <resultMap type="FusionResource" id="FusionResourceResult">
+        <id property="resourceId" column="resource_id" />
+        <result property="parentId" column="parent_id" />
+        <result property="resourceName" column="resource_name" />
+        <result property="resourceType" column="resource_type" />
+        <result property="sourceSystem" column="source_system" />
+        <result property="updateCycle" column="update_cycle" />
+        <result property="ownerName" column="owner_name" />
+        <result property="dataCount" column="data_count" />
+        <result property="tags" column="tags" />
+        <result property="permissionScope" column="permission_scope" />
+        <result property="status" column="status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectResourceVo">
+        select resource_id, parent_id, resource_name, resource_type, source_system,
+               update_cycle, owner_name, data_count, tags, permission_scope, status,
+               create_by, create_time, update_by, update_time, remark
+        from nc_fusion_resource_directory
+    </sql>
+
+    <select id="selectResourceList" parameterType="FusionResource" resultMap="FusionResourceResult">
+        <include refid="selectResourceVo"/>
+        <where>
+            del_flag = '0'
+            <if test="resourceName != null and resourceName != ''">
+                AND resource_name like '%' || #{resourceName} || '%'
+            </if>
+            <if test="resourceType != null and resourceType != ''">
+                AND resource_type = #{resourceType}
+            </if>
+            <if test="sourceSystem != null and sourceSystem != ''">
+                AND source_system like '%' || #{sourceSystem} || '%'
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        order by parent_id, resource_id desc
+    </select>
+
+    <select id="selectResourceById" parameterType="Long" resultMap="FusionResourceResult">
+        <include refid="selectResourceVo"/>
+        where resource_id = #{resourceId} and del_flag = '0'
+    </select>
+
+    <insert id="insertResource" parameterType="FusionResource" useGeneratedKeys="true" keyProperty="resourceId">
+        insert into nc_fusion_resource_directory
+        (parent_id, resource_name, resource_type, source_system, update_cycle, owner_name,
+         data_count, tags, permission_scope, status, create_by, create_time, remark)
+        values
+        (#{parentId}, #{resourceName}, #{resourceType}, #{sourceSystem}, #{updateCycle}, #{ownerName},
+         #{dataCount}, #{tags}, #{permissionScope}, coalesce(#{status}, '0'), #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateResource" parameterType="FusionResource">
+        update nc_fusion_resource_directory
+        <set>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="resourceName != null">resource_name = #{resourceName},</if>
+            <if test="resourceType != null">resource_type = #{resourceType},</if>
+            <if test="sourceSystem != null">source_system = #{sourceSystem},</if>
+            <if test="updateCycle != null">update_cycle = #{updateCycle},</if>
+            <if test="ownerName != null">owner_name = #{ownerName},</if>
+            <if test="dataCount != null">data_count = #{dataCount},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="permissionScope != null">permission_scope = #{permissionScope},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where resource_id = #{resourceId}
+    </update>
+
+    <update id="deleteResourceByIds" parameterType="Long">
+        update nc_fusion_resource_directory set del_flag = '2'
+        where resource_id in
+        <foreach collection="array" item="resourceId" open="(" separator="," close=")">
+            #{resourceId}
+        </foreach>
+    </update>
+</mapper>

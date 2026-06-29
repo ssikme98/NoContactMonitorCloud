@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.rectification.mapper.RectificationIssueMapper">
+
+    <resultMap type="RectificationIssue" id="RectificationIssueResult">
+        <id property="issueId" column="issue_id" />
+        <result property="issueCode" column="issue_code" />
+        <result property="issueTitle" column="issue_title" />
+        <result property="sourceType" column="source_type" />
+        <result property="sourceWarningId" column="source_warning_id" />
+        <result property="warningLevel" column="warning_level" />
+        <result property="regionName" column="region_name" />
+        <result property="responsibleUnitName" column="responsible_unit_name" />
+        <result property="responsiblePerson" column="responsible_person" />
+        <result property="supervisorName" column="supervisor_name" />
+        <result property="deadline" column="deadline" />
+        <result property="issueStatus" column="issue_status" />
+        <result property="indicatorId" column="indicator_id" />
+        <result property="indicatorName" column="indicator_name" />
+        <result property="currentValue" column="current_value" />
+        <result property="thresholdValue" column="threshold_value" />
+        <result property="issueDescription" column="issue_description" />
+        <result property="rectificationResult" column="rectification_result" />
+        <result property="reviewOpinion" column="review_opinion" />
+        <result property="attachmentUrl" column="attachment_url" />
+        <result property="dispatchTime" column="dispatch_time" />
+        <result property="submitTime" column="submit_time" />
+        <result property="reviewTime" column="review_time" />
+        <result property="archiveTime" column="archive_time" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <resultMap type="RectificationLog" id="RectificationLogResult">
+        <id property="logId" column="log_id" />
+        <result property="issueId" column="issue_id" />
+        <result property="fromStatus" column="from_status" />
+        <result property="toStatus" column="to_status" />
+        <result property="actionName" column="action_name" />
+        <result property="handleBy" column="handle_by" />
+        <result property="handleTime" column="handle_time" />
+        <result property="handleOpinion" column="handle_opinion" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectIssueVo">
+        select issue_id, issue_code, issue_title, source_type, source_warning_id, warning_level,
+               region_name, responsible_unit_name, responsible_person, supervisor_name, deadline,
+               issue_status, indicator_id, indicator_name, current_value, threshold_value,
+               issue_description, rectification_result, review_opinion, attachment_url,
+               dispatch_time, submit_time, review_time, archive_time,
+               create_by, create_time, update_by, update_time, remark
+        from nc_rectification_issue
+    </sql>
+
+    <select id="selectIssueList" parameterType="RectificationIssue" resultMap="RectificationIssueResult">
+        <include refid="selectIssueVo"/>
+        <where>
+            del_flag = '0'
+            <if test="issueTitle != null and issueTitle != ''">
+                AND (issue_title like '%' || #{issueTitle} || '%' OR issue_code like '%' || #{issueTitle} || '%')
+            </if>
+            <if test="issueStatus != null and issueStatus != ''">
+                AND issue_status = #{issueStatus}
+            </if>
+            <if test="warningLevel != null and warningLevel != ''">
+                AND warning_level = #{warningLevel}
+            </if>
+            <if test="regionName != null and regionName != ''">
+                AND region_name like '%' || #{regionName} || '%'
+            </if>
+            <if test="responsibleUnitName != null and responsibleUnitName != ''">
+                AND responsible_unit_name like '%' || #{responsibleUnitName} || '%'
+            </if>
+        </where>
+        order by create_time desc, issue_id desc
+    </select>
+
+    <select id="selectIssueById" parameterType="Long" resultMap="RectificationIssueResult">
+        <include refid="selectIssueVo"/>
+        where issue_id = #{issueId} and del_flag = '0'
+    </select>
+
+    <insert id="insertIssue" parameterType="RectificationIssue" useGeneratedKeys="true" keyProperty="issueId">
+        insert into nc_rectification_issue
+        (issue_code, issue_title, source_type, source_warning_id, warning_level, region_name,
+         responsible_unit_name, responsible_person, supervisor_name, deadline, issue_status,
+         indicator_id, indicator_name, current_value, threshold_value, issue_description,
+         rectification_result, review_opinion, attachment_url, create_by, create_time, remark)
+        values
+        (coalesce(#{issueCode}, 'ISS-' || to_char(current_timestamp, 'YYYYMMDDHH24MISS')), #{issueTitle}, #{sourceType},
+         #{sourceWarningId}, #{warningLevel}, #{regionName}, #{responsibleUnitName}, #{responsiblePerson},
+         #{supervisorName}, #{deadline}, #{issueStatus}, #{indicatorId}, #{indicatorName}, #{currentValue},
+         #{thresholdValue}, #{issueDescription}, #{rectificationResult}, #{reviewOpinion}, #{attachmentUrl},
+         #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateIssue" parameterType="RectificationIssue">
+        update nc_rectification_issue
+        <set>
+            <if test="issueTitle != null">issue_title = #{issueTitle},</if>
+            <if test="sourceType != null">source_type = #{sourceType},</if>
+            <if test="sourceWarningId != null">source_warning_id = #{sourceWarningId},</if>
+            <if test="warningLevel != null">warning_level = #{warningLevel},</if>
+            <if test="regionName != null">region_name = #{regionName},</if>
+            <if test="responsibleUnitName != null">responsible_unit_name = #{responsibleUnitName},</if>
+            <if test="responsiblePerson != null">responsible_person = #{responsiblePerson},</if>
+            <if test="supervisorName != null">supervisor_name = #{supervisorName},</if>
+            <if test="deadline != null">deadline = #{deadline},</if>
+            <if test="indicatorId != null">indicator_id = #{indicatorId},</if>
+            <if test="indicatorName != null">indicator_name = #{indicatorName},</if>
+            <if test="currentValue != null">current_value = #{currentValue},</if>
+            <if test="thresholdValue != null">threshold_value = #{thresholdValue},</if>
+            <if test="issueDescription != null">issue_description = #{issueDescription},</if>
+            <if test="rectificationResult != null">rectification_result = #{rectificationResult},</if>
+            <if test="reviewOpinion != null">review_opinion = #{reviewOpinion},</if>
+            <if test="attachmentUrl != null">attachment_url = #{attachmentUrl},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where issue_id = #{issueId}
+    </update>
+
+    <update id="updateIssueStatus" parameterType="RectificationIssue">
+        update nc_rectification_issue
+        <set>
+            issue_status = #{issueStatus},
+            <if test="responsibleUnitName != null">responsible_unit_name = #{responsibleUnitName},</if>
+            <if test="responsiblePerson != null">responsible_person = #{responsiblePerson},</if>
+            <if test="supervisorName != null">supervisor_name = #{supervisorName},</if>
+            <if test="deadline != null">deadline = #{deadline},</if>
+            <if test="rectificationResult != null">rectification_result = #{rectificationResult},</if>
+            <if test="reviewOpinion != null">review_opinion = #{reviewOpinion},</if>
+            <if test="attachmentUrl != null">attachment_url = #{attachmentUrl},</if>
+            <if test="dispatchTime != null">dispatch_time = #{dispatchTime},</if>
+            <if test="submitTime != null">submit_time = #{submitTime},</if>
+            <if test="reviewTime != null">review_time = #{reviewTime},</if>
+            <if test="archiveTime != null">archive_time = #{archiveTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        where issue_id = #{issueId}
+    </update>
+
+    <update id="deleteIssueByIds" parameterType="Long">
+        update nc_rectification_issue set del_flag = '2'
+        where issue_id in
+        <foreach collection="array" item="issueId" open="(" separator="," close=")">
+            #{issueId}
+        </foreach>
+    </update>
+
+    <insert id="insertLog" parameterType="RectificationLog" useGeneratedKeys="true" keyProperty="logId">
+        insert into nc_rectification_log
+        (issue_id, from_status, to_status, action_name, handle_by, handle_time,
+         handle_opinion, create_by, create_time, remark)
+        values
+        (#{issueId}, #{fromStatus}, #{toStatus}, #{actionName}, #{handleBy}, #{handleTime},
+         #{handleOpinion}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <select id="selectLogsByIssueId" parameterType="Long" resultMap="RectificationLogResult">
+        select log_id, issue_id, from_status, to_status, action_name, handle_by, handle_time,
+               handle_opinion, create_by, create_time, remark
+        from nc_rectification_log
+        where issue_id = #{issueId}
+        order by handle_time, log_id
+    </select>
+
+    <select id="selectStatusStats" resultType="map">
+        select issue_status as stat_name, count(1) as count_value
+        from nc_rectification_issue
+        where del_flag = '0'
+        group by issue_status
+        order by issue_status
+    </select>
+
+    <select id="selectRegionStats" resultType="map">
+        select coalesce(region_name, '未填地区') as stat_name, count(1) as count_value
+        from nc_rectification_issue
+        where del_flag = '0'
+        group by coalesce(region_name, '未填地区')
+        order by count(1) desc
+    </select>
+</mapper>
