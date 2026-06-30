@@ -35,7 +35,9 @@
         <template slot-scope="scope">{{ channelText(scope.row.pushChannels) }}</template>
       </el-table-column>
       <el-table-column label="状态" prop="messageStatus" width="90"><template slot-scope="scope">{{ statusText(scope.row.messageStatus) }}</template></el-table-column>
-      <el-table-column label="触发时间" prop="triggerTime" width="160" />
+      <el-table-column label="触发时间" width="180">
+        <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.triggerTime) }}</template>
+      </el-table-column>
       <el-table-column label="操作" align="center" width="190">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-view" @click="handleDetail(scope.row)" v-hasPermi="['nocontact:warning:message:query']">详情</el-button>
@@ -67,7 +69,9 @@
         <el-table-column label="原状态" prop="fromStatus" width="110"><template slot-scope="scope">{{ statusText(scope.row.fromStatus) }}</template></el-table-column>
         <el-table-column label="目标状态" prop="toStatus" width="110"><template slot-scope="scope">{{ statusText(scope.row.toStatus) }}</template></el-table-column>
         <el-table-column label="处理人" prop="handleBy" width="110" />
-        <el-table-column label="处理时间" prop="handleTime" width="160" />
+        <el-table-column label="处理时间" width="180">
+          <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.handleTime) }}</template>
+        </el-table-column>
         <el-table-column label="意见" prop="handleOpinion" min-width="180" show-overflow-tooltip />
       </el-table>
       <div slot="footer" class="dialog-footer"><el-button @click="detailOpen = false">关 闭</el-button></div>
@@ -95,6 +99,7 @@ import { listMessage, getMessage, updateMessageStatus, delMessage } from '@/api/
 import { createIssueFromWarning } from '@/api/nocontact/rectification/issue'
 import {
   channelText,
+  formatFriendlyDateTime,
   WARNING_LEVEL_COLOR_OPTIONS,
   WARNING_MESSAGE_STATUS_OPTIONS,
   warningLevelColorText,
@@ -126,6 +131,7 @@ export default {
   },
   methods: {
     channelText,
+    formatFriendlyDateTime,
     getList() {
       this.loading = true
       listMessage(this.queryParams).then(response => {

@@ -21,7 +21,9 @@
         <template slot-scope="scope">{{ syncFrequencyText(scope.row.syncFrequency) }}</template>
       </el-table-column>
       <el-table-column label="状态" prop="status" width="80"><template slot-scope="scope">{{ scope.row.status === '0' ? '启用' : '停用' }}</template></el-table-column>
-      <el-table-column label="最近同步" prop="lastSyncTime" width="160" />
+      <el-table-column label="最近同步" width="180">
+        <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.lastSyncTime) }}</template>
+      </el-table-column>
       <el-table-column label="同步结果" prop="lastSyncStatus" width="100">
         <template slot-scope="scope">{{ syncStatusText(scope.row.lastSyncStatus) }}</template>
       </el-table-column>
@@ -68,7 +70,7 @@
 
 <script>
 import { listConfig, addConfig, updateConfig, delConfig, testConfig, syncConfig } from '@/api/nocontact/integration'
-import { integrationTypeText, syncFrequencyText } from '@/utils/nocontactDisplay'
+import { formatFriendlyDateTime, integrationTypeText, syncFrequencyText } from '@/utils/nocontactDisplay'
 
 export default {
   name: 'IntegrationConfig',
@@ -106,6 +108,7 @@ export default {
     }
   },
   methods: {
+    formatFriendlyDateTime,
     integrationTypeText,
     syncFrequencyText,
     bootstrapEntryMode() {

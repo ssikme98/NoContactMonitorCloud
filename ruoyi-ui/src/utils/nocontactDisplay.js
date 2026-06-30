@@ -1,3 +1,5 @@
+import { parseTime } from '@/utils/ruoyi'
+
 const REPORT_TYPE_LABELS = {
   overall: '总报告',
   region: '分地区报告',
@@ -101,4 +103,8 @@ export function channelText(value) {
     .filter(Boolean)
     .map(item => CHANNEL_LABELS[item] || item)
   return labels.length ? labels.join('、') : '-'
+}
+
+export function formatFriendlyDateTime(value) {
+  return parseTime(value, '{y}-{m}-{d} {h}:{i}:{s}') || '-'
 }

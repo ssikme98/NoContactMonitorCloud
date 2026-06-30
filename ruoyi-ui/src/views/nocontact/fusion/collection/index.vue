@@ -49,7 +49,9 @@
         </template>
       </el-table-column>
       <el-table-column label="提交人" prop="submitBy" width="110" />
-      <el-table-column label="提交时间" prop="submitTime" width="160" />
+      <el-table-column label="提交时间" width="180">
+        <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.submitTime) }}</template>
+      </el-table-column>
       <el-table-column label="操作" align="center" width="260">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-view" @click="handleDetail(scope.row)" v-hasPermi="['nocontact:fusion:collection:query']">详情</el-button>
@@ -154,7 +156,7 @@
         <el-descriptions-item label="业务期间">{{ detail.periodKey }}</el-descriptions-item>
         <el-descriptions-item label="状态">{{ statusText(detail.batchStatus) }}</el-descriptions-item>
         <el-descriptions-item label="审核人">{{ detail.auditBy }}</el-descriptions-item>
-        <el-descriptions-item label="审核时间">{{ detail.auditTime }}</el-descriptions-item>
+        <el-descriptions-item label="审核时间">{{ formatFriendlyDateTime(detail.auditTime) }}</el-descriptions-item>
       </el-descriptions>
       <el-divider content-position="left">明细</el-divider>
       <el-table :data="detail.items || []" size="small" border>
@@ -175,7 +177,9 @@
           <template slot-scope="scope">{{ statusText(scope.row.toStatus) }}</template>
         </el-table-column>
         <el-table-column label="操作人" prop="auditBy" width="110" />
-        <el-table-column label="操作时间" prop="auditTime" width="160" />
+        <el-table-column label="操作时间" width="180">
+          <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.auditTime) }}</template>
+        </el-table-column>
         <el-table-column label="意见" prop="auditOpinion" min-width="180" show-overflow-tooltip />
       </el-table>
       <div slot="footer" class="dialog-footer"><el-button @click="detailOpen = false">关 闭</el-button></div>
@@ -197,7 +201,9 @@
         <el-table-column label="字段" prop="fieldName" width="120" />
         <el-table-column label="原始值" prop="rawValue" min-width="140" show-overflow-tooltip />
         <el-table-column label="失败原因" prop="failureReason" min-width="220" show-overflow-tooltip />
-        <el-table-column label="创建时间" prop="createTime" width="160" />
+        <el-table-column label="创建时间" width="180">
+          <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.createTime) }}</template>
+        </el-table-column>
       </el-table>
       <pagination v-show="failureTotal > 0" :total="failureTotal" :page.sync="failureQuery.pageNum" :limit.sync="failureQuery.pageSize" @pagination="getFailureList" />
       <div slot="footer" class="dialog-footer"><el-button @click="failureOpen = false">关 闭</el-button></div>
@@ -210,6 +216,7 @@
 <script>
 import ExcelImportDialog from '@/components/ExcelImportDialog'
 import { listCollection, getCollection, listImportFailures, submitCollection, approveCollection, rejectCollection } from '@/api/nocontact/fusion/collection'
+import { formatFriendlyDateTime } from '@/utils/nocontactDisplay'
 
 export default {
   name: 'FusionCollection',
@@ -247,6 +254,7 @@ export default {
     this.getList()
   },
   methods: {
+    formatFriendlyDateTime,
     getList() {
       this.loading = true
       listCollection(this.queryParams).then(response => {

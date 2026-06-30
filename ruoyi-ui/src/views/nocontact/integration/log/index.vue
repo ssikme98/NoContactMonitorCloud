@@ -9,7 +9,9 @@
     <el-tabs v-model="activeTab" @tab-click="handleTabClick">
       <el-tab-pane label="同步批次" name="batch">
         <el-table v-loading="loading" :data="batchList">
-          <el-table-column label="开始时间" prop="startedTime" width="160" />
+          <el-table-column label="开始时间" width="180">
+            <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.startedTime) }}</template>
+          </el-table-column>
           <el-table-column label="对接名称" prop="integrationName" min-width="160" />
           <el-table-column label="来源系统" prop="sourceSystem" min-width="140" />
           <el-table-column label="状态" prop="batchStatus" width="90">
@@ -29,7 +31,9 @@
       </el-tab-pane>
       <el-tab-pane label="运行日志" name="log">
         <el-table v-loading="loading" :data="logList">
-          <el-table-column label="同步时间" prop="syncTime" width="160" />
+          <el-table-column label="同步时间" width="180">
+            <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.syncTime) }}</template>
+          </el-table-column>
           <el-table-column label="对接名称" prop="integrationName" min-width="160" />
           <el-table-column label="请求摘要" prop="requestSummary" min-width="220" show-overflow-tooltip />
           <el-table-column label="结果" prop="responseStatus" width="90">
@@ -50,6 +54,7 @@
 
 <script>
 import { listSyncBatch, listSyncLog, retryBatch } from '@/api/nocontact/integration'
+import { formatFriendlyDateTime } from '@/utils/nocontactDisplay'
 
 export default {
   name: 'IntegrationLog',
@@ -67,6 +72,7 @@ export default {
     this.getList()
   },
   methods: {
+    formatFriendlyDateTime,
     getList() {
       this.loading = true
       const params = Object.assign({}, this.queryParams)

@@ -52,7 +52,9 @@
         <template slot-scope="scope">{{ scope.row.auditEnabled === '1' ? '启用' : '关闭' }}</template>
       </el-table-column>
       <el-table-column label="数据量" prop="dataCount" width="100" align="right" />
-      <el-table-column label="最后执行时间" prop="lastRunTime" width="160" />
+      <el-table-column label="最后执行时间" width="180">
+        <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.lastRunTime) }}</template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="240">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['nocontact:fusion:task:edit']">编辑</el-button>
@@ -161,6 +163,7 @@
 <script>
 import { listTask, getTask, addTask, updateTask, updateTaskStatus, delTask } from '@/api/nocontact/fusion/task'
 import { listIndicatorOptions } from '@/api/nocontact/fusion/indicator'
+import { formatFriendlyDateTime } from '@/utils/nocontactDisplay'
 
 export default {
   name: 'FusionTask',
@@ -213,6 +216,7 @@ export default {
     this.getIndicators()
   },
   methods: {
+    formatFriendlyDateTime,
     getList() {
       this.loading = true
       listTask(this.queryParams).then(response => {

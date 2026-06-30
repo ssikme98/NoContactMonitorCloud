@@ -25,7 +25,9 @@
       </el-table-column>
       <el-table-column label="Word文件" prop="generatedWordFileName" min-width="160" show-overflow-tooltip />
       <el-table-column label="Excel文件" prop="generatedExcelFileName" min-width="160" show-overflow-tooltip />
-      <el-table-column label="生成时间" prop="generatedTime" width="160" />
+      <el-table-column label="生成时间" width="180">
+        <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.generatedTime) }}</template>
+      </el-table-column>
       <el-table-column label="操作" width="260" align="center">
         <template slot-scope="scope">
           <el-button type="text" size="mini" icon="el-icon-document-checked" @click="handleGenerate(scope.row)">{{ scope.row.generatedTime ? '再次生成' : '立即生成' }}</el-button>
@@ -103,7 +105,9 @@
 
     <el-dialog :title="historyTitle" :visible.sync="historyOpen" width="900px" append-to-body>
       <el-table v-loading="historyLoading" :data="snapshotList">
-        <el-table-column label="生成时间" prop="generatedTime" width="160" />
+        <el-table-column label="生成时间" width="180">
+          <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.generatedTime) }}</template>
+        </el-table-column>
         <el-table-column label="生成人" prop="generatedBy" width="120" />
         <el-table-column label="报告周期" prop="reportPeriod" width="120" />
         <el-table-column label="报告范围" min-width="120">
@@ -126,6 +130,7 @@
 <script>
 import { listTemplate, listReportTask, addReportTask, generateReportTask, listReportSnapshot, reportTaskDownloadUrl, reportSnapshotDownloadUrl } from '@/api/nocontact/report'
 import { listIndicatorOptions } from '@/api/nocontact/fusion/indicator'
+import { formatFriendlyDateTime } from '@/utils/nocontactDisplay'
 
 const regionOptions = [
   { code: '430100', name: '长沙市' },
@@ -175,6 +180,7 @@ export default {
     this.getIndicatorOptions()
   },
   methods: {
+    formatFriendlyDateTime,
     getList() {
       this.loading = true
       listReportTask(this.queryParams).then(response => {

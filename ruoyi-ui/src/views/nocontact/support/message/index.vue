@@ -7,7 +7,9 @@
       <el-table-column label="已读状态" width="100">
         <template slot-scope="scope">{{ scope.row.readStatus === '1' ? '已读' : '未读' }}</template>
       </el-table-column>
-      <el-table-column label="事件时间" prop="eventTime" width="180" />
+      <el-table-column label="事件时间" width="180">
+        <template slot-scope="scope">{{ formatFriendlyDateTime(scope.row.eventTime) }}</template>
+      </el-table-column>
       <el-table-column label="操作" width="180">
         <template slot-scope="scope">
           <el-button size="mini" type="text" @click="handleOpen(scope.row)">打开</el-button>
@@ -21,6 +23,7 @@
 
 <script>
 import { listBusinessMessage, markBusinessMessageRead } from '@/api/nocontact/support'
+import { formatFriendlyDateTime } from '@/utils/nocontactDisplay'
 
 export default {
   name: 'SupportMessage',
@@ -39,6 +42,7 @@ export default {
     this.getList()
   },
   methods: {
+    formatFriendlyDateTime,
     getList() {
       this.loading = true
       listBusinessMessage(this.queryParams).then(response => {
