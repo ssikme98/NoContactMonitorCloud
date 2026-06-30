@@ -11,6 +11,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="integrationType" column="integration_type" />
         <result property="endpointUrl" column="endpoint_url" />
         <result property="authType" column="auth_type" />
+        <result property="authCredential" column="auth_credential" />
         <result property="syncFrequency" column="sync_frequency" />
         <result property="syncMode" column="sync_mode" />
         <result property="mappingRule" column="mapping_rule" />
@@ -19,6 +20,47 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="status" column="status" />
         <result property="lastSyncTime" column="last_sync_time" />
         <result property="lastSyncStatus" column="last_sync_status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <resultMap type="ExternalSyncBatch" id="ExternalSyncBatchResult">
+        <id property="syncBatchId" column="sync_batch_id" />
+        <result property="configId" column="config_id" />
+        <result property="integrationName" column="integration_name" />
+        <result property="sourceSystem" column="source_system" />
+        <result property="batchStatus" column="batch_status" />
+        <result property="successCount" column="success_count" />
+        <result property="failureCount" column="failure_count" />
+        <result property="skippedCount" column="skipped_count" />
+        <result property="retryCount" column="retry_count" />
+        <result property="requestSummary" column="request_summary" />
+        <result property="responseSummary" column="response_summary" />
+        <result property="errorMessage" column="error_message" />
+        <result property="startedTime" column="started_time" />
+        <result property="finishedTime" column="finished_time" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <resultMap type="ExternalSyncPayload" id="ExternalSyncPayloadResult">
+        <id property="payloadId" column="payload_id" />
+        <result property="syncBatchId" column="sync_batch_id" />
+        <result property="collectionBatchId" column="collection_batch_id" />
+        <result property="collectionItemId" column="collection_item_id" />
+        <result property="sourceSystem" column="source_system" />
+        <result property="externalId" column="external_id" />
+        <result property="versionHash" column="version_hash" />
+        <result property="payloadContent" column="payload_content" />
+        <result property="payloadStatus" column="payload_status" />
+        <result property="convertMessage" column="convert_message" />
+        <result property="convertedTime" column="converted_time" />
         <result property="createBy" column="create_by" />
         <result property="createTime" column="create_time" />
         <result property="updateBy" column="update_by" />
@@ -45,7 +87,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <sql id="selectConfigVo">
         select config_id, integration_name, platform_name, integration_type, endpoint_url,
-               auth_type, sync_frequency, sync_mode, mapping_rule, transform_rule, retry_policy,
+               auth_type, auth_credential, sync_frequency, sync_mode, mapping_rule, transform_rule, retry_policy,
                status, last_sync_time, last_sync_status,
                create_by, create_time, update_by, update_time, remark
         from nc_external_integration_config
@@ -75,10 +117,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <insert id="insertConfig" parameterType="ExternalIntegrationConfig" useGeneratedKeys="true" keyProperty="configId">
         insert into nc_external_integration_config
-        (integration_name, platform_name, integration_type, endpoint_url, auth_type, sync_frequency,
+        (integration_name, platform_name, integration_type, endpoint_url, auth_type, auth_credential, sync_frequency,
          sync_mode, mapping_rule, transform_rule, retry_policy, status, create_by, create_time, remark)
         values
-        (#{integrationName}, #{platformName}, #{integrationType}, #{endpointUrl}, #{authType}, #{syncFrequency},
+        (#{integrationName}, #{platformName}, #{integrationType}, #{endpointUrl}, #{authType}, #{authCredential}, #{syncFrequency},
          #{syncMode}, #{mappingRule}, #{transformRule}, #{retryPolicy}, #{status}, #{createBy}, #{createTime}, #{remark})
     </insert>
 
@@ -90,6 +132,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="integrationType != null">integration_type = #{integrationType},</if>
             <if test="endpointUrl != null">endpoint_url = #{endpointUrl},</if>
             <if test="authType != null">auth_type = #{authType},</if>
+            <if test="authCredential != null">auth_credential = #{authCredential},</if>
             <if test="syncFrequency != null">sync_frequency = #{syncFrequency},</if>
             <if test="syncMode != null">sync_mode = #{syncMode},</if>
             <if test="mappingRule != null">mapping_rule = #{mappingRule},</if>
@@ -139,5 +182,109 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
         </where>
         order by sync_time desc, log_id desc
+    </select>
+
+    <insert id="insertSyncBatch" parameterType="ExternalSyncBatch" useGeneratedKeys="true" keyProperty="syncBatchId">
+        insert into nc_external_sync_batch
+        (config_id, integration_name, source_system, batch_status, success_count, failure_count,
+         skipped_count, retry_count, request_summary, response_summary, error_message, started_time,
+         finished_time, create_by, create_time, remark)
+        values
+        (#{configId}, #{integrationName}, #{sourceSystem}, #{batchStatus}, #{successCount}, #{failureCount},
+         #{skippedCount}, #{retryCount}, #{requestSummary}, #{responseSummary}, #{errorMessage}, #{startedTime},
+         #{finishedTime}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateSyncBatch" parameterType="ExternalSyncBatch">
+        update nc_external_sync_batch
+        <set>
+            <if test="batchStatus != null">batch_status = #{batchStatus},</if>
+            <if test="successCount != null">success_count = #{successCount},</if>
+            <if test="failureCount != null">failure_count = #{failureCount},</if>
+            <if test="skippedCount != null">skipped_count = #{skippedCount},</if>
+            <if test="retryCount != null">retry_count = #{retryCount},</if>
+            <if test="requestSummary != null">request_summary = #{requestSummary},</if>
+            <if test="responseSummary != null">response_summary = #{responseSummary},</if>
+            <if test="errorMessage != null">error_message = #{errorMessage},</if>
+            <if test="finishedTime != null">finished_time = #{finishedTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        where sync_batch_id = #{syncBatchId}
+    </update>
+
+    <select id="selectSyncBatchById" parameterType="Long" resultMap="ExternalSyncBatchResult">
+        select sync_batch_id, config_id, integration_name, source_system, batch_status, success_count,
+               failure_count, skipped_count, retry_count, request_summary, response_summary, error_message,
+               started_time, finished_time, create_by, create_time, update_by, update_time, remark
+        from nc_external_sync_batch
+        where sync_batch_id = #{syncBatchId}
+    </select>
+
+    <select id="selectSyncBatchList" parameterType="ExternalSyncBatch" resultMap="ExternalSyncBatchResult">
+        select sync_batch_id, config_id, integration_name, source_system, batch_status, success_count,
+               failure_count, skipped_count, retry_count, request_summary, response_summary, error_message,
+               started_time, finished_time, create_by, create_time, update_by, update_time, remark
+        from nc_external_sync_batch
+        <where>
+            <if test="integrationName != null and integrationName != ''">
+                AND integration_name like '%' || #{integrationName} || '%'
+            </if>
+            <if test="batchStatus != null and batchStatus != ''">
+                AND batch_status = #{batchStatus}
+            </if>
+            <if test="configId != null">
+                AND config_id = #{configId}
+            </if>
+        </where>
+        order by started_time desc, sync_batch_id desc
+    </select>
+
+    <insert id="insertPayload" parameterType="ExternalSyncPayload" useGeneratedKeys="true" keyProperty="payloadId">
+        insert into nc_external_sync_payload
+        (sync_batch_id, collection_batch_id, collection_item_id, source_system, external_id, version_hash,
+         payload_content, payload_status, convert_message, converted_time, create_by, create_time, remark)
+        values
+        (#{syncBatchId}, #{collectionBatchId}, #{collectionItemId}, #{sourceSystem}, #{externalId}, #{versionHash},
+         #{payloadContent}, #{payloadStatus}, #{convertMessage}, #{convertedTime}, #{createBy}, #{createTime}, #{remark})
+        ON CONFLICT (source_system, external_id, version_hash) DO NOTHING
+    </insert>
+
+    <update id="updatePayload" parameterType="ExternalSyncPayload">
+        update nc_external_sync_payload
+        <set>
+            <if test="syncBatchId != null">sync_batch_id = #{syncBatchId},</if>
+            <if test="collectionBatchId != null">collection_batch_id = #{collectionBatchId},</if>
+            <if test="collectionItemId != null">collection_item_id = #{collectionItemId},</if>
+            <if test="payloadContent != null">payload_content = #{payloadContent},</if>
+            <if test="payloadStatus != null">payload_status = #{payloadStatus},</if>
+            <if test="convertMessage != null">convert_message = #{convertMessage},</if>
+            <if test="convertedTime != null">converted_time = #{convertedTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        where payload_id = #{payloadId}
+    </update>
+
+    <select id="selectPayloadByUnique" parameterType="ExternalSyncPayload" resultMap="ExternalSyncPayloadResult">
+        select payload_id, sync_batch_id, collection_batch_id, collection_item_id, source_system,
+               external_id, version_hash, payload_content, payload_status, convert_message, converted_time,
+               create_by, create_time, update_by, update_time, remark
+        from nc_external_sync_payload
+        where source_system = #{sourceSystem}
+          and external_id = #{externalId}
+          and version_hash = #{versionHash}
+        order by payload_id desc
+        limit 1
+    </select>
+
+    <select id="selectPayloadListByBatchId" parameterType="Long" resultMap="ExternalSyncPayloadResult">
+        select payload_id, sync_batch_id, collection_batch_id, collection_item_id, source_system,
+               external_id, version_hash, payload_content, payload_status, convert_message, converted_time,
+               create_by, create_time, update_by, update_time, remark
+        from nc_external_sync_payload
+        where sync_batch_id = #{syncBatchId}
+        order by payload_id asc
     </select>
 </mapper>

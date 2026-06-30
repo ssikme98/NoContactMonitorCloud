@@ -1,5 +1,6 @@
 package com.ruoyi.nocontact.integration.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import java.util.Date;
 import javax.validation.constraints.NotBlank;
@@ -17,12 +18,14 @@ public class ExternalIntegrationConfig extends BaseEntity
     private String integrationType;
     private String endpointUrl;
     private String authType;
+    private String authCredential;
     private String syncFrequency;
     private String syncMode;
     private String mappingRule;
     private String transformRule;
     private String retryPolicy;
     private String status;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date lastSyncTime;
     private String lastSyncStatus;
 
@@ -85,6 +88,16 @@ public class ExternalIntegrationConfig extends BaseEntity
     public void setAuthType(String authType)
     {
         this.authType = authType;
+    }
+
+    public String getAuthCredential()
+    {
+        return authCredential;
+    }
+
+    public void setAuthCredential(String authCredential)
+    {
+        this.authCredential = authCredential;
     }
 
     public String getSyncFrequency()

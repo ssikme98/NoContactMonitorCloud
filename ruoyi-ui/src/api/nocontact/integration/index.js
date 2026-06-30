@@ -52,6 +52,21 @@ export function syncConfig(configId) {
   })
 }
 
+export function retryBatch(syncBatchId) {
+  return request({
+    url: '/nocontact/integration/batch/' + syncBatchId + '/retry',
+    method: 'post'
+  })
+}
+
+export function listSyncBatch(query) {
+  return request({
+    url: '/nocontact/integration/batch/list',
+    method: 'get',
+    params: query
+  })
+}
+
 export function listSyncLog(query) {
   return request({
     url: '/nocontact/integration/log/list',

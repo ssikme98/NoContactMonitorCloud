@@ -6,6 +6,9 @@ import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.nocontact.fusion.domain.FusionCollectionBatch;
 import com.ruoyi.nocontact.fusion.domain.FusionCollectionItem;
 import com.ruoyi.nocontact.fusion.mapper.FusionCollectionBatchMapper;
+import com.ruoyi.nocontact.support.domain.BusinessMessage;
+import com.ruoyi.nocontact.support.service.IBusinessMessageService;
+import com.ruoyi.nocontact.support.service.impl.BusinessMessageServiceImpl;
 import com.ruoyi.nocontact.warning.domain.WarningMessage;
 import com.ruoyi.nocontact.warning.domain.WarningRule;
 import com.ruoyi.nocontact.warning.engine.WarningEvaluationInput;
@@ -42,6 +45,9 @@ public class WarningEvaluationServiceImpl implements IWarningEvaluationService
 
     @Autowired
     private WarningMessageMapper messageMapper;
+
+    @Autowired
+    private IBusinessMessageService businessMessageService;
 
     @Override
     public int evaluateApprovedBatch(Long batchId, String operName)
@@ -127,7 +133,9 @@ public class WarningEvaluationServiceImpl implements IWarningEvaluationService
         message.setCreateTime(DateUtils.getNowDate());
         try
         {
-            return messageMapper.insertMessage(message);
+            int rows = messageMapper.insertMessage(message);
+            createBusinessMessage(message, operName);
+            return rows;
         }
         catch (DuplicateKeyException e)
         {
@@ -135,6 +143,38 @@ public class WarningEvaluationServiceImpl implements IWarningEvaluationService
             message.setUpdateTime(DateUtils.getNowDate());
             return messageMapper.updateOpenMessageHitByBusinessKey(message);
         }
+    }
+
+    private void createBusinessMessage(WarningMessage message, String operName)
+    {
+        BusinessMessage businessMessage = new BusinessMessage();
+        businessMessage.setMessageType(BusinessMessageServiceImpl.WARNING_GENERATED);
+        businessMessage.setTitle("新增预警待处理");
+        businessMessage.setContent(StringUtils.defaultIfBlank(message.getRuleName(), "预警规则")
+                + " 在 " + StringUtils.defaultIfBlank(message.getRegionName(), "全省") + " 触发预警");
+        businessMessage.setBusinessType("warning");
+        businessMessage.setBusinessId(message.getMessageId());
+        businessMessage.setJumpTarget("/nocontact/warning/message?messageId=" + message.getMessageId());
+        businessMessage.setReceiverUserName(resolveWarningReceiver(message, operName));
+        businessMessage.setCreateBy(operName);
+        businessMessageService.createMessage(businessMessage);
+    }
+
+    private String resolveWarningReceiver(WarningMessage message, String operName)
+    {
+        if (StringUtils.isNotBlank(message.getReceivers()))
+        {
+            String[] receivers = message.getReceivers().split("[,，]");
+            for (String receiver : receivers)
+            {
+                String candidate = StringUtils.trimToEmpty(receiver);
+                if (StringUtils.isNotBlank(candidate))
+                {
+                    return candidate;
+                }
+            }
+        }
+        return operName;
     }
 
     private boolean hasScheduledScope(WarningRule rule)

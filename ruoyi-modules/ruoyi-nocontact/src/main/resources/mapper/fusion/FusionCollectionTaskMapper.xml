@@ -36,6 +36,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                t.create_by, t.create_time, t.update_by, t.update_time, t.remark
         from nc_fusion_collection_task t
         left join nc_fusion_indicator i on i.indicator_id = t.indicator_id
+        left join sys_user u on u.user_name = t.create_by
     </sql>
 
     <select id="selectTaskList" parameterType="FusionCollectionTask" resultMap="FusionCollectionTaskResult">
@@ -57,13 +58,46 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="indicatorName != null and indicatorName != ''">
                 AND coalesce(i.indicator_name, t.indicator_name) like '%' || #{indicatorName} || '%'
             </if>
+            ${params.dataScope}
         </where>
         order by t.create_time desc, t.task_id desc
+    </select>
+
+    <select id="countTaskList" parameterType="FusionCollectionTask" resultType="int">
+        select count(1)
+        from nc_fusion_collection_task t
+        left join nc_fusion_indicator i on i.indicator_id = t.indicator_id
+        left join sys_user u on u.user_name = t.create_by
+        <where>
+            t.del_flag = '0'
+            <if test="taskName != null and taskName != ''">
+                AND t.task_name like '%' || #{taskName} || '%'
+            </if>
+            <if test="taskType != null and taskType != ''">
+                AND t.task_type = #{taskType}
+            </if>
+            <if test="taskStatus != null and taskStatus != ''">
+                AND t.task_status = #{taskStatus}
+            </if>
+            <if test="sourceType != null and sourceType != ''">
+                AND t.source_type = #{sourceType}
+            </if>
+            <if test="indicatorName != null and indicatorName != ''">
+                AND coalesce(i.indicator_name, t.indicator_name) like '%' || #{indicatorName} || '%'
+            </if>
+            ${params.dataScope}
+        </where>
     </select>
 
     <select id="selectTaskById" parameterType="Long" resultMap="FusionCollectionTaskResult">
         <include refid="selectTaskVo"/>
         where t.task_id = #{taskId} and t.del_flag = '0'
+    </select>
+
+    <select id="selectTaskByScope" parameterType="FusionCollectionTask" resultMap="FusionCollectionTaskResult">
+        <include refid="selectTaskVo"/>
+        where t.task_id = #{taskId} and t.del_flag = '0'
+        ${params.dataScope}
     </select>
 
     <insert id="insertTask" parameterType="FusionCollectionTask" useGeneratedKeys="true" keyProperty="taskId">
@@ -100,6 +134,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="remark != null">remark = #{remark},</if>
         </set>
         where task_id = #{taskId}
+          and del_flag = '0'
     </update>
 
     <update id="updateTaskStatus" parameterType="FusionCollectionTask">
@@ -111,28 +146,33 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             update_time = #{updateTime}
         </set>
         where task_id = #{taskId}
+          and del_flag = '0'
     </update>
 
     <update id="deleteTaskByIds" parameterType="Long">
         update nc_fusion_collection_task set del_flag = '2'
-        where task_id in
+        where del_flag = '0' and task_id in
         <foreach collection="array" item="taskId" open="(" separator="," close=")">
             #{taskId}
         </foreach>
     </update>
 
-    <select id="selectTaskStatusStats" resultType="map">
+    <select id="selectTaskStatusStats" parameterType="FusionCollectionTask" resultType="map">
         select task_status as stat_name, count(1) as count_value
-        from nc_fusion_collection_task
-        where del_flag = '0'
+        from nc_fusion_collection_task t
+        left join sys_user u on u.user_name = t.create_by
+        where t.del_flag = '0'
+        ${params.dataScope}
         group by task_status
         order by task_status
     </select>
 
-    <select id="selectTaskTypeStats" resultType="map">
+    <select id="selectTaskTypeStats" parameterType="FusionCollectionTask" resultType="map">
         select task_type as stat_name, count(1) as count_value
-        from nc_fusion_collection_task
-        where del_flag = '0'
+        from nc_fusion_collection_task t
+        left join sys_user u on u.user_name = t.create_by
+        where t.del_flag = '0'
+        ${params.dataScope}
         group by task_type
         order by task_type
     </select>

@@ -1,13 +1,13 @@
 <template>
   <div class="app-container warning-rule-page">
+    <div class="entry-title">{{ routeTitle }}</div>
     <el-form v-show="showSearch" ref="queryForm" :model="queryParams" size="small" :inline="true">
       <el-form-item label="规则名称" prop="ruleName">
         <el-input v-model="queryParams.ruleName" placeholder="请输入规则名称" clearable @keyup.enter.native="handleQuery" />
       </el-form-item>
       <el-form-item label="规则状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="全部" clearable>
-          <el-option label="启用" value="0" />
-          <el-option label="停用" value="1" />
+          <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="预警级别" prop="warningLevel">
@@ -23,7 +23,7 @@
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['nocontact:warning:rule:add']">新增预警规则</el-button>
+        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['nocontact:warning:rule:add']">{{ createButtonText }}</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['nocontact:warning:rule:remove']">删除</el-button>
@@ -49,7 +49,9 @@
       <el-table-column label="触发条件" prop="triggerCondition" width="110">
         <template slot-scope="scope">{{ optionText(conditionOptions, scope.row.triggerCondition) }}</template>
       </el-table-column>
-      <el-table-column label="推送渠道" prop="pushChannels" width="130" />
+      <el-table-column label="推送渠道" min-width="150" show-overflow-tooltip>
+        <template slot-scope="scope">{{ channelText(scope.row.pushChannels) }}</template>
+      </el-table-column>
       <el-table-column label="状态" prop="status" width="90" align="center">
         <template slot-scope="scope"><el-switch v-model="scope.row.status" active-value="0" inactive-value="1" @change="changeStatus(scope.row)" v-hasPermi="['nocontact:warning:rule:edit']" /></template>
       </el-table-column>
@@ -97,11 +99,11 @@
         <el-row :gutter="12">
           <el-col :span="8"><el-form-item label="周期类型"><el-select v-model="form.periodType" clearable placeholder="不限"><el-option label="月度" value="month" /><el-option label="季度" value="quarter" /><el-option label="年度" value="year" /></el-select></el-form-item></el-col>
           <el-col :span="8"><el-form-item label="触发频率"><el-select v-model="form.triggerFrequency"><el-option label="实时" value="realtime" /><el-option label="每日" value="daily" /><el-option label="每周" value="weekly" /></el-select></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="推送渠道"><el-checkbox-group v-model="pushChannelArray"><el-checkbox label="site">平台消息</el-checkbox><el-checkbox label="sms">短信</el-checkbox><el-checkbox label="email">邮件</el-checkbox></el-checkbox-group></el-form-item></el-col>
+          <el-col :span="8"><el-form-item label="推送渠道"><el-checkbox-group v-model="pushChannelArray"><el-checkbox label="site">站内消息</el-checkbox><el-checkbox label="sms">短信</el-checkbox><el-checkbox label="email">邮件</el-checkbox></el-checkbox-group></el-form-item></el-col>
         </el-row>
         <el-form-item label="推送对象"><el-input v-model="form.pushTargets" placeholder="监测项负责人、管理人员或指定用户" /></el-form-item>
         <el-form-item label="推送模板"><el-input v-model="form.contentTemplate" type="textarea" :rows="3" /></el-form-item>
-        <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio label="0">启用</el-radio><el-radio label="1">停用</el-radio></el-radio-group></el-form-item>
+        <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="item in statusOptions" :key="item.value" :label="item.value">{{ item.label }}</el-radio></el-radio-group></el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="open = false">取 消</el-button>
@@ -114,12 +116,20 @@
 <script>
 import { listRule, getRule, addRule, updateRule, updateRuleStatus, delRule } from '@/api/nocontact/warning/rule'
 import { listIndicatorOptions } from '@/api/nocontact/fusion/indicator'
+import { BINARY_STATUS_OPTIONS, channelText, WARNING_LEVEL_COLOR_OPTIONS, warningLevelColorText } from '@/utils/nocontactDisplay'
 
 export default {
   name: 'WarningRule',
+  props: {
+    entryMode: {
+      type: String,
+      default: 'list'
+    }
+  },
   data() {
     return {
       loading: false,
+      entryBootstrapped: false,
       showSearch: true,
       ids: [],
       multiple: true,
@@ -131,7 +141,8 @@ export default {
       pushChannelArray: [],
       queryParams: { pageNum: 1, pageSize: 10, ruleName: undefined, status: undefined, warningLevel: undefined },
       form: {},
-      levelOptions: [{ label: '一级红色', value: '1' }, { label: '二级橙色', value: '2' }, { label: '三级黄色', value: '3' }],
+      levelOptions: WARNING_LEVEL_COLOR_OPTIONS,
+      statusOptions: BINARY_STATUS_OPTIONS,
       thresholdOptions: [{ label: '目标值对比', value: 'target' }, { label: '国内普遍值对比', value: 'common' }, { label: '自定义阈值', value: 'custom' }, { label: '同比环比', value: 'trend' }],
       conditionOptions: [{ label: '大于', value: 'gt' }, { label: '大于等于', value: 'gte' }, { label: '小于', value: 'lt' }, { label: '小于等于', value: 'lte' }, { label: '等于', value: 'eq' }, { label: '不等于', value: 'ne' }, { label: '区间外', value: 'outside_range' }, { label: '缺失', value: 'missing' }, { label: '逾期', value: 'overdue' }],
       rules: {
@@ -145,7 +156,34 @@ export default {
     this.getList()
     listIndicatorOptions({ status: '0' }).then(response => { this.indicatorOptions = response.data || [] })
   },
+  mounted() {
+    this.bootstrapEntryMode()
+  },
+  computed: {
+    isEditorEntry() {
+      return this.entryMode === 'editor'
+    },
+    isListEntry() {
+      return this.entryMode === 'list'
+    },
+    routeTitle() {
+      return this.isEditorEntry ? '新增/编辑预警规则' : '预警规则列表'
+    },
+    createButtonText() {
+      return this.isEditorEntry ? '新建预警规则' : '新增预警规则'
+    }
+  },
   methods: {
+    channelText,
+    bootstrapEntryMode() {
+      if (this.entryBootstrapped) {
+        return
+      }
+      this.entryBootstrapped = true
+      if (this.isEditorEntry) {
+        this.handleAdd()
+      }
+    },
     getList() {
       this.loading = true
       listRule(this.queryParams).then(response => {
@@ -159,7 +197,7 @@ export default {
       return item ? item.label : value
     },
     levelText(value) {
-      return this.optionText(this.levelOptions, value)
+      return warningLevelColorText(value)
     },
     levelTag(value) {
       return value === '1' ? 'danger' : value === '2' ? 'warning' : 'info'
@@ -194,7 +232,7 @@ export default {
     handleAdd() {
       this.reset()
       this.open = true
-      this.title = '新增预警规则'
+      this.title = this.isEditorEntry ? '新增/编辑预警规则' : '新增预警规则'
     },
     handleUpdate(row) {
       this.reset()
@@ -202,7 +240,7 @@ export default {
         this.form = response.data
         this.pushChannelArray = this.form.pushChannels ? this.form.pushChannels.split(',') : []
         this.open = true
-        this.title = '编辑预警规则'
+        this.title = this.isEditorEntry ? '新增/编辑预警规则' : '编辑预警规则'
       })
     },
     submitForm() {
@@ -254,3 +292,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.entry-title {
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+</style>

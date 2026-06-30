@@ -37,8 +37,10 @@
           <el-form-item label="行业分类" prop="industryCategory">
             <el-input v-model="queryParams.industryCategory" placeholder="请输入行业分类" clearable @keyup.enter.native="handleQuery" />
           </el-form-item>
-          <el-form-item label="地区" prop="regionName">
-            <el-input v-model="queryParams.regionName" placeholder="请输入地区" clearable @keyup.enter.native="handleQuery" />
+          <el-form-item label="城市" prop="regionName">
+            <el-select v-model="queryParams.regionName" placeholder="请选择城市" clearable filterable @change="handleQuery">
+              <el-option v-for="item in HUNAN_CITY_OPTIONS" :key="item.code" :label="item.name" :value="item.name" />
+            </el-select>
           </el-form-item>
           <el-form-item label="企业规模" prop="enterpriseScale">
             <el-select v-model="queryParams.enterpriseScale" placeholder="请选择企业规模" clearable>
@@ -76,12 +78,19 @@
         <el-table v-loading="loading" :data="enterpriseList" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="55" align="center" />
           <el-table-column label="企业名称" align="center" prop="enterpriseName" min-width="180" show-overflow-tooltip />
-          <el-table-column label="统一社会信用代码" align="center" prop="creditCode" width="190" />
+          <el-table-column label="统一社会信用代码" align="center" prop="creditCode" width="190">
+            <template slot-scope="scope">{{ maskCreditCode(scope.row.creditCode) }}</template>
+          </el-table-column>
           <el-table-column label="行业分类" align="center" prop="industryCategory" width="130" />
-          <el-table-column label="地区" align="center" prop="regionName" width="130" />
+          <el-table-column label="城市" align="center" prop="regionName" width="130" />
           <el-table-column label="企业规模" align="center" prop="enterpriseScale" width="100" />
           <el-table-column label="联系人" align="center" prop="contactName" width="100" />
-          <el-table-column label="联系电话" align="center" prop="contactPhone" width="130" />
+          <el-table-column label="联系电话" align="center" prop="contactPhone" width="130">
+            <template slot-scope="scope">{{ maskPhone(scope.row.contactPhone) }}</template>
+          </el-table-column>
+          <el-table-column label="详细地址" align="center" prop="address" min-width="220" show-overflow-tooltip />
+          <el-table-column label="经度" align="center" prop="longitude" width="110" />
+          <el-table-column label="纬度" align="center" prop="latitude" width="110" />
           <el-table-column label="状态" align="center" prop="status" width="80">
             <template slot-scope="scope">
               <el-tag v-if="scope.row.status === '0'" size="mini">正常</el-tag>
@@ -119,11 +128,10 @@
         <el-form-item label="行业分类" prop="industryCategory">
           <el-input v-model="form.industryCategory" placeholder="请输入行业分类" />
         </el-form-item>
-        <el-form-item label="地区" prop="regionName">
-          <el-input v-model="form.regionName" placeholder="请输入地区" />
-        </el-form-item>
-        <el-form-item label="地区编码" prop="regionCode">
-          <el-input v-model="form.regionCode" placeholder="请输入地区编码" />
+        <el-form-item label="城市" prop="regionName">
+          <el-select v-model="form.regionName" placeholder="请选择城市" filterable clearable @change="handleCityChange">
+            <el-option v-for="item in HUNAN_CITY_OPTIONS" :key="item.code" :label="item.name" :value="item.name" />
+          </el-select>
         </el-form-item>
         <el-form-item label="企业规模" prop="enterpriseScale">
           <el-select v-model="form.enterpriseScale" placeholder="请选择企业规模" clearable>
@@ -139,6 +147,19 @@
         <el-form-item label="联系电话" prop="contactPhone">
           <el-input v-model="form.contactPhone" placeholder="请输入联系电话" />
         </el-form-item>
+        <el-form-item label="详细地址" prop="address">
+          <el-input v-model="form.address" placeholder="请输入详细地址" />
+        </el-form-item>
+        <el-form-item label="经度" prop="longitude">
+          <el-input v-model="form.longitude" placeholder="请输入经度" />
+        </el-form-item>
+        <el-form-item label="纬度" prop="latitude">
+          <el-input v-model="form.latitude" placeholder="请输入纬度" />
+        </el-form-item>
+        <el-form-item label="坐标操作">
+          <el-button size="mini" type="primary" @click="handleGeocode">地址解析</el-button>
+          <span class="location-tip">{{ form.geocodeMessage || '支持地址解析，失败后可手工维护坐标' }}</span>
+        </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
             <el-radio label="0">正常</el-radio>
@@ -147,6 +168,14 @@
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+        </el-form-item>
+        <el-form-item label="位置预览">
+          <enterprise-location-map
+            :name="form.enterpriseName"
+            :longitude="form.longitude"
+            :latitude="form.latitude"
+            @manual="handleManualLocation"
+          />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -193,6 +222,7 @@ import {
   delEnterprise,
   addEnterprise,
   updateEnterprise,
+  geocodeEnterpriseLocation,
   groupTreeSelect,
   getEnterpriseGroup,
   addEnterpriseGroup,
@@ -203,12 +233,32 @@ import Treeselect from '@riophae/vue-treeselect'
 import '@riophae/vue-treeselect/dist/vue-treeselect.css'
 import TreePanel from '@/components/TreePanel'
 import ExcelImportDialog from '@/components/ExcelImportDialog'
+import EnterpriseLocationMap from '@/components/amap/EnterpriseLocationMap'
+import { geocodeWithAmapJs } from '@/config/amap'
+
+const HUNAN_CITY_OPTIONS = [
+  { code: '430100', name: '长沙市' },
+  { code: '430200', name: '株洲市' },
+  { code: '430300', name: '湘潭市' },
+  { code: '430400', name: '衡阳市' },
+  { code: '430500', name: '邵阳市' },
+  { code: '430600', name: '岳阳市' },
+  { code: '430700', name: '常德市' },
+  { code: '430800', name: '张家界市' },
+  { code: '430900', name: '益阳市' },
+  { code: '431000', name: '郴州市' },
+  { code: '431100', name: '永州市' },
+  { code: '431200', name: '怀化市' },
+  { code: '431300', name: '娄底市' },
+  { code: '433100', name: '湘西土家族苗族自治州' }
+]
 
 export default {
   name: 'SurveyEnterprise',
-  components: { Treeselect, TreePanel, ExcelImportDialog },
+  components: { Treeselect, TreePanel, ExcelImportDialog, EnterpriseLocationMap },
   data() {
     return {
+      HUNAN_CITY_OPTIONS,
       loading: true,
       ids: [],
       single: true,
@@ -300,7 +350,7 @@ export default {
     handleGroupNodeClick(data) {
       this.currentGroupId = data.id
       this.currentGroupName = data.label
-      this.queryParams.groupId = data.id
+      this.queryParams.groupId = data.id === 0 ? undefined : data.id
       this.handleQuery()
     },
     cancel() {
@@ -319,6 +369,11 @@ export default {
         enterpriseScale: undefined,
         contactName: undefined,
         contactPhone: undefined,
+        address: undefined,
+        longitude: undefined,
+        latitude: undefined,
+        geocodeStatus: undefined,
+        geocodeMessage: undefined,
         status: '0',
         remark: undefined
       }
@@ -377,6 +432,58 @@ export default {
         this.open = true
         this.title = '修改企业'
       })
+    },
+    handleCityChange(regionName) {
+      const city = HUNAN_CITY_OPTIONS.find(item => item.name === regionName)
+      this.form.regionCode = city ? city.code : undefined
+    },
+    handleGeocode() {
+      if (!this.form.regionName || !this.form.address) {
+        this.$modal.msgWarning('请先填写城市和详细地址')
+        return
+      }
+      geocodeEnterpriseLocation(this.form.regionName, this.form.address).then(response => {
+        const data = response.data || {}
+        if (response.code === 200 && data.longitude && data.latitude) {
+          this.form.longitude = data.longitude
+          this.form.latitude = data.latitude
+          this.form.geocodeStatus = 'success'
+          this.form.geocodeMessage = '地址解析成功'
+          return
+        }
+        return this.handleGeocodeFallback(response.msg)
+      }).catch(error => {
+        return this.handleGeocodeFallback((error && error.message) || '地址解析失败，请手工维护坐标')
+      })
+    },
+    handleGeocodeFallback(message) {
+      return geocodeWithAmapJs(this.form.regionName, this.form.address).then(result => {
+        this.form.longitude = result.longitude
+        this.form.latitude = result.latitude
+        this.form.geocodeStatus = 'success'
+        this.form.geocodeMessage = '地址解析成功（浏览器地图服务）'
+      }).catch(() => {
+        this.form.geocodeStatus = 'manual'
+        this.form.geocodeMessage = message || '地址解析失败，请手工维护坐标'
+      })
+    },
+    handleManualLocation() {
+      this.form.geocodeStatus = 'manual'
+      this.form.geocodeMessage = '已切换为手工维护坐标'
+    },
+    maskCreditCode(value) {
+      if (!value) {
+        return ''
+      }
+      const text = String(value)
+      return text.length <= 8 ? text.replace(/.(?=.{2})/g, '*') : text.slice(0, 4) + '**********' + text.slice(-4)
+    },
+    maskPhone(value) {
+      if (!value) {
+        return ''
+      }
+      const text = String(value)
+      return text.length >= 7 ? text.slice(0, 3) + '****' + text.slice(-4) : text.replace(/.(?=.{2})/g, '*')
     },
     submitForm() {
       this.$refs['form'].validate(valid => {
@@ -518,5 +625,11 @@ export default {
 
 .group-action-icon:hover {
   color: #409eff;
+}
+
+.location-tip {
+  margin-left: 12px;
+  color: #909399;
+  font-size: 12px;
 }
 </style>

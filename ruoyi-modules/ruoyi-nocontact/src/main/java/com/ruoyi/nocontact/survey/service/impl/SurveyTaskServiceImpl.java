@@ -1,9 +1,15 @@
 package com.ruoyi.nocontact.survey.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.DateUtils;
 import com.ruoyi.common.core.utils.StringUtils;
 import com.ruoyi.common.core.utils.uuid.IdUtils;
+import com.ruoyi.nocontact.common.NocontactDataScopeHelper;
+import com.ruoyi.nocontact.support.domain.BusinessMessage;
+import com.ruoyi.nocontact.support.service.IBusinessMessageService;
+import com.ruoyi.nocontact.support.service.impl.BusinessMessageServiceImpl;
 import com.ruoyi.nocontact.survey.domain.SurveyEnterprise;
 import com.ruoyi.nocontact.survey.domain.SurveyQuestionnaire;
 import com.ruoyi.nocontact.survey.domain.SurveyTask;
@@ -40,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SurveyTaskServiceImpl implements ISurveyTaskService
 {
     private static final String QUESTIONNAIRE_STATUS_PUBLISHED = "1";
+    private static final String QUESTIONNAIRE_STATUS_COLLECTING = "3";
     private static final String TASK_STATUS_SAMPLED = "1";
     private static final String TASK_STATUS_DISPATCHED = "2";
     private static final String SAMPLE_STATUS_PENDING = "0";
@@ -55,22 +62,28 @@ public class SurveyTaskServiceImpl implements ISurveyTaskService
     private static final String CHANNEL_SMS = "sms";
     private static final String CHANNEL_SITE = "site";
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     @Autowired
     private SurveyTaskMapper taskMapper;
 
     @Autowired
     private SurveyQuestionnaireMapper questionnaireMapper;
 
+    @Autowired
+    private IBusinessMessageService businessMessageService;
+
     @Override
     public List<SurveyTask> selectTaskList(SurveyTask task)
     {
+        NocontactDataScopeHelper.applyDataScope(task, "u", "dept_id", "t", "create_by");
         return taskMapper.selectTaskList(task);
     }
 
     @Override
     public SurveyTask selectTaskById(Long taskId)
     {
-        SurveyTask task = taskMapper.selectTaskById(taskId);
+        SurveyTask task = selectScopedTask(taskId);
         if (task != null)
         {
             task.setSendChannels(splitChannels(task.getSendChannelsText()));
@@ -83,30 +96,39 @@ public class SurveyTaskServiceImpl implements ISurveyTaskService
     @Override
     public SurveyTaskSample selectSampleById(Long sampleId)
     {
-        return taskMapper.selectSampleById(sampleId);
+        SurveyTaskSample sample = taskMapper.selectSampleById(sampleId);
+        if (sample == null)
+        {
+            return null;
+        }
+        return selectScopedTask(sample.getTaskId()) == null ? null : sample;
     }
 
     @Override
     public SurveyTaskTrackingSummary selectTrackingSummary(Long taskId)
     {
+        requireTask(taskId);
         return taskMapper.selectTrackingSummary(taskId);
     }
 
     @Override
     public List<SurveyTaskRegionStat> selectTrackingRegionStats(Long taskId)
     {
+        requireTask(taskId);
         return taskMapper.selectTrackingRegionStats(taskId);
     }
 
     @Override
     public List<SurveyTaskTrackingDetail> selectTrackingDetailList(SurveyTaskTrackingDetail detail)
     {
+        requireTask(detail.getTaskId());
         return taskMapper.selectTrackingDetailList(detail);
     }
 
     @Override
     public List<SurveyTaskResponseTrend> selectTrackingTrend(Long taskId)
     {
+        requireTask(taskId);
         return taskMapper.selectTrackingTrend(taskId);
     }
 
@@ -118,13 +140,17 @@ public class SurveyTaskServiceImpl implements ISurveyTaskService
         task.setSendChannels(normalizeChannels(task.getSendChannels()));
         task.setSendChannelsText(StringUtils.join(task.getSendChannels(), ","));
         task.setStatus(TASK_STATUS_SAMPLED);
-        task.setCreateTime(DateUtils.getNowDate());
-        int rows = taskMapper.insertTask(task);
+        Date now = DateUtils.getNowDate();
+        task.setCreateTime(now);
+        task.setSamplingBatchNo(buildSamplingBatchNo(now));
+        task.setSamplingBatchTime(now);
         List<SurveyEnterprise> selected = selectSamples(task, taskMapper.selectEnterprisePool(task));
         if (selected.isEmpty())
         {
             throw new ServiceException("调研对象池为空，无法生成任务样本");
         }
+        task.setSamplingFilterSnapshot(buildSamplingSnapshot(task, selected));
+        int rows = taskMapper.insertTask(task);
         Date expireTime = DateUtils.addHours(DateUtils.getNowDate(), task.getTokenExpireHours() == null ? 168 : task.getTokenExpireHours());
         for (SurveyEnterprise enterprise : selected)
         {
@@ -137,11 +163,7 @@ public class SurveyTaskServiceImpl implements ISurveyTaskService
     @Transactional(rollbackFor = Exception.class)
     public int dispatchTask(Long taskId, String operName)
     {
-        SurveyTask task = selectTaskById(taskId);
-        if (task == null)
-        {
-            throw new ServiceException("调研任务不存在");
-        }
+        SurveyTask task = requireTask(taskId);
         if (!TASK_STATUS_SAMPLED.equals(task.getStatus()))
         {
             throw new ServiceException("只有已抽样任务允许发卷，当前状态不允许此操作");
@@ -169,24 +191,37 @@ public class SurveyTaskServiceImpl implements ISurveyTaskService
         SurveyTask update = new SurveyTask();
         update.setTaskId(taskId);
         update.setStatus(TASK_STATUS_DISPATCHED);
+        update.setExpectedStatus(task.getStatus());
         update.setDispatchTime(DateUtils.getNowDate());
         update.setUpdateBy(operName);
         update.setUpdateTime(DateUtils.getNowDate());
-        return taskMapper.updateTaskStatus(update);
+        int rows = taskMapper.updateTaskStatus(update);
+        if (rows == 0)
+        {
+            throw new ServiceException("调研任务状态已变化，请刷新后重试");
+        }
+        promoteQuestionnaireToCollecting(task.getQuestionnaireId(), operName);
+        createDispatchMessage(task, operName);
+        return rows;
     }
 
     @Override
     public int deleteTaskByIds(Long[] taskIds)
     {
+        for (Long taskId : taskIds)
+        {
+            requireTask(taskId);
+        }
         return taskMapper.deleteTaskByIds(taskIds);
     }
 
     private void validateTask(SurveyTask task)
     {
         SurveyQuestionnaire questionnaire = questionnaireMapper.selectQuestionnaireById(task.getQuestionnaireId());
-        if (questionnaire == null || !QUESTIONNAIRE_STATUS_PUBLISHED.equals(questionnaire.getStatus()))
+        if (questionnaire == null || (!QUESTIONNAIRE_STATUS_PUBLISHED.equals(questionnaire.getStatus())
+                && !QUESTIONNAIRE_STATUS_COLLECTING.equals(questionnaire.getStatus())))
         {
-            throw new ServiceException("调研任务只能绑定已发布问卷版本");
+            throw new ServiceException("调研任务只能绑定已发布或收集中问卷版本");
         }
         task.setSampleSource(StringUtils.defaultIfBlank(task.getSampleSource(), SOURCE_ALL));
         task.setSamplingMethod(StringUtils.defaultIfBlank(task.getSamplingMethod(), SAMPLING_RANDOM));
@@ -225,6 +260,71 @@ public class SurveyTaskServiceImpl implements ISurveyTaskService
         List<SurveyEnterprise> randomPool = new ArrayList<SurveyEnterprise>(pool);
         Collections.shuffle(randomPool);
         return randomPool.subList(0, Math.min(task.getSampleSize(), randomPool.size()));
+    }
+
+    private void createDispatchMessage(SurveyTask task, String operName)
+    {
+        BusinessMessage message = new BusinessMessage();
+        message.setMessageType(BusinessMessageServiceImpl.SURVEY_DISPATCHED);
+        message.setTitle("问卷任务已发放");
+        message.setContent("调研任务“" + task.getTaskName() + "”已生成发送记录");
+        message.setBusinessType("survey");
+        message.setBusinessId(task.getTaskId());
+        message.setJumpTarget("/survey/tracking?taskId=" + task.getTaskId());
+        message.setReceiverUserName(operName);
+        message.setCreateBy(operName);
+        if (businessMessageService.createMessage(message) <= 0)
+        {
+            throw new ServiceException("问卷发卷消息创建失败");
+        }
+    }
+
+    private void promoteQuestionnaireToCollecting(Long questionnaireId, String operName)
+    {
+        SurveyQuestionnaire update = new SurveyQuestionnaire();
+        update.setQuestionnaireId(questionnaireId);
+        update.setCurrentStatus(QUESTIONNAIRE_STATUS_PUBLISHED);
+        update.setStatus(QUESTIONNAIRE_STATUS_COLLECTING);
+        update.setUpdateBy(operName);
+        update.setUpdateTime(DateUtils.getNowDate());
+        questionnaireMapper.updateQuestionnaireStatus(update);
+    }
+
+    private String buildSamplingBatchNo(Date now)
+    {
+        return "TASK-" + DateUtils.dateTimeNow(DateUtils.YYYYMMDDHHMMSS) + "-" + IdUtils.fastSimpleUUID().substring(0, 6).toUpperCase();
+    }
+
+    private String buildSamplingSnapshot(SurveyTask task, List<SurveyEnterprise> selected)
+    {
+        Map<String, Object> snapshot = new LinkedHashMap<String, Object>();
+        snapshot.put("sampleSource", task.getSampleSource());
+        snapshot.put("samplingMethod", task.getSamplingMethod());
+        snapshot.put("sampleSize", task.getSampleSize());
+        snapshot.put("groupId", task.getGroupId());
+        snapshot.put("enterpriseIds", task.getEnterpriseIds());
+        snapshot.put("selectedEnterpriseIds", selected.stream().map(SurveyEnterprise::getEnterpriseId).collect(Collectors.toList()));
+        snapshot.put("selectedEnterprises", selected.stream().map(this::samplingSnapshotItem).collect(Collectors.toList()));
+        try
+        {
+            return objectMapper.writeValueAsString(snapshot);
+        }
+        catch (JsonProcessingException e)
+        {
+            throw new ServiceException("抽样筛选快照序列化失败");
+        }
+    }
+
+    private Map<String, Object> samplingSnapshotItem(SurveyEnterprise enterprise)
+    {
+        Map<String, Object> row = new LinkedHashMap<String, Object>();
+        row.put("enterpriseId", enterprise.getEnterpriseId());
+        row.put("enterpriseName", enterprise.getEnterpriseName());
+        row.put("creditCode", enterprise.getCreditCode());
+        row.put("regionName", enterprise.getRegionName());
+        row.put("industryCategory", enterprise.getIndustryCategory());
+        row.put("enterpriseScale", enterprise.getEnterpriseScale());
+        return row;
     }
 
     private List<SurveyEnterprise> stratifiedSample(List<SurveyEnterprise> pool, int sampleSize)
@@ -298,6 +398,7 @@ public class SurveyTaskServiceImpl implements ISurveyTaskService
         record.setReceiver(CHANNEL_SMS.equals(channel) ? sample.getContactPhone() : sample.getEnterpriseName());
         record.setContent("请通过问卷链接完成调研：" + sample.getQrContent());
         record.setSendStatus("0");
+        record.setSubmitStatus("0");
         record.setCreateTime(DateUtils.getNowDate());
         return record;
     }
@@ -343,5 +444,23 @@ public class SurveyTaskServiceImpl implements ISurveyTaskService
             }
         }
         return rows.isEmpty() ? new String[] { CHANNEL_SMS, CHANNEL_SITE } : rows.toArray(new String[0]);
+    }
+
+    private SurveyTask selectScopedTask(Long taskId)
+    {
+        SurveyTask query = new SurveyTask();
+        query.setTaskId(taskId);
+        NocontactDataScopeHelper.applyDataScope(query, "u", "dept_id", "t", "create_by");
+        return taskMapper.selectTaskByScope(query);
+    }
+
+    private SurveyTask requireTask(Long taskId)
+    {
+        SurveyTask task = selectTaskById(taskId);
+        if (task == null)
+        {
+            throw new ServiceException("调研任务不存在");
+        }
+        return task;
     }
 }

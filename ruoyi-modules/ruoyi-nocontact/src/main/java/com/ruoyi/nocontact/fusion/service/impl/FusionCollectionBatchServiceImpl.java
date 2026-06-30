@@ -18,6 +18,9 @@ import com.ruoyi.nocontact.fusion.domain.FusionIndicator;
 import com.ruoyi.nocontact.fusion.mapper.FusionCollectionBatchMapper;
 import com.ruoyi.nocontact.fusion.mapper.FusionIndicatorMapper;
 import com.ruoyi.nocontact.fusion.service.IFusionCollectionBatchService;
+import com.ruoyi.nocontact.support.domain.BusinessMessage;
+import com.ruoyi.nocontact.support.service.IBusinessMessageService;
+import com.ruoyi.nocontact.support.service.impl.BusinessMessageServiceImpl;
 import com.ruoyi.nocontact.warning.service.IWarningEvaluationService;
 import com.ruoyi.system.api.domain.SysRole;
 import com.ruoyi.system.api.model.LoginUser;
@@ -49,6 +52,9 @@ public class FusionCollectionBatchServiceImpl implements IFusionCollectionBatchS
 
     @Autowired
     private IWarningEvaluationService warningEvaluationService;
+
+    @Autowired
+    private IBusinessMessageService businessMessageService;
 
     @Override
     public List<FusionCollectionBatch> selectBatchList(FusionCollectionBatch batch)
@@ -170,6 +176,7 @@ public class FusionCollectionBatchServiceImpl implements IFusionCollectionBatchS
         }
         insertAuditLog(batchId, batch.getBatchStatus(), "rejected", "审核驳回", opinion, operName);
         markBatchItemsCurrent(batchId, "0", operName);
+        createRejectMessage(batchId, opinion, operName);
         return rows;
     }
 
@@ -335,6 +342,20 @@ public class FusionCollectionBatchServiceImpl implements IFusionCollectionBatchS
             return null;
         }
         return item;
+    }
+
+    private void createRejectMessage(Long batchId, String opinion, String operName)
+    {
+        BusinessMessage message = new BusinessMessage();
+        message.setMessageType(BusinessMessageServiceImpl.AUDIT_REJECTED);
+        message.setTitle("采集数据审核被驳回");
+        message.setContent(StringUtils.defaultIfBlank(opinion, "请根据驳回意见重新提交采集数据"));
+        message.setBusinessType("collection");
+        message.setBusinessId(batchId);
+        message.setJumpTarget("/nocontact/collection/audit?batchId=" + batchId);
+        message.setReceiverUserName(operName);
+        message.setCreateBy(operName);
+        businessMessageService.createMessage(message);
     }
 
     private FusionIndicator resolveIndicator(FusionCollectionImportRow row)

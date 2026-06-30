@@ -34,9 +34,10 @@ export default {
       const total = this.statusStats.reduce((sum, item) => sum + Number(item.count_value || 0), 0)
       return [
         { label: '总问题数', value: total },
+        { label: '待整改', value: this.valueOf('pending_rectification') + this.valueOf('rework') },
         { label: '整改中', value: this.valueOf('rectifying') },
         { label: '待审核', value: this.valueOf('pending_review') },
-        { label: '已归档', value: this.valueOf('archived') }
+        { label: '已关闭', value: this.valueOf('closed') + this.valueOf('review_passed') + this.valueOf('archived') }
       ]
     }
   },

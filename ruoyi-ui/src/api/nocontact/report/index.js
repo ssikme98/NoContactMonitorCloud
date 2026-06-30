@@ -53,3 +53,18 @@ export function generateReportTask(taskId) {
     method: 'put'
   })
 }
+
+export function listReportSnapshot(taskId) {
+  return request({
+    url: '/nocontact/report/task/' + taskId + '/snapshot/list',
+    method: 'get'
+  })
+}
+
+export function reportTaskDownloadUrl(taskId, fileType) {
+  return '/nocontact/report/task/' + taskId + '/download/' + fileType
+}
+
+export function reportSnapshotDownloadUrl(snapshotId, fileType) {
+  return '/nocontact/report/task/snapshot/' + snapshotId + '/download/' + fileType
+}

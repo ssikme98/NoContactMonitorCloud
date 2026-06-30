@@ -1,5 +1,5 @@
 <template>
-  <survey-task />
+  <survey-task entry-mode="analytics" />
 </template>
 
 <script>

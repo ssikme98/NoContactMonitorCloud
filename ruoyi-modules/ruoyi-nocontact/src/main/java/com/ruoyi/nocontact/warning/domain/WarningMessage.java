@@ -1,5 +1,6 @@
 package com.ruoyi.nocontact.warning.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.annotation.Excel;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import java.math.BigDecimal;
@@ -70,12 +71,15 @@ public class WarningMessage extends BaseEntity
     private Long sourceItemId;
 
     @Excel(name = "触发时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date triggerTime;
 
     @Excel(name = "最近命中时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date latestHitTime;
 
     @Excel(name = "处理时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date handleTime;
 
     private String handleOpinion;

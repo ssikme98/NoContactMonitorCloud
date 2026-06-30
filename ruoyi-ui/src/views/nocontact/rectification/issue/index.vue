@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <div v-if="isDetailEntry" class="entry-title">问题详情与处理流程</div>
     <el-form :model="queryParams" size="small" :inline="true" label-width="80px">
       <el-form-item label="关键词"><el-input v-model="queryParams.issueTitle" clearable placeholder="编号/标题" @keyup.enter.native="handleQuery" /></el-form-item>
       <el-form-item label="状态"><el-select v-model="queryParams.issueStatus" clearable placeholder="全部"><el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
@@ -8,24 +9,27 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增问题</el-button></el-col>
+      <el-col v-if="showAddAction" :span="1.5"><el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增问题</el-button></el-col>
     </el-row>
 
     <el-table v-loading="loading" :data="issueList">
       <el-table-column label="问题编号" prop="issueCode" width="160" />
       <el-table-column label="问题标题" prop="issueTitle" min-width="180" show-overflow-tooltip />
-      <el-table-column label="级别" prop="warningLevel" width="80" />
+      <el-table-column label="级别" width="80">
+        <template slot-scope="scope">{{ warningLevelText(scope.row.warningLevel) }}</template>
+      </el-table-column>
       <el-table-column label="地区" prop="regionName" width="120" />
       <el-table-column label="责任单位" prop="responsibleUnitName" min-width="150" show-overflow-tooltip />
       <el-table-column label="状态" prop="issueStatus" width="110"><template slot-scope="scope">{{ statusText(scope.row.issueStatus) }}</template></el-table-column>
       <el-table-column label="期限" prop="deadline" width="160" />
       <el-table-column label="操作" width="280" fixed="right">
         <template slot-scope="scope">
-          <el-button type="text" size="mini" icon="el-icon-view" @click="handleDetail(scope.row)">详情</el-button>
-          <el-button v-if="['pending_dispatch','rejected'].includes(scope.row.issueStatus)" type="text" size="mini" @click="openAction(scope.row,'dispatch')">分配</el-button>
+          <el-button type="text" size="mini" icon="el-icon-view" @click="openDetail(scope.row)">{{ detailButtonText }}</el-button>
+          <el-button v-if="scope.row.issueStatus==='pending_dispatch'" type="text" size="mini" @click="openAction(scope.row,'dispatch')">分配</el-button>
+          <el-button v-if="scope.row.issueStatus==='rejected'" type="text" size="mini" @click="openAction(scope.row,'dispatch')">重新分配</el-button>
+          <el-button v-if="['pending_rectification','rework'].includes(scope.row.issueStatus)" type="text" size="mini" @click="startRectification(scope.row)">{{ scope.row.issueStatus==='rework' ? '开始返工' : '开始整改' }}</el-button>
           <el-button v-if="scope.row.issueStatus==='rectifying'" type="text" size="mini" @click="openAction(scope.row,'submit')">提交</el-button>
           <el-button v-if="scope.row.issueStatus==='pending_review'" type="text" size="mini" @click="openAction(scope.row,'review')">审核</el-button>
-          <el-button v-if="scope.row.issueStatus==='review_passed'" type="text" size="mini" @click="archive(scope.row)">归档</el-button>
           <el-button type="text" size="mini" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
@@ -92,13 +96,21 @@
 </template>
 
 <script>
-import { listIssue, getIssue, addIssue, updateIssue, dispatchIssue, submitIssue, reviewIssue, archiveIssue, delIssue } from '@/api/nocontact/rectification/issue'
+import { listIssue, getIssue, addIssue, updateIssue, dispatchIssue, startIssue, submitIssue, reviewIssue, delIssue } from '@/api/nocontact/rectification/issue'
+import { warningLevelText } from '@/utils/nocontactDisplay'
 
 export default {
   name: 'RectificationIssue',
+  props: {
+    entryMode: {
+      type: String,
+      default: 'manage'
+    }
+  },
   data() {
     return {
       loading: false,
+      entryBootstrapped: false,
       open: false,
       detailOpen: false,
       actionOpen: false,
@@ -114,11 +126,12 @@ export default {
       form: {},
       statusOptions: [
         { label: '待分配', value: 'pending_dispatch' },
+        { label: '待整改', value: 'pending_rectification' },
         { label: '整改中', value: 'rectifying' },
         { label: '待审核', value: 'pending_review' },
-        { label: '审核通过', value: 'review_passed' },
         { label: '已驳回', value: 'rejected' },
-        { label: '已归档', value: 'archived' }
+        { label: '返工中', value: 'rework' },
+        { label: '已关闭', value: 'closed' }
       ],
       rules: { issueTitle: [{ required: true, message: '问题标题不能为空', trigger: 'blur' }] }
     }
@@ -126,18 +139,50 @@ export default {
   created() {
     this.getList()
   },
+  computed: {
+    isDetailEntry() {
+      return this.entryMode === 'detail'
+    },
+    showAddAction() {
+      return !this.isDetailEntry
+    },
+    detailButtonText() {
+      return this.isDetailEntry ? '详情流程' : '详情'
+    }
+  },
   methods: {
+    warningLevelText,
     getList() {
       this.loading = true
       listIssue(this.queryParams).then(response => {
         this.issueList = response.rows || []
         this.total = response.total || 0
         this.loading = false
+        this.bootstrapEntryMode()
       })
+    },
+    bootstrapEntryMode() {
+      if (this.entryBootstrapped) {
+        return
+      }
+      if (this.isDetailEntry && this.issueList.length) {
+        this.entryBootstrapped = true
+        this.openDetail(this.issueList[0])
+        return
+      }
+      if (!this.isDetailEntry) {
+        this.entryBootstrapped = true
+      }
     },
     statusText(value) {
       const item = this.statusOptions.find(option => option.value === value)
-      return item ? item.label : value
+      if (item) {
+        return item.label
+      }
+      if (value === 'review_passed' || value === 'archived') {
+        return '已关闭'
+      }
+      return value
     },
     handleQuery() {
       this.queryParams.pageNum = 1
@@ -169,12 +214,23 @@ export default {
         this.detailOpen = true
       })
     },
+    openDetail(row) {
+      this.handleDetail(row)
+    },
     openAction(row, type) {
       this.actionRow = row
       this.actionType = type
       this.actionForm = { approved: true }
-      this.actionTitle = type === 'dispatch' ? '分配整改' : type === 'submit' ? '提交整改' : '审核整改'
+      this.actionTitle = type === 'dispatch'
+        ? (row.issueStatus === 'rejected' ? '重新分配整改' : '分配整改')
+        : type === 'submit' ? '提交整改' : '审核整改'
       this.actionOpen = true
+    },
+    startRectification(row) {
+      startIssue(row.issueId).then(() => {
+        this.$modal.msgSuccess(row.issueStatus === 'rework' ? '已开始返工' : '已开始整改')
+        this.getList()
+      })
     },
     submitAction() {
       const id = this.actionRow.issueId
@@ -189,12 +245,6 @@ export default {
         this.getList()
       })
     },
-    archive(row) {
-      archiveIssue(row.issueId).then(() => {
-        this.$modal.msgSuccess('归档成功')
-        this.getList()
-      })
-    },
     handleDelete(row) {
       this.$modal.confirm('确认删除问题"' + row.issueTitle + '"？').then(() => delIssue(row.issueId)).then(() => {
         this.$modal.msgSuccess('删除成功')
@@ -206,6 +256,13 @@ export default {
 </script>
 
 <style scoped>
+.entry-title {
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
 .mt16 {
   margin-top: 16px;
 }

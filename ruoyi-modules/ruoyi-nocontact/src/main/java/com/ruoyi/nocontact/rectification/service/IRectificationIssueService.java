@@ -12,17 +12,19 @@ public interface IRectificationIssueService
 
     int insertIssue(RectificationIssue issue, String operName);
 
+    int createFromWarning(Long messageId, RectificationIssue issue, String operName);
+
     int updateIssue(RectificationIssue issue, String operName);
 
     int deleteIssueByIds(Long[] issueIds);
 
     int dispatch(Long issueId, RectificationIssue form, String operName);
 
+    int start(Long issueId, String operName);
+
     int submit(Long issueId, RectificationIssue form, String operName);
 
     int review(Long issueId, boolean approved, RectificationIssue form, String operName);
-
-    int archive(Long issueId, String operName);
 
     Map<String, Object> dashboard();
 }

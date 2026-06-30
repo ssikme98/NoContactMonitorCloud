@@ -9,7 +9,13 @@ public interface RectificationIssueMapper
 {
     List<RectificationIssue> selectIssueList(RectificationIssue issue);
 
+    int countIssueList(RectificationIssue issue);
+
     RectificationIssue selectIssueById(Long issueId);
+
+    RectificationIssue selectIssueByScope(RectificationIssue issue);
+
+    RectificationIssue selectActiveIssueBySourceWarningId(Long sourceWarningId);
 
     int insertIssue(RectificationIssue issue);
 
@@ -23,7 +29,7 @@ public interface RectificationIssueMapper
 
     List<RectificationLog> selectLogsByIssueId(Long issueId);
 
-    List<Map<String, Object>> selectStatusStats();
+    List<Map<String, Object>> selectStatusStats(RectificationIssue issue);
 
-    List<Map<String, Object>> selectRegionStats();
+    List<Map<String, Object>> selectRegionStats(RectificationIssue issue);
 }

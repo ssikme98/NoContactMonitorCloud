@@ -51,6 +51,12 @@
             <el-tab-pane label="修改密码" name="resetPwd">
               <resetPwd />
             </el-tab-pane>
+            <el-tab-pane label="我的消息" name="message">
+              <business-message-center />
+            </el-tab-pane>
+            <el-tab-pane label="我的任务" name="todo">
+              <todo-center />
+            </el-tab-pane>
           </el-tabs>
         </el-card>
       </el-col>
@@ -62,11 +68,13 @@
 import userAvatar from "./userAvatar"
 import userInfo from "./userInfo"
 import resetPwd from "./resetPwd"
+import BusinessMessageCenter from "./components/BusinessMessageCenter"
+import TodoCenter from "./components/TodoCenter"
 import { getUserProfile } from "@/api/system/user"
 
 export default {
   name: "Profile",
-  components: { userAvatar, userInfo, resetPwd },
+  components: { userAvatar, userInfo, resetPwd, BusinessMessageCenter, TodoCenter },
   data() {
     return {
       user: {},
@@ -76,7 +84,7 @@ export default {
     }
   },
   created() {
-    const activeTab = this.$route.params && this.$route.params.activeTab
+    const activeTab = (this.$route.params && this.$route.params.activeTab) || this.$route.query.activeTab
     if (activeTab) {
       this.selectedTab = activeTab
     }

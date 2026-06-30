@@ -17,6 +17,8 @@ public interface IWarningMessageService
 
     public int updateMessageStatus(Long messageId, String status, String opinion, String operName);
 
+    public int closeFromRectification(Long messageId, String opinion, String operName);
+
     public int deleteMessageByIds(Long[] messageIds);
 
     public Map<String, Object> selectDashboard();

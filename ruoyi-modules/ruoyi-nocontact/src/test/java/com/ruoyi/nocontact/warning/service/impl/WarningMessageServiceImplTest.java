@@ -66,18 +66,15 @@ class WarningMessageServiceImplTest
     }
 
     @Test
-    void processingWarningCanClose()
+    void manualCloseIsRejected()
     {
         when(messageMapper.selectMessageByScope(any(WarningMessage.class))).thenReturn(message("processing"));
-        when(messageMapper.updateMessageStatus(any(WarningMessage.class))).thenReturn(1);
 
-        int rows = service.updateMessageStatus(4001L, "closed", "已核查", "admin");
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> service.updateMessageStatus(4001L, "closed", "已核查", "admin"));
 
-        assertEquals(1, rows);
-        ArgumentCaptor<WarningMessage> captor = ArgumentCaptor.forClass(WarningMessage.class);
-        verify(messageMapper).updateMessageStatus(captor.capture());
-        assertEquals("processing", captor.getValue().getExpectedStatus());
-        verify(messageMapper).insertHandleLog(any());
+        assertEquals("预警关闭需通过整改审核闭环完成", exception.getMessage());
+        verify(messageMapper, never()).updateMessageStatus(any());
     }
 
     @Test
@@ -112,6 +109,34 @@ class WarningMessageServiceImplTest
         assertThrows(ServiceException.class, () -> service.updateMessageStatus(4001L, "handled", "旧状态", "admin"));
 
         verify(messageMapper, never()).updateMessageStatus(any());
+    }
+
+    @Test
+    void rectificationCloseUpdatesWarningToClosed()
+    {
+        when(messageMapper.selectMessageById(4001L)).thenReturn(message("processing"));
+        when(messageMapper.updateMessageStatus(any(WarningMessage.class))).thenReturn(1);
+
+        int rows = service.closeFromRectification(4001L, "整改审核通过，关闭预警", "reviewer");
+
+        assertEquals(1, rows);
+        ArgumentCaptor<WarningMessage> captor = ArgumentCaptor.forClass(WarningMessage.class);
+        verify(messageMapper).updateMessageStatus(captor.capture());
+        assertEquals("closed", captor.getValue().getMessageStatus());
+        assertEquals("processing", captor.getValue().getExpectedStatus());
+        verify(messageMapper).insertHandleLog(any());
+    }
+
+    @Test
+    void rectificationCloseIgnoresAlreadyClosedWarning()
+    {
+        when(messageMapper.selectMessageById(4001L)).thenReturn(message("closed"));
+
+        int rows = service.closeFromRectification(4001L, "重复关闭", "reviewer");
+
+        assertEquals(0, rows);
+        verify(messageMapper, never()).updateMessageStatus(any());
+        verify(messageMapper, never()).insertHandleLog(any());
     }
 
     @Test

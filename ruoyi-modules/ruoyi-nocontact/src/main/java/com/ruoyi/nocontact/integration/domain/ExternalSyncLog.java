@@ -1,5 +1,6 @@
 package com.ruoyi.nocontact.integration.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import java.util.Date;
 
@@ -20,6 +21,7 @@ public class ExternalSyncLog extends BaseEntity
     private Long durationMs;
     private String errorMessage;
     private Integer retryCount;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date syncTime;
 
     public Long getLogId()

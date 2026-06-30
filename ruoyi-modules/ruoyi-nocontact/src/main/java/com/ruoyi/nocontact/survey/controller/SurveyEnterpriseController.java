@@ -43,6 +43,7 @@ public class SurveyEnterpriseController extends BaseController
     {
         startPage();
         List<SurveyEnterprise> list = enterpriseService.selectEnterpriseList(enterprise);
+        maskListSensitiveFields(list);
         return getDataTable(list);
     }
 
@@ -114,5 +115,40 @@ public class SurveyEnterpriseController extends BaseController
     public AjaxResult remove(@PathVariable Long[] enterpriseIds)
     {
         return toAjax(enterpriseService.deleteEnterpriseByIds(enterpriseIds));
+    }
+
+    private void maskListSensitiveFields(List<SurveyEnterprise> list)
+    {
+        if (list == null)
+        {
+            return;
+        }
+        for (SurveyEnterprise enterprise : list)
+        {
+            if (enterprise == null)
+            {
+                continue;
+            }
+            enterprise.setCreditCode(maskCreditCode(enterprise.getCreditCode()));
+            enterprise.setContactPhone(maskPhone(enterprise.getContactPhone()));
+        }
+    }
+
+    private String maskCreditCode(String value)
+    {
+        if (value == null || value.length() == 0)
+        {
+            return value;
+        }
+        return value.length() <= 8 ? value.replaceAll(".(?=.{2})", "*") : value.substring(0, 4) + "**********" + value.substring(value.length() - 4);
+    }
+
+    private String maskPhone(String value)
+    {
+        if (value == null || value.length() == 0)
+        {
+            return value;
+        }
+        return value.length() >= 7 ? value.substring(0, 3) + "****" + value.substring(value.length() - 4) : value.replaceAll(".(?=.{2})", "*");
     }
 }

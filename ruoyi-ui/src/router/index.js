@@ -97,6 +97,12 @@ export const constantRoutes = [
         component: () => import('@/views/system/user/profile/index'),
         name: 'Profile',
         meta: { title: '个人中心', icon: 'user' }
+      },
+      {
+        path: 'profile/:activeTab',
+        component: () => import('@/views/system/user/profile/index'),
+        name: 'ProfileTab',
+        meta: { title: '个人中心', icon: 'user' }
       }
     ]
   }

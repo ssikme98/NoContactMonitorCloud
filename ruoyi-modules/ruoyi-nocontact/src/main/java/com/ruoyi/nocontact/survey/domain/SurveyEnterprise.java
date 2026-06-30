@@ -32,11 +32,11 @@ public class SurveyEnterprise extends BaseEntity
     @Excel(name = "行业分类")
     private String industryCategory;
 
-    /** 地区编码 */
+    /** 湖南省内城市编码 */
     private String regionCode;
 
-    /** 地区名称 */
-    @Excel(name = "地区")
+    /** 湖南省内城市名称 */
+    @Excel(name = "城市")
     private String regionName;
 
     /** 企业规模 */
@@ -50,6 +50,22 @@ public class SurveyEnterprise extends BaseEntity
     /** 联系电话 */
     @Excel(name = "联系电话")
     private String contactPhone;
+
+    /** 详细地址 */
+    @Excel(name = "详细地址")
+    private String address;
+
+    /** 经度 */
+    private String longitude;
+
+    /** 纬度 */
+    private String latitude;
+
+    /** 地理编码状态 */
+    private String geocodeStatus;
+
+    /** 地理编码说明 */
+    private String geocodeMessage;
 
     /** 状态（0正常 1停用） */
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
@@ -165,6 +181,56 @@ public class SurveyEnterprise extends BaseEntity
         this.status = status;
     }
 
+    public String getAddress()
+    {
+        return address;
+    }
+
+    public void setAddress(String address)
+    {
+        this.address = address;
+    }
+
+    public String getLongitude()
+    {
+        return longitude;
+    }
+
+    public void setLongitude(String longitude)
+    {
+        this.longitude = longitude;
+    }
+
+    public String getLatitude()
+    {
+        return latitude;
+    }
+
+    public void setLatitude(String latitude)
+    {
+        this.latitude = latitude;
+    }
+
+    public String getGeocodeStatus()
+    {
+        return geocodeStatus;
+    }
+
+    public void setGeocodeStatus(String geocodeStatus)
+    {
+        this.geocodeStatus = geocodeStatus;
+    }
+
+    public String getGeocodeMessage()
+    {
+        return geocodeMessage;
+    }
+
+    public void setGeocodeMessage(String geocodeMessage)
+    {
+        this.geocodeMessage = geocodeMessage;
+    }
+
     public Long getGroupId()
     {
         return groupId;
@@ -198,6 +264,11 @@ public class SurveyEnterprise extends BaseEntity
                 .append("enterpriseScale", getEnterpriseScale())
                 .append("contactName", getContactName())
                 .append("contactPhone", getContactPhone())
+                .append("address", getAddress())
+                .append("longitude", getLongitude())
+                .append("latitude", getLatitude())
+                .append("geocodeStatus", getGeocodeStatus())
+                .append("geocodeMessage", getGeocodeMessage())
                 .append("status", getStatus())
                 .append("groupId", getGroupId())
                 .append("groupIds", getGroupIds())

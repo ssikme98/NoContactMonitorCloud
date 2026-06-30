@@ -22,6 +22,8 @@ public interface SurveyTaskMapper
 
     public SurveyTask selectTaskById(Long taskId);
 
+    public SurveyTask selectTaskByScope(SurveyTask task);
+
     public List<SurveyTaskSample> selectSamplesByTaskId(Long taskId);
 
     public List<SurveyTaskSendRecord> selectSendRecordsByTaskId(Long taskId);
@@ -31,6 +33,8 @@ public interface SurveyTaskMapper
     public List<SurveyEnterprise> selectEnterprisePool(SurveyTask task);
 
     public int countSendRecordsByTaskId(Long taskId);
+
+    public int countPendingTodoSamples(SurveyTask task);
 
     public SurveyTaskTrackingSummary selectTrackingSummary(Long taskId);
 
@@ -53,4 +57,6 @@ public interface SurveyTaskMapper
     public int deleteSendRecordsByTaskId(Long taskId);
 
     public int updateSamplesSent(Long taskId);
+
+    public int updateSendRecordSubmitted(@Param("sampleId") Long sampleId, @Param("recoveryTime") java.util.Date recoveryTime);
 }

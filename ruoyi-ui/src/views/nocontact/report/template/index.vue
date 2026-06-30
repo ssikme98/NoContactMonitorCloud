@@ -12,10 +12,12 @@
 
     <el-table v-loading="loading" :data="templateList">
       <el-table-column label="模板名称" prop="templateName" min-width="180" />
-      <el-table-column label="报告类型" prop="reportType" width="120" />
+      <el-table-column label="报告类型" width="120">
+        <template slot-scope="scope">{{ reportTypeText(scope.row.reportType) }}</template>
+      </el-table-column>
       <el-table-column label="章节配置" prop="sections" min-width="240" show-overflow-tooltip />
       <el-table-column label="版本" prop="versionNo" width="80" align="right" />
-      <el-table-column label="状态" prop="status" width="80"><template slot-scope="scope">{{ scope.row.status === '0' ? '启用' : '停用' }}</template></el-table-column>
+      <el-table-column label="状态" prop="status" width="80"><template slot-scope="scope">{{ binaryStatusText(scope.row.status) }}</template></el-table-column>
       <el-table-column label="操作" width="140" align="center">
         <template slot-scope="scope">
           <el-button type="text" size="mini" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
@@ -44,6 +46,7 @@
 
 <script>
 import { listTemplate, addTemplate, updateTemplate, delTemplate } from '@/api/nocontact/report'
+import { binaryStatusText, reportTypeText } from '@/utils/nocontactDisplay'
 
 export default {
   name: 'ReportTemplate',
@@ -63,6 +66,8 @@ export default {
     this.getList()
   },
   methods: {
+    binaryStatusText,
+    reportTypeText,
     getList() {
       this.loading = true
       listTemplate(this.queryParams).then(response => {

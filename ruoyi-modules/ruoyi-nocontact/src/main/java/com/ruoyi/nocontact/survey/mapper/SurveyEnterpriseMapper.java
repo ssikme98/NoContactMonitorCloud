@@ -30,4 +30,6 @@ public interface SurveyEnterpriseMapper
     public int deleteEnterpriseGroupByEnterpriseIds(Long[] enterpriseIds);
 
     public int batchEnterpriseGroup(List<SurveyEnterpriseGroupRel> list);
+
+    public int updateEnterpriseLocation(SurveyEnterprise enterprise);
 }

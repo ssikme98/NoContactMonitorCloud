@@ -52,28 +52,32 @@ public class WarningMessageServiceImpl implements IWarningMessageService
         {
             throw new ServiceException("预警消息不存在");
         }
-        assertAllowedTransition(existing.getMessageStatus(), status);
-        WarningMessage message = new WarningMessage();
-        message.setMessageId(messageId);
-        message.setMessageStatus(status);
-        message.setExpectedStatus(existing.getMessageStatus());
-        message.setHandleOpinion(opinion);
-        message.setUpdateBy(operName);
-        message.setUpdateTime(DateUtils.getNowDate());
-        if ("closed".equals(status) || "ignored".equals(status))
+        if ("closed".equals(status))
         {
-            message.setHandleTime(DateUtils.getNowDate());
+            throw new ServiceException("预警关闭需通过整改审核闭环完成");
         }
-        int rows = messageMapper.updateMessageStatus(message);
-        if (rows == 0)
+        assertAllowedManualTransition(existing.getMessageStatus(), status);
+        return doUpdateStatus(existing, status, opinion, operName);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int closeFromRectification(Long messageId, String opinion, String operName)
+    {
+        WarningMessage existing = messageMapper.selectMessageById(messageId);
+        if (existing == null)
         {
-            throw new ServiceException("预警消息状态已变化，请刷新后重试");
+            throw new ServiceException("预警消息不存在");
         }
-        if (rows > 0)
+        if ("closed".equals(existing.getMessageStatus()) || "ignored".equals(existing.getMessageStatus()))
         {
-            insertHandleLog(existing.getMessageId(), existing.getMessageStatus(), status, opinion, operName);
+            return 0;
         }
-        return rows;
+        if (!"pending".equals(existing.getMessageStatus()) && !"processing".equals(existing.getMessageStatus()))
+        {
+            throw new ServiceException("当前预警状态不允许整改闭环关闭：" + existing.getMessageStatus());
+        }
+        return doUpdateStatus(existing, "closed", opinion, operName);
     }
 
     @Override
@@ -106,9 +110,31 @@ public class WarningMessageServiceImpl implements IWarningMessageService
         return data;
     }
 
-    private void assertAllowedTransition(String fromStatus, String toStatus)
+    private int doUpdateStatus(WarningMessage existing, String status, String opinion, String operName)
     {
-        if (!"processing".equals(toStatus) && !"closed".equals(toStatus) && !"ignored".equals(toStatus))
+        WarningMessage message = new WarningMessage();
+        message.setMessageId(existing.getMessageId());
+        message.setMessageStatus(status);
+        message.setExpectedStatus(existing.getMessageStatus());
+        message.setHandleOpinion(opinion);
+        message.setUpdateBy(operName);
+        message.setUpdateTime(DateUtils.getNowDate());
+        if ("closed".equals(status) || "ignored".equals(status))
+        {
+            message.setHandleTime(DateUtils.getNowDate());
+        }
+        int rows = messageMapper.updateMessageStatus(message);
+        if (rows == 0)
+        {
+            throw new ServiceException("预警消息状态已变化，请刷新后重试");
+        }
+        insertHandleLog(existing.getMessageId(), existing.getMessageStatus(), status, opinion, operName);
+        return rows;
+    }
+
+    private void assertAllowedManualTransition(String fromStatus, String toStatus)
+    {
+        if (!"processing".equals(toStatus) && !"ignored".equals(toStatus))
         {
             throw new ServiceException("不支持的预警状态：" + toStatus);
         }
@@ -116,11 +142,11 @@ public class WarningMessageServiceImpl implements IWarningMessageService
         {
             throw new ServiceException("已关闭或已忽略的预警不允许再次处理");
         }
-        if ("pending".equals(fromStatus))
+        if ("pending".equals(fromStatus) && ("processing".equals(toStatus) || "ignored".equals(toStatus)))
         {
             return;
         }
-        if ("processing".equals(fromStatus) && ("closed".equals(toStatus) || "ignored".equals(toStatus)))
+        if ("processing".equals(fromStatus) && "ignored".equals(toStatus))
         {
             return;
         }

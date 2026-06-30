@@ -13,6 +13,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="samplingMethod"   column="sampling_method"    />
         <result property="sampleSize"       column="sample_size"        />
         <result property="groupId"          column="group_id"           />
+        <result property="samplingBatchNo"  column="sampling_batch_no"  />
+        <result property="samplingBatchTime" column="sampling_batch_time" />
+        <result property="samplingFilterSnapshot" column="sampling_filter_snapshot" />
         <result property="tokenExpireHours" column="token_expire_hours" />
         <result property="sendChannelsText" column="send_channels"      />
         <result property="status"           column="status"             />
@@ -51,6 +54,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="receiver"    column="receiver"     />
         <result property="content"     column="content"      />
         <result property="sendStatus"  column="send_status"  />
+        <result property="submitStatus" column="submit_status" />
+        <result property="recoveryTime" column="recovery_time" />
         <result property="createTime"  column="create_time"  />
     </resultMap>
 
@@ -84,6 +89,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="submitStatus"     column="submit_status"     />
         <result property="sendTime"         column="send_time"         />
         <result property="submitTime"       column="submit_time"       />
+        <result property="recoveryTime"     column="recovery_time"     />
         <result property="tokenExpireTime"  column="token_expire_time" />
     </resultMap>
 
@@ -108,10 +114,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <sql id="selectTaskVo">
         select t.task_id, t.task_name, t.questionnaire_id, q.questionnaire_name,
                t.sample_source, t.sampling_method, t.sample_size, t.group_id,
+               t.sampling_batch_no, t.sampling_batch_time, t.sampling_filter_snapshot,
                t.token_expire_hours, t.send_channels, t.status, t.dispatch_time, t.del_flag,
                t.create_by, t.create_time, t.update_by, t.update_time, t.remark
         from survey_task t
         left join survey_questionnaire q on q.questionnaire_id = t.questionnaire_id
+        left join sys_user u on u.user_name = t.create_by
     </sql>
 
     <select id="selectTaskList" parameterType="SurveyTask" resultMap="SurveyTaskResult">
@@ -127,6 +135,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="status != null and status != ''">
                 AND t.status = #{status}
             </if>
+            ${params.dataScope}
         </where>
         order by t.create_time desc, t.task_id desc
     </select>
@@ -134,6 +143,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectTaskById" parameterType="Long" resultMap="SurveyTaskResult">
         <include refid="selectTaskVo"/>
         where t.task_id = #{taskId} and t.del_flag = '0'
+    </select>
+
+    <select id="selectTaskByScope" parameterType="SurveyTask" resultMap="SurveyTaskResult">
+        <include refid="selectTaskVo"/>
+        where t.task_id = #{taskId} and t.del_flag = '0'
+        ${params.dataScope}
     </select>
 
     <select id="selectSamplesByTaskId" parameterType="Long" resultMap="SurveyTaskSampleResult">
@@ -147,7 +162,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectSendRecordsByTaskId" parameterType="Long" resultMap="SurveyTaskSendRecordResult">
         select record_id, task_id, sample_id, enterprise_id, channel, receiver,
-               content, send_status, create_time
+               content, send_status, submit_status, recovery_time, create_time
         from survey_task_send_record
         where task_id = #{taskId}
         order by record_id
@@ -172,8 +187,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="sampleSource == 'group' and groupId != null">
                 and exists (
                     select 1 from survey_enterprise_group_rel r
+                    left join survey_enterprise_group g on g.group_id = r.group_id
                     where r.enterprise_id = e.enterprise_id
-                      and r.group_id = #{groupId}
+                      and (
+                          r.group_id = #{groupId}
+                          or ',' || g.ancestors || ',' LIKE '%,' || #{groupId} || ',%'
+                      )
                 )
             </if>
             <if test="enterpriseIds != null and enterpriseIds.length > 0">
@@ -190,6 +209,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select count(1) from survey_task_send_record where task_id = #{taskId}
     </select>
 
+    <select id="countPendingTodoSamples" parameterType="SurveyTask" resultType="int">
+        select count(1)
+        from survey_task_sample s
+        inner join survey_task t on t.task_id = s.task_id
+        left join sys_user u on u.user_name = t.create_by
+        where t.del_flag = '0'
+          and t.status = '2'
+          and s.status = '1'
+          ${params.dataScope}
+    </select>
+
     <select id="selectTrackingSummary" parameterType="Long" resultMap="SurveyTaskTrackingSummaryResult">
         select count(s.sample_id) as total_count,
                count(r.response_id) as submitted_count,
@@ -203,7 +233,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectTrackingRegionStats" parameterType="Long" resultMap="SurveyTaskRegionStatResult">
-        select coalesce(nullif(s.region_name, ''), '未填地区') as region_name,
+        select coalesce(nullif(s.region_name, ''), '未填城市') as region_name,
                count(s.sample_id) as total_count,
                count(r.response_id) as submitted_count,
                case when count(s.sample_id) = 0 then 0
@@ -212,7 +242,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from survey_task_sample s
         left join survey_response r on r.sample_id = s.sample_id
         where s.task_id = #{taskId}
-        group by coalesce(nullif(s.region_name, ''), '未填地区')
+        group by coalesce(nullif(s.region_name, ''), '未填城市')
         order by response_rate desc, total_count desc, region_name
     </select>
 
@@ -229,14 +259,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                s.contact_phone,
                s.status as sample_status,
                coalesce(sr.send_status, '') as send_status,
-               case when r.response_id is null then '0' else '1' end as submit_status,
+               coalesce(sr.submit_status, case when r.response_id is null then '0' else '1' end) as submit_status,
                sr.send_time,
-               r.submit_time,
+               coalesce(sr.recovery_time, r.submit_time) as submit_time,
+               sr.recovery_time,
                s.token_expire_time
         from survey_task_sample s
         left join survey_response r on r.sample_id = s.sample_id
         left join (
-            select sample_id, min(send_status) as send_status, min(create_time) as send_time
+            select sample_id,
+                   min(send_status) as send_status,
+                   min(submit_status) as submit_status,
+                   min(create_time) as send_time,
+                   min(recovery_time) as recovery_time
             from survey_task_send_record
             where task_id = #{taskId}
             group by sample_id
@@ -277,11 +312,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <insert id="insertTask" parameterType="SurveyTask" useGeneratedKeys="true" keyProperty="taskId">
         insert into survey_task(
             task_name, questionnaire_id, sample_source, sampling_method, sample_size,
-            group_id, token_expire_hours, send_channels, status, dispatch_time, del_flag,
+            group_id, sampling_batch_no, sampling_batch_time, sampling_filter_snapshot,
+            token_expire_hours, send_channels, status, dispatch_time, del_flag,
             create_by, create_time, remark
         ) values (
             #{taskName}, #{questionnaireId}, #{sampleSource}, #{samplingMethod}, #{sampleSize},
-            #{groupId}, #{tokenExpireHours}, #{sendChannelsText}, #{status}, #{dispatchTime}, '0',
+            #{groupId}, #{samplingBatchNo}, #{samplingBatchTime}, #{samplingFilterSnapshot},
+            #{tokenExpireHours}, #{sendChannelsText}, #{status}, #{dispatchTime}, '0',
             #{createBy}, #{createTime}, #{remark}
         )
     </insert>
@@ -295,10 +332,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             update_time = #{updateTime}
         </set>
         where task_id = #{taskId} and del_flag = '0'
+        <if test="expectedStatus != null and expectedStatus != ''">
+            and status = #{expectedStatus}
+        </if>
     </update>
 
     <update id="deleteTaskByIds" parameterType="Long">
-        update survey_task set del_flag = '2' where task_id in
+        update survey_task set del_flag = '2' where del_flag = '0' and task_id in
         <foreach collection="array" item="taskId" open="(" separator="," close=")">
             #{taskId}
         </foreach>
@@ -318,10 +358,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <insert id="batchSendRecord">
         insert into survey_task_send_record(
-            task_id, sample_id, enterprise_id, channel, receiver, content, send_status, create_time
+            task_id, sample_id, enterprise_id, channel, receiver, content, send_status, submit_status, recovery_time, create_time
         ) values
         <foreach collection="list" item="item" separator=",">
-            (#{item.taskId}, #{item.sampleId}, #{item.enterpriseId}, #{item.channel}, #{item.receiver}, #{item.content}, #{item.sendStatus}, #{item.createTime})
+            (#{item.taskId}, #{item.sampleId}, #{item.enterpriseId}, #{item.channel}, #{item.receiver}, #{item.content}, #{item.sendStatus}, #{item.submitStatus}, #{item.recoveryTime}, #{item.createTime})
         </foreach>
     </insert>
 
@@ -331,6 +371,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <update id="updateSamplesSent" parameterType="Long">
         update survey_task_sample set status = '1' where task_id = #{taskId}
+    </update>
+
+    <update id="updateSendRecordSubmitted">
+        update survey_task_send_record
+        set submit_status = '1',
+            recovery_time = #{recoveryTime}
+        where sample_id = #{sampleId}
     </update>
 
 </mapper>

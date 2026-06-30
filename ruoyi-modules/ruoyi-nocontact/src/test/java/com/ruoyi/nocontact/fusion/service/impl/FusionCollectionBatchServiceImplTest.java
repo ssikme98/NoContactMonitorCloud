@@ -12,6 +12,7 @@ import com.ruoyi.nocontact.fusion.domain.FusionCollectionItem;
 import com.ruoyi.nocontact.fusion.domain.FusionIndicator;
 import com.ruoyi.nocontact.fusion.mapper.FusionCollectionBatchMapper;
 import com.ruoyi.nocontact.fusion.mapper.FusionIndicatorMapper;
+import com.ruoyi.nocontact.support.service.IBusinessMessageService;
 import com.ruoyi.nocontact.warning.service.IWarningEvaluationService;
 import com.ruoyi.system.api.domain.SysRole;
 import com.ruoyi.system.api.domain.SysUser;
@@ -54,6 +55,9 @@ class FusionCollectionBatchServiceImplTest
     @Mock
     private IWarningEvaluationService warningEvaluationService;
 
+    @Mock
+    private IBusinessMessageService businessMessageService;
+
     @BeforeEach
     void setUp()
     {
@@ -61,6 +65,7 @@ class FusionCollectionBatchServiceImplTest
         ReflectionTestUtils.setField(service, "batchMapper", batchMapper);
         ReflectionTestUtils.setField(service, "indicatorMapper", indicatorMapper);
         ReflectionTestUtils.setField(service, "warningEvaluationService", warningEvaluationService);
+        ReflectionTestUtils.setField(service, "businessMessageService", businessMessageService);
         lenient().when(batchMapper.selectDeptNameById(200L)).thenReturn("省数据局");
         loginAsAdmin();
     }

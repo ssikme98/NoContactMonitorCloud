@@ -4,8 +4,9 @@
 
 1. 本地已安装 JDK 8、Maven 3、Node.js 14+。
 2. 已获取人大金仓 Kingbase V8 的 JDBC 驱动 JAR（通常名为 `kingbase8-xxx.jar`）。
-3. 远程服务器已安装 JDK 8、Maven 3，且可访问 Kingbase 数据库（121.40.112.55:54321）。
-4. 远程服务器可访问互联网以下载 Docker 镜像，或已准备好离线镜像包。
+3. 已获取与当前 Nacos 版本匹配的金仓数据源插件 JAR（模块名 `nacos-kingbase-datasource-plugin-ext`）。
+4. 远程服务器已安装 JDK 8、Maven 3，且可访问目标 Kingbase 数据库。
+5. 远程服务器可访问互联网以下载 Docker 镜像，或已准备好离线镜像包。
 
 ## 二、本地改造说明
 
@@ -18,8 +19,8 @@
 - `pom.xml` 及 `ruoyi-common/ruoyi-common-datasource/pom.xml`：添加 Kingbase 驱动依赖。
 - `ruoyi-modules/*/pom.xml`：移除 MySQL 驱动，统一从 `ruoyi-common-datasource` 获取数据库驱动。
 - 所有 `bootstrap.yml`：Nacos 地址从 `127.0.0.1:8848` 改为 `ruoyi-nacos:8848`（Docker 内部服务名）。
-- `sql/kingbase/*.sql`：已转换为 Kingbase/PostgreSQL 兼容脚本。
-- `sql/kingbase/ry-config_updates.sql`：导入 ry-config 后执行，将 Nacos 配置中的 MySQL 连接改为 Kingbase。
+- `sql/kingbase/*.sql`：已转换为 Kingbase 脚本。
+- `sql/kingbase/ry-config_updates.sql`：导入 ry-config 后执行，对 Nacos 配置做幂等归一化，确保 JDBC/Redis/PageHelper 保持 Kingbase 基线。
 - MyBatis Mapper XML：已替换 `IFNULL`、`DATE_FORMAT`、`FIND_IN_SET` 等 MySQL 函数。
 
 ## 三、本地构建步骤
@@ -61,10 +62,12 @@ cd docker
 sh copy.sh
 ```
 
-### 5. 复制 Kingbase 驱动到 Nacos 构建目录
+### 5. 复制 Kingbase 插件与驱动到 Nacos 构建目录
 
 ```bash
-cp /path/to/kingbase8-8.6.0.jar docker/nacos/
+mkdir -p docker/nacos/plugins
+cp /path/to/nacos-kingbase-datasource-plugin-ext-*.jar docker/nacos/plugins/
+cp /path/to/kingbase8-8.6.0.jar docker/nacos/plugins/
 ```
 
 ### 6. 构建 Docker 镜像
@@ -124,7 +127,7 @@ sudo firewall-cmd --reload
 
 ### 3. 准备 Kingbase 数据库
 
-登录 121.40.112.55 上的 Kingbase，执行：
+登录目标 Kingbase，执行：
 
 ```sql
 CREATE DATABASE "ry-cloud";
@@ -136,9 +139,9 @@ CREATE DATABASE "ry-seata";
 
 ```bash
 # 连接 Kingbase，注意替换为实际的用户名、密码、端口
-ksql -h 121.40.112.55 -p 54321 -U root -d ry-config -f ry-config.sql
-ksql -h 121.40.112.55 -p 54321 -U root -d ry-cloud -f ry-cloud.sql
-ksql -h 121.40.112.55 -p 54321 -U root -d ry-seata -f ry-seata.sql
+ksql -h <KINGBASE_HOST> -p <KINGBASE_PORT> -U <KINGBASE_USER> -d ry-config -f ry-config.sql
+ksql -h <KINGBASE_HOST> -p <KINGBASE_PORT> -U <KINGBASE_USER> -d ry-cloud -f ry-cloud.sql
+ksql -h <KINGBASE_HOST> -p <KINGBASE_PORT> -U <KINGBASE_USER> -d ry-seata -f ry-seata.sql
 ```
 
 > `quartz.sql` 已合并到 `ry-cloud.sql` 中，无需单独执行。
@@ -148,15 +151,25 @@ ksql -h 121.40.112.55 -p 54321 -U root -d ry-seata -f ry-seata.sql
 进入 `ry-config` 库，执行：
 
 ```bash
-ksql -h 121.40.112.55 -p 54321 -U root -d ry-config -f ry-config_updates.sql
+ksql -h <KINGBASE_HOST> -p <KINGBASE_PORT> -U <KINGBASE_USER> -d ry-config -f ry-config_updates.sql
 ```
 
 此脚本会：
-- 将配置中的 MySQL 驱动改为 Kingbase 驱动
-- 将 JDBC URL 改为 `jdbc:kingbase8://121.40.112.55:54321/...`
-- 将密码改为 `HGZJ2026`
-- 将 Redis 地址改为 `ruoyi-redis`
-- 添加 PageHelper 的 `helperDialect: postgresql`
+- 归一化 JDBC 驱动为 PostgreSQL 兼容驱动类
+- 归一化 JDBC URL 为 `jdbc:postgresql://${KINGBASE_HOST:localhost}:${KINGBASE_PORT:54321}/...`
+- 将用户名/密码切换为 `${KINGBASE_USERNAME:root}` / `${KINGBASE_PASSWORD:password}`
+- 将 Redis 地址切换为 `${REDIS_HOST:localhost}`，容器部署时显式传 `REDIS_HOST=ruoyi-redis`
+- 添加 PageHelper 的 `helperDialect: kingbase8`
+
+构建 `ruoyi-nacos` 镜像前，请先导出环境变量：
+
+```bash
+export KINGBASE_HOST=<KINGBASE_HOST>
+export KINGBASE_PORT=<KINGBASE_PORT>
+export KINGBASE_USERNAME=<KINGBASE_USER>
+export KINGBASE_PASSWORD=<KINGBASE_PASSWORD>
+export REDIS_HOST=ruoyi-redis
+```
 
 ### 5. 上传部署包到服务器
 
@@ -172,7 +185,9 @@ docker/
 ├── nacos/
 │   ├── dockerfile
 │   ├── conf/application.properties
-│   └── kingbase8-8.6.0.jar   # Kingbase 驱动
+│   └── plugins/
+│       ├── nacos-kingbase-datasource-plugin-ext-*.jar
+│       └── kingbase8-8.6.0.jar   # Kingbase 驱动
 ├── ruoyi/
 │   ├── gateway/jar/ruoyi-gateway.jar
 │   ├── auth/jar/ruoyi-auth.jar
@@ -225,15 +240,20 @@ sh deploy.sh modules
 解决：
 - 确认已执行 `scripts/install-kingbase-driver.bat/sh`
 - 确认 `pom.xml` 中的 `<kingbase8.version>` 与 JAR 版本一致
-- 确认 `docker/nacos/kingbase8-*.jar` 存在
+- 确认 `docker/nacos/plugins/kingbase8-*.jar` 存在
+- 当前仓库内置 `kingbase8-8.6.0.jar` 实际暴露的是 `org.postgresql.Driver`
+- 业务服务配置请使用 `org.postgresql.Driver`
+- Nacos 外置存储仍按插件路径使用 `com.kingbase8.Driver` + `jdbc:kingbase8://...`
 
 ### 2. Nacos 无法连接 Kingbase
 
 错误：`No suitable driver found for jdbc:kingbase8://...`
 
 解决：
+- 确认 `nacos-kingbase-datasource-plugin-ext*.jar` 已放入 `docker/nacos/plugins/`
 - 确认 Kingbase 驱动已放入 `docker/nacos/`
-- 确认 `docker/nacos/dockerfile` 正确复制了驱动到 `/home/nacos/plugins/`
+- 确认 `docker/nacos/dockerfile` 正确复制了插件和驱动到 `/home/nacos/plugins/`
+- 对于业务模块数据源，JDBC URL 请使用 `jdbc:postgresql://...` 连接 KingbaseES
 - 重新构建 Nacos 镜像：`docker-compose build ruoyi-nacos`
 
 ### 3. MyBatis SQL 报错
@@ -242,7 +262,7 @@ sh deploy.sh modules
 
 解决：
 - 确认已执行本改造中的 Mapper XML 替换脚本
-- 确认 Nacos 配置中 `helperDialect` 已改为 `postgresql`
+- 确认 Nacos 配置中 `helperDialect` 已改为 `kingbase8`
 
 ### 4. 服务注册不上 Nacos
 

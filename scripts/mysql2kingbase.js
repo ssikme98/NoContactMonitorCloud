@@ -177,12 +177,20 @@ function convert(inputFile, outputFile, options = {}) {
     if (options.updateNacosConfig) {
         const updateSql = [
             "-- 更新 Nacos 配置中心的 MySQL 连接为 Kingbase",
-            `UPDATE "config_info" SET "content" = REPLACE("content", 'com.mysql.cj.jdbc.Driver', 'com.kingbase8.Driver') WHERE "content" LIKE '%com.mysql.cj.jdbc.Driver%';`,
-            `UPDATE "config_info" SET "content" = REPLACE("content", 'jdbc:mysql://localhost:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8', 'jdbc:kingbase8://121.40.112.55:54321/ry-cloud') WHERE "content" LIKE '%jdbc:mysql://localhost:3306/ry-cloud%';`,
-            `UPDATE "config_info" SET "content" = REPLACE("content", 'jdbc:mysql://localhost:3306/ry-config?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC', 'jdbc:kingbase8://121.40.112.55:54321/ry-config') WHERE "content" LIKE '%jdbc:mysql://localhost:3306/ry-config%';`,
+            "-- 业务服务在当前环境通过 Kingbase JDBC 包暴露的 PostgreSQL 兼容驱动接入同一套 Kingbase 实例",
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'com.mysql.cj.jdbc.Driver', 'org.postgresql.Driver') WHERE "content" LIKE '%com.mysql.cj.jdbc.Driver%';`,
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'com.kingbase8.Driver', 'org.postgresql.Driver') WHERE "content" LIKE '%com.kingbase8.Driver%';`,
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'jdbc:mysql://localhost:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8', 'jdbc:postgresql://\${KINGBASE_HOST:localhost}:\${KINGBASE_PORT:54321}/ry-cloud') WHERE "content" LIKE '%jdbc:mysql://localhost:3306/ry-cloud%';`,
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'jdbc:kingbase8://\${KINGBASE_HOST:localhost}:\${KINGBASE_PORT:54321}/ry-cloud', 'jdbc:postgresql://\${KINGBASE_HOST:localhost}:\${KINGBASE_PORT:54321}/ry-cloud') WHERE "content" LIKE '%jdbc:kingbase8://\${KINGBASE_HOST:localhost}:\${KINGBASE_PORT:54321}/ry-cloud%';`,
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'jdbc:postgresql://localhost:54321/ry-cloud', 'jdbc:postgresql://\${KINGBASE_HOST:localhost}:\${KINGBASE_PORT:54321}/ry-cloud') WHERE "content" LIKE '%jdbc:postgresql://localhost:54321/ry-cloud%';`,
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'jdbc:mysql://localhost:3306/ry-config?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC', 'jdbc:postgresql://\${KINGBASE_HOST:localhost}:\${KINGBASE_PORT:54321}/ry-config') WHERE "content" LIKE '%jdbc:mysql://localhost:3306/ry-config%';`,
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'jdbc:kingbase8://\${KINGBASE_HOST:localhost}:\${KINGBASE_PORT:54321}/ry-config', 'jdbc:postgresql://\${KINGBASE_HOST:localhost}:\${KINGBASE_PORT:54321}/ry-config') WHERE "content" LIKE '%jdbc:kingbase8://\${KINGBASE_HOST:localhost}:\${KINGBASE_PORT:54321}/ry-config%';`,
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'jdbc:postgresql://localhost:54321/ry-config', 'jdbc:postgresql://\${KINGBASE_HOST:localhost}:\${KINGBASE_PORT:54321}/ry-config') WHERE "content" LIKE '%jdbc:postgresql://localhost:54321/ry-config%';`,
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'username: root', 'username: \${KINGBASE_USERNAME:root}') WHERE "content" LIKE '%username: root%';`,
             `UPDATE "config_info" SET "content" = REPLACE("content", 'SELECT 1 FROM DUAL', 'SELECT 1') WHERE "content" LIKE '%SELECT 1 FROM DUAL%';`,
-            `UPDATE "config_info" SET "content" = REPLACE("content", 'helperDialect: mysql', 'helperDialect: postgresql') WHERE "content" LIKE '%helperDialect: mysql%';`,
-            `UPDATE "config_info" SET "content" = REPLACE("content", 'password: password', 'password: HGZJ2026') WHERE "content" LIKE '%password: password%';`,
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'helperDialect: mysql', 'helperDialect: kingbase8') WHERE "content" LIKE '%helperDialect: mysql%';`,
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'helperDialect: postgresql', 'helperDialect: kingbase8') WHERE "content" LIKE '%helperDialect: postgresql%';`,
+            `UPDATE "config_info" SET "content" = REPLACE("content", 'password: password', 'password: \${KINGBASE_PASSWORD:password}') WHERE "content" LIKE '%password: password%';`,
             ""
         ].join("\n");
         const updateFile = outputFile.replace(/\.sql$/, '_updates.sql');

@@ -1,5 +1,6 @@
 package com.ruoyi.nocontact.rectification.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import java.util.Date;
 
@@ -16,6 +17,7 @@ public class RectificationLog extends BaseEntity
     private String toStatus;
     private String actionName;
     private String handleBy;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date handleTime;
     private String handleOpinion;
 

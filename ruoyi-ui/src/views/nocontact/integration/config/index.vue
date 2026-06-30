@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <div v-if="isEditorEntry" class="entry-title">新增/编辑对接配置</div>
     <el-form :model="queryParams" size="small" :inline="true" label-width="80px">
       <el-form-item label="对接名称"><el-input v-model="queryParams.integrationName" clearable placeholder="请输入对接名称" @keyup.enter.native="handleQuery" /></el-form-item>
       <el-form-item label="状态"><el-select v-model="queryParams.status" clearable><el-option label="启用" value="0" /><el-option label="停用" value="1" /></el-select></el-form-item>
@@ -7,17 +8,23 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">新增对接</el-button></el-col>
+      <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd">{{ createButtonText }}</el-button></el-col>
     </el-row>
 
     <el-table v-loading="loading" :data="configList">
       <el-table-column label="对接名称" prop="integrationName" min-width="180" show-overflow-tooltip />
       <el-table-column label="平台" prop="platformName" min-width="150" />
-      <el-table-column label="类型" prop="integrationType" width="90" />
-      <el-table-column label="同步频率" prop="syncFrequency" width="110" />
+      <el-table-column label="类型" min-width="100" show-overflow-tooltip>
+        <template slot-scope="scope">{{ integrationTypeText(scope.row.integrationType) }}</template>
+      </el-table-column>
+      <el-table-column label="同步频率" min-width="110" show-overflow-tooltip>
+        <template slot-scope="scope">{{ syncFrequencyText(scope.row.syncFrequency) }}</template>
+      </el-table-column>
       <el-table-column label="状态" prop="status" width="80"><template slot-scope="scope">{{ scope.row.status === '0' ? '启用' : '停用' }}</template></el-table-column>
       <el-table-column label="最近同步" prop="lastSyncTime" width="160" />
-      <el-table-column label="同步结果" prop="lastSyncStatus" width="100" />
+      <el-table-column label="同步结果" prop="lastSyncStatus" width="100">
+        <template slot-scope="scope">{{ syncStatusText(scope.row.lastSyncStatus) }}</template>
+      </el-table-column>
       <el-table-column label="操作" width="260" fixed="right">
         <template slot-scope="scope">
           <el-button type="text" size="mini" icon="el-icon-edit" @click="handleUpdate(scope.row)">编辑</el-button>
@@ -34,14 +41,22 @@
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="对接名称" prop="integrationName"><el-input v-model="form.integrationName" /></el-form-item>
         <el-form-item label="对接平台"><el-input v-model="form.platformName" /></el-form-item>
-        <el-form-item label="对接类型"><el-select v-model="form.integrationType"><el-option label="API" value="api" /><el-option label="数据库" value="database" /><el-option label="文件交换" value="file" /></el-select></el-form-item>
+        <el-form-item label="对接类型"><el-select v-model="form.integrationType" disabled><el-option label="API接口" value="api" /></el-select></el-form-item>
         <el-form-item label="API地址"><el-input v-model="form.endpointUrl" /></el-form-item>
-        <el-form-item label="认证方式"><el-select v-model="form.authType"><el-option label="Token" value="token" /><el-option label="OAuth2" value="oauth2" /><el-option label="证书" value="cert" /><el-option label="用户名密码" value="password" /></el-select></el-form-item>
+        <el-form-item label="认证方式"><el-select v-model="form.authType"><el-option label="访问Token" value="token" /></el-select></el-form-item>
+        <el-form-item label="认证凭据"><el-input v-model="form.authCredential" type="password" show-password autocomplete="new-password" placeholder="请输入访问Token" /></el-form-item>
         <el-form-item label="同步频率"><el-select v-model="form.syncFrequency"><el-option label="实时" value="realtime" /><el-option label="每小时" value="hourly" /><el-option label="每日" value="daily" /><el-option label="每周" value="weekly" /></el-select></el-form-item>
         <el-form-item label="同步方式"><el-select v-model="form.syncMode"><el-option label="全量同步" value="full" /><el-option label="增量同步" value="incremental" /></el-select></el-form-item>
+        <el-form-item label="启用状态">
+          <el-radio-group v-model="form.status">
+            <el-radio label="0">启用</el-radio>
+            <el-radio label="1">停用</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="字段映射"><el-input v-model="form.mappingRule" type="textarea" :rows="2" /></el-form-item>
         <el-form-item label="转换规则"><el-input v-model="form.transformRule" type="textarea" :rows="2" /></el-form-item>
         <el-form-item label="异常策略"><el-input v-model="form.retryPolicy" /></el-form-item>
+        <el-form-item label="备注"><el-input v-model="form.remark" type="textarea" :rows="2" /></el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="open=false">取 消</el-button>
@@ -53,12 +68,20 @@
 
 <script>
 import { listConfig, addConfig, updateConfig, delConfig, testConfig, syncConfig } from '@/api/nocontact/integration'
+import { integrationTypeText, syncFrequencyText } from '@/utils/nocontactDisplay'
 
 export default {
   name: 'IntegrationConfig',
+  props: {
+    entryMode: {
+      type: String,
+      default: 'manage'
+    }
+  },
   data() {
     return {
       loading: false,
+      entryBootstrapped: false,
       open: false,
       title: '',
       total: 0,
@@ -71,7 +94,29 @@ export default {
   created() {
     this.getList()
   },
+  mounted() {
+    this.bootstrapEntryMode()
+  },
+  computed: {
+    isEditorEntry() {
+      return this.entryMode === 'editor'
+    },
+    createButtonText() {
+      return this.isEditorEntry ? '新建对接配置' : '新增对接'
+    }
+  },
   methods: {
+    integrationTypeText,
+    syncFrequencyText,
+    bootstrapEntryMode() {
+      if (this.entryBootstrapped) {
+        return
+      }
+      this.entryBootstrapped = true
+      if (this.isEditorEntry) {
+        this.handleAdd()
+      }
+    },
     getList() {
       this.loading = true
       listConfig(this.queryParams).then(response => {
@@ -90,12 +135,14 @@ export default {
     },
     handleAdd() {
       this.form = { integrationType: 'api', authType: 'token', syncFrequency: 'daily', syncMode: 'incremental', status: '0' }
-      this.title = '新增对接配置'
+      this.title = this.isEditorEntry ? '新增/编辑对接配置' : '新增对接配置'
       this.open = true
     },
     handleUpdate(row) {
       this.form = Object.assign({}, row)
-      this.title = '编辑对接配置'
+      this.form.integrationType = 'api'
+      this.form.authType = 'token'
+      this.title = this.isEditorEntry ? '新增/编辑对接配置' : '编辑对接配置'
       this.open = true
     },
     submitForm() {
@@ -110,13 +157,31 @@ export default {
       })
     },
     handleTest(row) {
-      testConfig(row.configId).then(() => this.$modal.msgSuccess('连接测试通过'))
+      testConfig(row.configId).then(response => {
+        const result = response.data || {}
+        if (result.responseStatus === 'failed') {
+          this.$modal.msgError(result.errorMessage || '连接测试失败')
+          return
+        }
+        this.$modal.msgSuccess('连接测试通过')
+      })
     },
     handleSync(row) {
-      syncConfig(row.configId).then(() => {
-        this.$modal.msgSuccess('同步完成')
+      syncConfig(row.configId).then(response => {
+        const result = response.data || {}
+        if (result.batchStatus === 'success') {
+          this.$modal.msgSuccess('同步完成')
+        } else {
+          this.$modal.msgError(result.errorMessage || `同步未完全成功：${this.syncStatusText(result.batchStatus)}`)
+        }
         this.getList()
       })
+    },
+    syncStatusText(status) {
+      if (status === 'success') return '成功'
+      if (status === 'failed') return '失败'
+      if (status === 'partial_failed') return '部分失败'
+      return status || '-'
     },
     handleDelete(row) {
       this.$modal.confirm('确认删除对接"' + row.integrationName + '"？').then(() => delConfig(row.configId)).then(() => {
@@ -127,3 +192,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.entry-title {
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+</style>

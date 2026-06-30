@@ -1,5 +1,6 @@
 package com.ruoyi.nocontact.survey.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import java.util.Date;
 import java.util.List;
@@ -42,13 +43,27 @@ public class SurveyTask extends BaseEntity
     /** 企业分组ID */
     private Long groupId;
 
+    /** 抽样批次号 */
+    private String samplingBatchNo;
+
+    /** 抽样批次时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date samplingBatchTime;
+
+    /** 抽样筛选快照 */
+    private String samplingFilterSnapshot;
+
     /** token有效小时数 */
     private Integer tokenExpireHours;
 
     /** 状态（0草稿 1已抽样 2已发卷 3已结束） */
     private String status;
 
+    /** 并发更新时的期望状态 */
+    private String expectedStatus;
+
     /** 发卷时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date dispatchTime;
 
     /** 删除标志（0代表存在 2代表删除） */
@@ -152,6 +167,36 @@ public class SurveyTask extends BaseEntity
         this.groupId = groupId;
     }
 
+    public String getSamplingBatchNo()
+    {
+        return samplingBatchNo;
+    }
+
+    public void setSamplingBatchNo(String samplingBatchNo)
+    {
+        this.samplingBatchNo = samplingBatchNo;
+    }
+
+    public Date getSamplingBatchTime()
+    {
+        return samplingBatchTime;
+    }
+
+    public void setSamplingBatchTime(Date samplingBatchTime)
+    {
+        this.samplingBatchTime = samplingBatchTime;
+    }
+
+    public String getSamplingFilterSnapshot()
+    {
+        return samplingFilterSnapshot;
+    }
+
+    public void setSamplingFilterSnapshot(String samplingFilterSnapshot)
+    {
+        this.samplingFilterSnapshot = samplingFilterSnapshot;
+    }
+
     public Integer getTokenExpireHours()
     {
         return tokenExpireHours;
@@ -170,6 +215,16 @@ public class SurveyTask extends BaseEntity
     public void setStatus(String status)
     {
         this.status = status;
+    }
+
+    public String getExpectedStatus()
+    {
+        return expectedStatus;
+    }
+
+    public void setExpectedStatus(String expectedStatus)
+    {
+        this.expectedStatus = expectedStatus;
     }
 
     public Date getDispatchTime()
@@ -254,6 +309,9 @@ public class SurveyTask extends BaseEntity
                 .append("samplingMethod", getSamplingMethod())
                 .append("sampleSize", getSampleSize())
                 .append("groupId", getGroupId())
+                .append("samplingBatchNo", getSamplingBatchNo())
+                .append("samplingBatchTime", getSamplingBatchTime())
+                .append("samplingFilterSnapshot", getSamplingFilterSnapshot())
                 .append("tokenExpireHours", getTokenExpireHours())
                 .append("status", getStatus())
                 .append("dispatchTime", getDispatchTime())

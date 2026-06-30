@@ -11,6 +11,15 @@
     </el-row>
 
     <el-row :gutter="12">
+      <el-col :span="24">
+        <div class="panel map-panel">
+          <div class="panel-title">湖南省地图热力图</div>
+          <nocontact-risk-map :regions="mapRegions" />
+        </div>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="12" class="stats-row">
       <el-col :span="8">
         <div class="panel">
           <div class="panel-title">级别分布</div>
@@ -62,9 +71,12 @@
 
 <script>
 import { getWarningDashboard } from '@/api/nocontact/warning/message'
+import NocontactRiskMap from '@/components/amap/NocontactRiskMap'
+import { warningLevelColorText } from '@/utils/nocontactDisplay'
 
 export default {
   name: 'WarningDashboard',
+  components: { NocontactRiskMap },
   data() {
     return {
       data: { summary: {}, levelStats: [], regionStats: [], indicatorStats: [], trendStats: [] }
@@ -83,6 +95,12 @@ export default {
     maxCount() {
       const rows = [].concat(this.data.levelStats || [], this.data.regionStats || [], this.data.indicatorStats || [], this.data.trendStats || [])
       return rows.reduce((max, row) => Math.max(max, Number(this.statCount(row)) || 0), 1)
+    },
+    mapRegions() {
+      return (this.data.regionStats || []).map(item => ({
+        name: this.statName(item),
+        value: this.statCount(item)
+      }))
     }
   },
   created() {
@@ -105,7 +123,7 @@ export default {
       return Math.max(8, Number(this.statCount(row)) * 100 / this.maxCount) + '%'
     },
     levelText(value) {
-      return value === '1' ? '一级红色' : value === '2' ? '二级橙色' : '三级黄色'
+      return warningLevelColorText(value)
     }
   }
 }
@@ -149,10 +167,16 @@ export default {
 .trend-panel {
   margin-top: 12px;
 }
+.stats-row {
+  margin-top: 12px;
+}
 .panel-title {
   margin-bottom: 12px;
   font-weight: 600;
   color: #303133;
+}
+.map-panel {
+  min-height: 360px;
 }
 .bar-row {
   display: grid;

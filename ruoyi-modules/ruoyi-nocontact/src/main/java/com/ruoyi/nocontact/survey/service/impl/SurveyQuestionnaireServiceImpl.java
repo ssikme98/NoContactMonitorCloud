@@ -31,6 +31,7 @@ public class SurveyQuestionnaireServiceImpl implements ISurveyQuestionnaireServi
     private static final String STATUS_DRAFT = "0";
     private static final String STATUS_PUBLISHED = "1";
     private static final String STATUS_ENDED = "2";
+    private static final String STATUS_COLLECTING = "3";
 
     private static final String QUESTION_TYPE_SINGLE = "single";
     private static final String QUESTION_TYPE_MULTIPLE = "multiple";
@@ -46,8 +47,7 @@ public class SurveyQuestionnaireServiceImpl implements ISurveyQuestionnaireServi
             QUESTION_TYPE_MULTIPLE,
             QUESTION_TYPE_TEXT,
             QUESTION_TYPE_SCORE,
-            QUESTION_TYPE_MATRIX_SCORE,
-            QUESTION_TYPE_LIKERT
+            QUESTION_TYPE_MATRIX_SCORE
     ));
 
     @Autowired
@@ -90,7 +90,7 @@ public class SurveyQuestionnaireServiceImpl implements ISurveyQuestionnaireServi
         {
             throw new ServiceException("已结束问卷不允许修改");
         }
-        if (STATUS_PUBLISHED.equals(exists.getStatus()))
+        if (isImmutableQuestionnaire(exists.getStatus()))
         {
             return createDraftFromSubmitted(questionnaire, exists, questionnaire.getUpdateBy());
         }
@@ -122,9 +122,9 @@ public class SurveyQuestionnaireServiceImpl implements ISurveyQuestionnaireServi
         {
             throw new ServiceException("问卷不存在");
         }
-        if (!STATUS_PUBLISHED.equals(published.getStatus()))
+        if (!STATUS_PUBLISHED.equals(published.getStatus()) && !STATUS_COLLECTING.equals(published.getStatus()))
         {
-            throw new ServiceException("只有已发布问卷才能创建新版草稿");
+            throw new ServiceException("只有已发布或收集中问卷才能创建新版草稿");
         }
         SurveyQuestionnaire draft = cloneAsDraft(published, operName);
         questionnaireMapper.insertQuestionnaire(draft);
@@ -167,9 +167,9 @@ public class SurveyQuestionnaireServiceImpl implements ISurveyQuestionnaireServi
         {
             throw new ServiceException("问卷不存在");
         }
-        if (!STATUS_PUBLISHED.equals(questionnaire.getStatus()))
+        if (!STATUS_PUBLISHED.equals(questionnaire.getStatus()) && !STATUS_COLLECTING.equals(questionnaire.getStatus()))
         {
-            throw new ServiceException("只有已发布问卷允许结束");
+            throw new ServiceException("只有已发布或收集中问卷允许结束");
         }
         SurveyQuestionnaire update = new SurveyQuestionnaire();
         update.setQuestionnaireId(questionnaireId);
@@ -216,6 +216,11 @@ public class SurveyQuestionnaireServiceImpl implements ISurveyQuestionnaireServi
         questionnaire.setCreateTime(DateUtils.getNowDate());
     }
 
+    private boolean isImmutableQuestionnaire(String status)
+    {
+        return STATUS_PUBLISHED.equals(status) || STATUS_COLLECTING.equals(status);
+    }
+
     private void validateQuestionnaire(SurveyQuestionnaire questionnaire)
     {
         if (StringUtils.isBlank(questionnaire.getQuestionnaireName()))
@@ -236,6 +241,10 @@ public class SurveyQuestionnaireServiceImpl implements ISurveyQuestionnaireServi
             if (!QUESTION_TYPES.contains(question.getQuestionType()))
             {
                 throw new ServiceException("不支持的题型：" + question.getQuestionType());
+            }
+            if (!QUESTION_TYPE_MATRIX_SCORE.equals(question.getQuestionType()))
+            {
+                question.setDimension(null);
             }
             if ((QUESTION_TYPE_SCORE.equals(question.getQuestionType()) || QUESTION_TYPE_MATRIX_SCORE.equals(question.getQuestionType()))
                     && (question.getScoreMax() == null || question.getScoreMax() <= 0))

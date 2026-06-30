@@ -137,6 +137,7 @@ public class SurveyResponseServiceImpl implements ISurveyResponseService
             responseMapper.batchResponseAnswer(answers);
         }
         responseMapper.updateSampleCompleted(sample.getSampleId());
+        responseMapper.updateSendRecordSubmitted(sample.getSampleId(), response.getSubmitTime());
         return rows;
     }
 

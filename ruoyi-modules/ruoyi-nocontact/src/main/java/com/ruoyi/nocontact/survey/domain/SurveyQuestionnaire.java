@@ -1,5 +1,6 @@
 package com.ruoyi.nocontact.survey.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import java.util.Date;
 import java.util.List;
@@ -27,8 +28,11 @@ public class SurveyQuestionnaire extends BaseEntity
     /** 问卷说明 */
     private String description;
 
-    /** 状态（0草稿 1已发布 2已结束） */
+    /** 状态（0草稿 1已发布 2已结束 3收集中） */
     private String status;
+
+    /** 条件更新使用的当前状态 */
+    private String currentStatus;
 
     /** 版本号 */
     private Integer versionNo;
@@ -37,9 +41,11 @@ public class SurveyQuestionnaire extends BaseEntity
     private Long sourceQuestionnaireId;
 
     /** 发布时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date publishedTime;
 
     /** 结束时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date endedTime;
 
     /** 删除标志（0代表存在 2代表删除） */
@@ -90,6 +96,16 @@ public class SurveyQuestionnaire extends BaseEntity
     public void setStatus(String status)
     {
         this.status = status;
+    }
+
+    public String getCurrentStatus()
+    {
+        return currentStatus;
+    }
+
+    public void setCurrentStatus(String currentStatus)
+    {
+        this.currentStatus = currentStatus;
     }
 
     public Integer getVersionNo()
@@ -160,6 +176,7 @@ public class SurveyQuestionnaire extends BaseEntity
                 .append("questionnaireName", getQuestionnaireName())
                 .append("description", getDescription())
                 .append("status", getStatus())
+                .append("currentStatus", getCurrentStatus())
                 .append("versionNo", getVersionNo())
                 .append("sourceQuestionnaireId", getSourceQuestionnaireId())
                 .append("publishedTime", getPublishedTime())

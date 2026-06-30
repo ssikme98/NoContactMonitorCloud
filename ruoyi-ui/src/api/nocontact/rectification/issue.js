@@ -30,6 +30,14 @@ export function addIssue(data) {
   })
 }
 
+export function createIssueFromWarning(messageId, data) {
+  return request({
+    url: '/nocontact/rectification/issue/from-warning/' + messageId,
+    method: 'post',
+    data
+  })
+}
+
 export function updateIssue(data) {
   return request({
     url: '/nocontact/rectification/issue',
@@ -46,6 +54,13 @@ export function dispatchIssue(issueId, data) {
   })
 }
 
+export function startIssue(issueId) {
+  return request({
+    url: '/nocontact/rectification/issue/' + issueId + '/start',
+    method: 'put'
+  })
+}
+
 export function submitIssue(issueId, data) {
   return request({
     url: '/nocontact/rectification/issue/' + issueId + '/submit',
@@ -59,13 +74,6 @@ export function reviewIssue(issueId, approved, data) {
     url: '/nocontact/rectification/issue/' + issueId + '/review/' + approved,
     method: 'put',
     data
-  })
-}
-
-export function archiveIssue(issueId) {
-  return request({
-    url: '/nocontact/rectification/issue/' + issueId + '/archive',
-    method: 'put'
   })
 }
 

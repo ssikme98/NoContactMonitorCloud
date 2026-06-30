@@ -1,5 +1,6 @@
 package com.ruoyi.nocontact.survey.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.io.Serializable;
 import java.util.Date;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -38,7 +39,15 @@ public class SurveyTaskSendRecord implements Serializable
     /** 发送状态（0已生成） */
     private String sendStatus;
 
+    /** 填报状态（0未填报 1已填报） */
+    private String submitStatus;
+
+    /** 填报时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date recoveryTime;
+
     /** 创建时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createTime;
 
     public Long getRecordId()
@@ -121,6 +130,26 @@ public class SurveyTaskSendRecord implements Serializable
         this.sendStatus = sendStatus;
     }
 
+    public String getSubmitStatus()
+    {
+        return submitStatus;
+    }
+
+    public void setSubmitStatus(String submitStatus)
+    {
+        this.submitStatus = submitStatus;
+    }
+
+    public Date getRecoveryTime()
+    {
+        return recoveryTime;
+    }
+
+    public void setRecoveryTime(Date recoveryTime)
+    {
+        this.recoveryTime = recoveryTime;
+    }
+
     public Date getCreateTime()
     {
         return createTime;
@@ -143,6 +172,8 @@ public class SurveyTaskSendRecord implements Serializable
                 .append("receiver", getReceiver())
                 .append("content", getContent())
                 .append("sendStatus", getSendStatus())
+                .append("submitStatus", getSubmitStatus())
+                .append("recoveryTime", getRecoveryTime())
                 .append("createTime", getCreateTime())
                 .toString();
     }

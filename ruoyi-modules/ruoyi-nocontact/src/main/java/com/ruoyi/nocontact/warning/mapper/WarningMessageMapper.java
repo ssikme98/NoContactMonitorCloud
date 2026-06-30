@@ -14,6 +14,8 @@ public interface WarningMessageMapper
 {
     public List<WarningMessage> selectMessageList(WarningMessage message);
 
+    public int countMessageList(WarningMessage message);
+
     public WarningMessage selectMessageById(Long messageId);
 
     public WarningMessage selectMessageByScope(WarningMessage message);

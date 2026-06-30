@@ -1,5 +1,5 @@
 <template>
-  <integration-config />
+  <integration-config entry-mode="editor" />
 </template>
 
 <script>

@@ -23,4 +23,6 @@ public interface ISurveyEnterpriseService
     public int deleteEnterpriseByIds(Long[] enterpriseIds);
 
     public String importEnterprise(List<SurveyEnterprise> enterpriseList, Boolean updateSupport, String operName);
+
+    public int updateEnterpriseLocation(SurveyEnterprise enterprise, String operName);
 }

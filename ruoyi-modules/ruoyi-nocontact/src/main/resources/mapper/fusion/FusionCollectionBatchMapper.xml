@@ -128,6 +128,36 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by b.create_time desc, b.batch_id desc
     </select>
 
+    <select id="countBatchList" parameterType="FusionCollectionBatch" resultType="int">
+        select count(1)
+        from nc_fusion_collection_batch b
+        <where>
+            b.del_flag = '0'
+            <if test="batchName != null and batchName != ''">
+                AND b.batch_name like '%' || #{batchName} || '%'
+            </if>
+            <if test="batchStatus != null and batchStatus != ''">
+                AND b.batch_status = #{batchStatus}
+            </if>
+            <if test="responsibleUnitName != null and responsibleUnitName != ''">
+                AND b.responsible_unit_name like '%' || #{responsibleUnitName} || '%'
+            </if>
+            <if test="deptId != null">
+                AND b.dept_id = #{deptId}
+            </if>
+            <if test="responsibleUnitId != null">
+                AND b.responsible_unit_id = #{responsibleUnitId}
+            </if>
+            <if test="regionCode != null and regionCode != ''">
+                AND b.region_code = #{regionCode}
+            </if>
+            <if test="periodKey != null and periodKey != ''">
+                AND b.period_key = #{periodKey}
+            </if>
+            ${params.dataScope}
+        </where>
+    </select>
+
     <select id="selectBatchById" parameterType="Long" resultMap="FusionCollectionBatchResult">
         <include refid="selectBatchVo"/>
         where b.batch_id = #{batchId} and b.del_flag = '0'
@@ -182,6 +212,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          #{valueText}, #{valueDate}, #{validationStatus}, #{validationMessage}, #{isCurrent},
          #{createBy}, #{createTime}, #{remark})
     </insert>
+
+    <delete id="deleteBatchById" parameterType="Long">
+        delete from nc_fusion_collection_batch
+        where batch_id = #{batchId}
+    </delete>
 
     <update id="updateBatchStatus" parameterType="FusionCollectionBatch">
         update nc_fusion_collection_batch

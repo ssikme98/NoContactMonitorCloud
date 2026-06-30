@@ -1,5 +1,6 @@
 package com.ruoyi.nocontact.rectification.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -18,13 +19,16 @@ public class RectificationIssue extends BaseEntity
     private String issueTitle;
     private String sourceType;
     private Long sourceWarningId;
+    private Long deptId;
     private String warningLevel;
     private String regionName;
     private String responsibleUnitName;
     private String responsiblePerson;
     private String supervisorName;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date deadline;
     private String issueStatus;
+    private String expectedStatus;
     private Long indicatorId;
     private String indicatorName;
     private BigDecimal currentValue;
@@ -33,9 +37,13 @@ public class RectificationIssue extends BaseEntity
     private String rectificationResult;
     private String reviewOpinion;
     private String attachmentUrl;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date dispatchTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date submitTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date reviewTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date archiveTime;
     private List<RectificationLog> logs;
 
@@ -88,6 +96,16 @@ public class RectificationIssue extends BaseEntity
     public void setSourceWarningId(Long sourceWarningId)
     {
         this.sourceWarningId = sourceWarningId;
+    }
+
+    public Long getDeptId()
+    {
+        return deptId;
+    }
+
+    public void setDeptId(Long deptId)
+    {
+        this.deptId = deptId;
     }
 
     public String getWarningLevel()
@@ -158,6 +176,16 @@ public class RectificationIssue extends BaseEntity
     public void setIssueStatus(String issueStatus)
     {
         this.issueStatus = issueStatus;
+    }
+
+    public String getExpectedStatus()
+    {
+        return expectedStatus;
+    }
+
+    public void setExpectedStatus(String expectedStatus)
+    {
+        this.expectedStatus = expectedStatus;
     }
 
     public Long getIndicatorId()

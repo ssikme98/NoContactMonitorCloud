@@ -10,6 +10,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="issueTitle" column="issue_title" />
         <result property="sourceType" column="source_type" />
         <result property="sourceWarningId" column="source_warning_id" />
+        <result property="deptId" column="dept_id" />
         <result property="warningLevel" column="warning_level" />
         <result property="regionName" column="region_name" />
         <result property="responsibleUnitName" column="responsible_unit_name" />
@@ -51,52 +52,92 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectIssueVo">
-        select issue_id, issue_code, issue_title, source_type, source_warning_id, warning_level,
-               region_name, responsible_unit_name, responsible_person, supervisor_name, deadline,
-               issue_status, indicator_id, indicator_name, current_value, threshold_value,
-               issue_description, rectification_result, review_opinion, attachment_url,
-               dispatch_time, submit_time, review_time, archive_time,
-               create_by, create_time, update_by, update_time, remark
-        from nc_rectification_issue
+        select r.issue_id, r.issue_code, r.issue_title, r.source_type, r.source_warning_id, r.dept_id, r.warning_level,
+               r.region_name, r.responsible_unit_name, r.responsible_person, r.supervisor_name, r.deadline,
+               r.issue_status, r.indicator_id, r.indicator_name, r.current_value, r.threshold_value,
+               r.issue_description, r.rectification_result, r.review_opinion, r.attachment_url,
+               r.dispatch_time, r.submit_time, r.review_time, r.archive_time,
+               r.create_by, r.create_time, r.update_by, r.update_time, r.remark
+        from nc_rectification_issue r
     </sql>
 
     <select id="selectIssueList" parameterType="RectificationIssue" resultMap="RectificationIssueResult">
         <include refid="selectIssueVo"/>
         <where>
-            del_flag = '0'
+            r.del_flag = '0'
             <if test="issueTitle != null and issueTitle != ''">
-                AND (issue_title like '%' || #{issueTitle} || '%' OR issue_code like '%' || #{issueTitle} || '%')
+                AND (r.issue_title like '%' || #{issueTitle} || '%' OR r.issue_code like '%' || #{issueTitle} || '%')
             </if>
             <if test="issueStatus != null and issueStatus != ''">
-                AND issue_status = #{issueStatus}
+                AND r.issue_status = #{issueStatus}
             </if>
             <if test="warningLevel != null and warningLevel != ''">
-                AND warning_level = #{warningLevel}
+                AND r.warning_level = #{warningLevel}
             </if>
             <if test="regionName != null and regionName != ''">
-                AND region_name like '%' || #{regionName} || '%'
+                AND r.region_name like '%' || #{regionName} || '%'
             </if>
             <if test="responsibleUnitName != null and responsibleUnitName != ''">
-                AND responsible_unit_name like '%' || #{responsibleUnitName} || '%'
+                AND r.responsible_unit_name like '%' || #{responsibleUnitName} || '%'
             </if>
+            ${params.dataScope}
         </where>
-        order by create_time desc, issue_id desc
+        order by r.create_time desc, r.issue_id desc
+    </select>
+
+    <select id="countIssueList" parameterType="RectificationIssue" resultType="int">
+        select count(1)
+        from nc_rectification_issue r
+        <where>
+            r.del_flag = '0'
+            <if test="issueTitle != null and issueTitle != ''">
+                AND (r.issue_title like '%' || #{issueTitle} || '%' OR r.issue_code like '%' || #{issueTitle} || '%')
+            </if>
+            <if test="issueStatus != null and issueStatus != ''">
+                AND r.issue_status = #{issueStatus}
+            </if>
+            <if test="warningLevel != null and warningLevel != ''">
+                AND r.warning_level = #{warningLevel}
+            </if>
+            <if test="regionName != null and regionName != ''">
+                AND r.region_name like '%' || #{regionName} || '%'
+            </if>
+            <if test="responsibleUnitName != null and responsibleUnitName != ''">
+                AND r.responsible_unit_name like '%' || #{responsibleUnitName} || '%'
+            </if>
+            ${params.dataScope}
+        </where>
     </select>
 
     <select id="selectIssueById" parameterType="Long" resultMap="RectificationIssueResult">
         <include refid="selectIssueVo"/>
-        where issue_id = #{issueId} and del_flag = '0'
+        where r.issue_id = #{issueId} and r.del_flag = '0'
+    </select>
+
+    <select id="selectIssueByScope" parameterType="RectificationIssue" resultMap="RectificationIssueResult">
+        <include refid="selectIssueVo"/>
+        where r.issue_id = #{issueId} and r.del_flag = '0'
+        ${params.dataScope}
+    </select>
+
+    <select id="selectActiveIssueBySourceWarningId" parameterType="Long" resultMap="RectificationIssueResult">
+        <include refid="selectIssueVo"/>
+        where source_warning_id = #{sourceWarningId}
+          and del_flag = '0'
+          and issue_status not in ('closed', 'archived')
+        order by issue_id desc
+        limit 1
     </select>
 
     <insert id="insertIssue" parameterType="RectificationIssue" useGeneratedKeys="true" keyProperty="issueId">
         insert into nc_rectification_issue
-        (issue_code, issue_title, source_type, source_warning_id, warning_level, region_name,
+        (issue_code, issue_title, source_type, source_warning_id, dept_id, warning_level, region_name,
          responsible_unit_name, responsible_person, supervisor_name, deadline, issue_status,
          indicator_id, indicator_name, current_value, threshold_value, issue_description,
          rectification_result, review_opinion, attachment_url, create_by, create_time, remark)
         values
         (coalesce(#{issueCode}, 'ISS-' || to_char(current_timestamp, 'YYYYMMDDHH24MISS')), #{issueTitle}, #{sourceType},
-         #{sourceWarningId}, #{warningLevel}, #{regionName}, #{responsibleUnitName}, #{responsiblePerson},
+         #{sourceWarningId}, #{deptId}, #{warningLevel}, #{regionName}, #{responsibleUnitName}, #{responsiblePerson},
          #{supervisorName}, #{deadline}, #{issueStatus}, #{indicatorId}, #{indicatorName}, #{currentValue},
          #{thresholdValue}, #{issueDescription}, #{rectificationResult}, #{reviewOpinion}, #{attachmentUrl},
          #{createBy}, #{createTime}, #{remark})
@@ -127,6 +168,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="remark != null">remark = #{remark},</if>
         </set>
         where issue_id = #{issueId}
+          and del_flag = '0'
     </update>
 
     <update id="updateIssueStatus" parameterType="RectificationIssue">
@@ -148,11 +190,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateTime != null">update_time = #{updateTime},</if>
         </set>
         where issue_id = #{issueId}
+          and del_flag = '0'
+        <if test="expectedStatus != null and expectedStatus != ''">
+          and issue_status = #{expectedStatus}
+        </if>
     </update>
 
     <update id="deleteIssueByIds" parameterType="Long">
         update nc_rectification_issue set del_flag = '2'
-        where issue_id in
+        where del_flag = '0' and issue_id in
         <foreach collection="array" item="issueId" open="(" separator="," close=")">
             #{issueId}
         </foreach>
@@ -175,19 +221,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by handle_time, log_id
     </select>
 
-    <select id="selectStatusStats" resultType="map">
-        select issue_status as stat_name, count(1) as count_value
-        from nc_rectification_issue
-        where del_flag = '0'
-        group by issue_status
-        order by issue_status
+    <select id="selectStatusStats" parameterType="RectificationIssue" resultType="map">
+        select r.issue_status as stat_name, count(1) as count_value
+        from nc_rectification_issue r
+        where r.del_flag = '0'
+        ${params.dataScope}
+        group by r.issue_status
+        order by r.issue_status
     </select>
 
-    <select id="selectRegionStats" resultType="map">
-        select coalesce(region_name, '未填地区') as stat_name, count(1) as count_value
-        from nc_rectification_issue
-        where del_flag = '0'
-        group by coalesce(region_name, '未填地区')
+    <select id="selectRegionStats" parameterType="RectificationIssue" resultType="map">
+        select coalesce(r.region_name, '未填地区') as stat_name, count(1) as count_value
+        from nc_rectification_issue r
+        where r.del_flag = '0'
+        ${params.dataScope}
+        group by coalesce(r.region_name, '未填地区')
         order by count(1) desc
     </select>
 </mapper>

@@ -1,5 +1,5 @@
 <template>
-  <warning-rule />
+  <warning-rule entry-mode="list" />
 </template>
 
 <script>

@@ -12,14 +12,6 @@
       <template v-if="device!=='mobile'">
         <search id="header-search" class="right-menu-item" />
 
-        <el-tooltip content="源码地址" effect="dark" placement="bottom">
-          <ruo-yi-git id="ruoyi-git" class="right-menu-item hover-effect" />
-        </el-tooltip>
-
-        <el-tooltip content="文档地址" effect="dark" placement="bottom">
-          <ruo-yi-doc id="ruoyi-doc" class="right-menu-item hover-effect" />
-        </el-tooltip>
-
         <screenfull id="screenfull" class="right-menu-item hover-effect" />
 
         <el-tooltip content="布局大小" effect="dark" placement="bottom">
@@ -35,11 +27,17 @@
       <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="hover">
         <div class="avatar-wrapper">
           <img :src="avatar" class="user-avatar">
-          <span class="user-nickname"> {{ nickName }} </span>
+          <span class="user-nickname"> {{ displayName }} </span>
         </div>
         <el-dropdown-menu slot="dropdown">
           <router-link to="/user/profile">
             <el-dropdown-item>个人中心</el-dropdown-item>
+          </router-link>
+          <router-link to="/support/message">
+            <el-dropdown-item>我的消息</el-dropdown-item>
+          </router-link>
+          <router-link to="/support/todo">
+            <el-dropdown-item>我的任务</el-dropdown-item>
           </router-link>
           <el-dropdown-item @click.native="setLayout" v-if="setting">
             <span>布局设置</span>
@@ -66,8 +64,6 @@ import Hamburger from '@/components/Hamburger'
 import Screenfull from '@/components/Screenfull'
 import SizeSelect from '@/components/SizeSelect'
 import Search from '@/components/HeaderSearch'
-import RuoYiGit from '@/components/RuoYi/Git'
-import RuoYiDoc from '@/components/RuoYi/Doc'
 import HeaderNotice from './HeaderNotice'
 
 export default {
@@ -80,8 +76,6 @@ export default {
     Screenfull,
     SizeSelect,
     Search,
-    RuoYiGit,
-    RuoYiDoc,
     HeaderNotice
   },
   computed: {
@@ -91,6 +85,12 @@ export default {
       'device',
       'nickName'
     ]),
+    displayName() {
+      if (!this.nickName) {
+        return '业务用户'
+      }
+      return this.nickName === '若依' ? '管理员' : this.nickName
+    },
     setting: {
       get() {
         return this.$store.state.settings.showSettings

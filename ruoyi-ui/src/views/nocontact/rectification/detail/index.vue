@@ -1,5 +1,5 @@
 <template>
-  <rectification-issue />
+  <rectification-issue entry-mode="detail" />
 </template>
 
 <script>

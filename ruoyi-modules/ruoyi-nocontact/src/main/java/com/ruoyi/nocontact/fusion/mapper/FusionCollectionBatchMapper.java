@@ -14,6 +14,8 @@ public interface FusionCollectionBatchMapper
 {
     public List<FusionCollectionBatch> selectBatchList(FusionCollectionBatch batch);
 
+    public int countBatchList(FusionCollectionBatch batch);
+
     public FusionCollectionBatch selectBatchById(Long batchId);
 
     public FusionCollectionBatch selectBatchByScope(FusionCollectionBatch batch);
@@ -25,6 +27,8 @@ public interface FusionCollectionBatchMapper
     public int insertBatch(FusionCollectionBatch batch);
 
     public int insertItem(FusionCollectionItem item);
+
+    public int deleteBatchById(Long batchId);
 
     public int updateBatchStatus(FusionCollectionBatch batch);
 

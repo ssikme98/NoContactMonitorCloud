@@ -1,5 +1,6 @@
 package com.ruoyi.nocontact.survey.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.Date;
@@ -46,6 +47,7 @@ public class SurveyTaskSample implements Serializable
     private String token;
 
     /** token失效时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date tokenExpireTime;
 
     /** 二维码内容 */
@@ -55,6 +57,7 @@ public class SurveyTaskSample implements Serializable
     private String status;
 
     /** 创建时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createTime;
 
     public Long getSampleId()

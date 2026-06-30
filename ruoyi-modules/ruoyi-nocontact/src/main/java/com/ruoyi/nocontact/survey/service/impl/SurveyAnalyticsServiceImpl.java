@@ -17,6 +17,7 @@ import com.ruoyi.nocontact.survey.mapper.SurveyResponseMapper;
 import com.ruoyi.nocontact.survey.mapper.SurveyTaskMapper;
 import com.ruoyi.nocontact.survey.service.ISurveyAnalyticsService;
 import com.ruoyi.nocontact.survey.service.ISurveyQuestionnaireService;
+import com.ruoyi.nocontact.survey.service.ISurveyTaskService;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -65,6 +66,9 @@ public class SurveyAnalyticsServiceImpl implements ISurveyAnalyticsService
     private SurveyTaskMapper taskMapper;
 
     @Autowired
+    private ISurveyTaskService surveyTaskService;
+
+    @Autowired
     private SurveyResponseMapper responseMapper;
 
     @Autowired
@@ -73,7 +77,7 @@ public class SurveyAnalyticsServiceImpl implements ISurveyAnalyticsService
     @Override
     public SurveySatisfactionAnalytics selectSatisfactionAnalytics(Long taskId)
     {
-        SurveyTask task = taskMapper.selectTaskById(taskId);
+        SurveyTask task = surveyTaskService.selectTaskById(taskId);
         if (task == null)
         {
             throw new ServiceException("调研任务不存在");
@@ -106,7 +110,7 @@ public class SurveyAnalyticsServiceImpl implements ISurveyAnalyticsService
         analytics.setTaskId(taskId);
         analytics.setResponseCount(Long.valueOf(responseIds.size()));
         analytics.setOverallScore(average(points));
-        analytics.setRegionStats(groupStats(points, item -> defaultName(item.regionName, "未填地区")));
+        analytics.setRegionStats(groupStats(points, item -> defaultName(item.regionName, "未填城市")));
         analytics.setIndustryStats(groupStats(points, item -> defaultName(item.industryCategory, "未填行业")));
         analytics.setDimensionStats(groupStats(points, item -> item.dimension));
         analytics.setScaleStats(groupStats(points, item -> defaultName(item.enterpriseScale, "未填规模")));
@@ -124,7 +128,7 @@ public class SurveyAnalyticsServiceImpl implements ISurveyAnalyticsService
         addParagraph(document, "有效答卷数：" + analytics.getResponseCount());
         addParagraph(document, "总体满意度：" + formatScore(analytics.getOverallScore()));
         addStatsTable(document, "题目维度统计", analytics.getDimensionStats());
-        addStatsTable(document, "地区统计", analytics.getRegionStats());
+        addStatsTable(document, "城市统计", analytics.getRegionStats());
         addStatsTable(document, "行业统计", analytics.getIndustryStats());
         addStatsTable(document, "企业规模统计", analytics.getScaleStats());
         addDistributionTables(document, analytics.getQuestionDistributions());

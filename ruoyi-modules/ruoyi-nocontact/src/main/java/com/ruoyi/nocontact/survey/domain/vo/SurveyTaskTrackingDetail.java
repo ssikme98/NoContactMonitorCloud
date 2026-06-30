@@ -1,5 +1,6 @@
 package com.ruoyi.nocontact.survey.domain.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import java.util.Date;
 
@@ -38,10 +39,16 @@ public class SurveyTaskTrackingDetail extends BaseEntity
 
     private String submitStatus;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date sendTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date submitTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date recoveryTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date tokenExpireTime;
 
     public Long getTaskId()
@@ -192,6 +199,16 @@ public class SurveyTaskTrackingDetail extends BaseEntity
     public void setSubmitTime(Date submitTime)
     {
         this.submitTime = submitTime;
+    }
+
+    public Date getRecoveryTime()
+    {
+        return recoveryTime;
+    }
+
+    public void setRecoveryTime(Date recoveryTime)
+    {
+        this.recoveryTime = recoveryTime;
     }
 
     public Date getTokenExpireTime()

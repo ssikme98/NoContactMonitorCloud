@@ -1,5 +1,5 @@
 <template>
-  <survey-questionnaire />
+  <survey-questionnaire entry-mode="designer" />
 </template>
 
 <script>

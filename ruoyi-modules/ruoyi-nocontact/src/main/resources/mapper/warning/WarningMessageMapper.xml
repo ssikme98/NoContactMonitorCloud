@@ -103,6 +103,47 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by m.trigger_time desc, m.message_id desc
     </select>
 
+    <select id="countMessageList" parameterType="WarningMessage" resultType="int">
+        select count(1)
+        from nc_warning_message m
+        left join nc_warning_rule r on r.rule_id = m.rule_id
+        left join nc_fusion_indicator i on i.indicator_id = m.indicator_id
+        <where>
+            m.del_flag = '0'
+            <if test="ruleName != null and ruleName != ''">
+                AND coalesce(r.rule_name, m.rule_name) like '%' || #{ruleName} || '%'
+            </if>
+            <if test="indicatorName != null and indicatorName != ''">
+                AND coalesce(i.indicator_name, m.indicator_name) like '%' || #{indicatorName} || '%'
+            </if>
+            <if test="warningLevel != null and warningLevel != ''">
+                AND m.warning_level = #{warningLevel}
+            </if>
+            <if test="messageStatus != null and messageStatus != ''">
+                AND m.message_status = #{messageStatus}
+            </if>
+            <if test="regionName != null and regionName != ''">
+                AND m.region_name like '%' || #{regionName} || '%'
+            </if>
+            <if test="deptId != null">
+                AND m.dept_id = #{deptId}
+            </if>
+            <if test="responsibleUnitId != null">
+                AND m.responsible_unit_id = #{responsibleUnitId}
+            </if>
+            <if test="responsibleUnitName != null and responsibleUnitName != ''">
+                AND m.responsible_unit_name like '%' || #{responsibleUnitName} || '%'
+            </if>
+            <if test="regionCode != null and regionCode != ''">
+                AND m.region_code = #{regionCode}
+            </if>
+            <if test="periodKey != null and periodKey != ''">
+                AND m.period_key = #{periodKey}
+            </if>
+            ${params.dataScope}
+        </where>
+    </select>
+
     <select id="selectMessageById" parameterType="Long" resultMap="WarningMessageResult">
         <include refid="selectMessageVo"/>
         where m.message_id = #{messageId} and m.del_flag = '0'

@@ -1,5 +1,6 @@
 <template>
   <div class="app-container survey-task-page">
+    <div v-if="routeTitle" class="entry-title">{{ routeTitle }}</div>
     <el-form v-show="showSearch" ref="queryForm" :model="queryParams" size="small" :inline="true">
       <el-form-item label="任务名称" prop="taskName">
         <el-input v-model="queryParams.taskName" placeholder="请输入任务名称" clearable @keyup.enter.native="handleQuery" />
@@ -16,10 +17,10 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['survey:task:add']">新增</el-button>
+      <el-col v-if="showAddAction" :span="1.5">
+        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['survey:task:add']">{{ addButtonText }}</el-button>
       </el-col>
-      <el-col :span="1.5">
+      <el-col v-if="showDeleteAction" :span="1.5">
         <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['survey:task:remove']">删除</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" />
@@ -41,13 +42,17 @@
           <el-tag size="mini" :type="statusTag(scope.row.status)">{{ statusText(scope.row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="发卷时间" prop="dispatchTime" width="160" />
-      <el-table-column label="创建时间" prop="createTime" width="160" />
+      <el-table-column label="发卷时间" prop="dispatchTime" width="160">
+        <template slot-scope="scope">{{ parseTime(scope.row.dispatchTime) }}</template>
+      </el-table-column>
+      <el-table-column label="创建时间" prop="createTime" width="160">
+        <template slot-scope="scope">{{ parseTime(scope.row.createTime) }}</template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="230">
         <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-view" @click="handleDetail(scope.row)" v-hasPermi="['survey:task:query']">详情</el-button>
-          <el-button v-if="scope.row.status === '1'" size="mini" type="text" icon="el-icon-s-promotion" @click="handleDispatch(scope.row)" v-hasPermi="['survey:task:dispatch']">发卷</el-button>
-          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['survey:task:remove']">删除</el-button>
+          <el-button size="mini" type="text" icon="el-icon-view" @click="openDetail(scope.row)" v-hasPermi="['survey:task:query']">{{ detailButtonText }}</el-button>
+          <el-button v-if="showDispatchAction && scope.row.status === '1'" size="mini" type="text" icon="el-icon-s-promotion" @click="handleDispatch(scope.row)" v-hasPermi="['survey:task:dispatch']">发卷</el-button>
+          <el-button v-if="showDeleteAction" size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['survey:task:remove']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -59,8 +64,8 @@
         <el-form-item label="任务名称" prop="taskName">
           <el-input v-model="form.taskName" maxlength="120" show-word-limit />
         </el-form-item>
-        <el-form-item label="已发布问卷" prop="questionnaireId">
-          <el-select v-model="form.questionnaireId" placeholder="请选择已发布问卷" filterable>
+        <el-form-item label="可用问卷" prop="questionnaireId">
+          <el-select v-model="form.questionnaireId" placeholder="请选择可用问卷" filterable>
             <el-option v-for="item in questionnaireOptions" :key="item.questionnaireId" :label="item.questionnaireName + ' v' + (item.versionNo || 1)" :value="item.questionnaireId" />
           </el-select>
         </el-form-item>
@@ -85,10 +90,6 @@
         <el-form-item v-if="form.samplingMethod !== 'specified' && form.sampleSource !== 'enterprise'" label="样本数量" prop="sampleSize">
           <el-input-number v-model="form.sampleSize" :min="1" :max="10000" controls-position="right" />
         </el-form-item>
-        <el-form-item label="token有效期" prop="tokenExpireHours">
-          <el-input-number v-model="form.tokenExpireHours" :min="1" :max="720" controls-position="right" />
-          <span class="form-suffix">小时</span>
-        </el-form-item>
         <el-form-item label="模拟渠道">
           <el-checkbox-group v-model="form.sendChannels">
             <el-checkbox label="sms">短信记录</el-checkbox>
@@ -109,10 +110,13 @@
       <el-descriptions v-if="detail.taskId" :column="3" border size="small">
         <el-descriptions-item label="任务名称">{{ detail.taskName }}</el-descriptions-item>
         <el-descriptions-item label="问卷">{{ detail.questionnaireName }}</el-descriptions-item>
-        <el-descriptions-item label="状态">{{ statusText(detail.status) }}</el-descriptions-item>
+        <el-descriptions-item label="发卷时间">{{ parseTime(detail.dispatchTime) }}</el-descriptions-item>
         <el-descriptions-item label="对象池">{{ sourceText(detail.sampleSource) }}</el-descriptions-item>
         <el-descriptions-item label="抽样方式">{{ samplingText(detail.samplingMethod) }}</el-descriptions-item>
-        <el-descriptions-item label="token有效期">{{ detail.tokenExpireHours }}小时</el-descriptions-item>
+        <el-descriptions-item label="样本数量">{{ detail.sampleSize || 0 }}</el-descriptions-item>
+        <el-descriptions-item label="抽样批次">{{ detail.samplingBatchNo || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="抽样时间">{{ parseTime(detail.samplingBatchTime) }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ parseTime(detail.createTime) }}</el-descriptions-item>
       </el-descriptions>
 
       <div class="tracking-summary">
@@ -121,27 +125,29 @@
           <strong>{{ trackingSummary.totalCount || 0 }}</strong>
         </div>
         <div class="tracking-metric">
-          <span>已回收数</span>
+          <span>已填报数</span>
           <strong>{{ trackingSummary.submittedCount || 0 }}</strong>
         </div>
         <div class="tracking-metric">
-          <span>未回收数</span>
+          <span>未填报数</span>
           <strong>{{ trackingSummary.unsubmittedCount || 0 }}</strong>
         </div>
         <div class="tracking-metric">
-          <span>回收率</span>
+          <span>填报率</span>
           <strong>{{ formatRate(trackingSummary.responseRate) }}</strong>
         </div>
       </div>
 
-      <el-tabs class="detail-tabs">
-        <el-tab-pane label="填报明细">
+      <el-tabs v-model="activeDetailTab" class="detail-tabs">
+        <el-tab-pane label="填报明细" name="tracking-detail">
           <el-form :model="trackingQuery" size="small" :inline="true" class="tracking-filter">
             <el-form-item label="企业名称">
               <el-input v-model="trackingQuery.enterpriseName" clearable placeholder="企业名称" />
             </el-form-item>
-            <el-form-item label="地区">
-              <el-input v-model="trackingQuery.regionName" clearable placeholder="地区" />
+            <el-form-item label="城市">
+              <el-select v-model="trackingQuery.regionName" clearable filterable placeholder="请选择城市">
+                <el-option v-for="item in HUNAN_CITY_OPTIONS" :key="item.code" :label="item.name" :value="item.name" />
+              </el-select>
             </el-form-item>
             <el-form-item label="行业">
               <el-input v-model="trackingQuery.industryCategory" clearable placeholder="行业" />
@@ -162,7 +168,7 @@
           </el-form>
           <el-table :data="trackingDetails" max-height="360">
             <el-table-column label="企业名称" prop="enterpriseName" min-width="190" show-overflow-tooltip />
-            <el-table-column label="地区" prop="regionName" width="130" show-overflow-tooltip />
+            <el-table-column label="城市" prop="regionName" width="130" show-overflow-tooltip />
             <el-table-column label="行业" prop="industryCategory" width="150" show-overflow-tooltip />
             <el-table-column label="规模" prop="enterpriseScale" width="90" />
             <el-table-column label="发送状态" prop="sendStatus" width="90">
@@ -171,25 +177,29 @@
             <el-table-column label="填报状态" prop="submitStatus" width="90">
               <template slot-scope="scope">{{ submitStatusText(scope.row.submitStatus) }}</template>
             </el-table-column>
-            <el-table-column label="发送时间" prop="sendTime" width="160" />
-            <el-table-column label="提交时间" prop="submitTime" width="160" />
+            <el-table-column label="发送时间" prop="sendTime" width="160">
+              <template slot-scope="scope">{{ parseTime(scope.row.sendTime) }}</template>
+            </el-table-column>
+            <el-table-column label="提交时间" prop="submitTime" width="160">
+              <template slot-scope="scope">{{ parseTime(scope.row.submitTime) }}</template>
+            </el-table-column>
           </el-table>
           <pagination v-show="trackingDetailTotal > 0" :total="trackingDetailTotal" :page.sync="trackingQuery.pageNum" :limit.sync="trackingQuery.pageSize" @pagination="getTrackingDetails" />
         </el-tab-pane>
-        <el-tab-pane label="地区统计">
+        <el-tab-pane label="城市统计" name="tracking-region">
           <el-table :data="trackingRegions" max-height="360">
-            <el-table-column label="地区" prop="regionName" min-width="180" />
+            <el-table-column label="城市" prop="regionName" min-width="180" />
             <el-table-column label="发放数" prop="totalCount" width="120" align="center" />
-            <el-table-column label="已回收数" prop="submittedCount" width="120" align="center" />
-            <el-table-column label="回收率" prop="responseRate" width="120" align="center">
+            <el-table-column label="已填报数" prop="submittedCount" width="120" align="center" />
+            <el-table-column label="填报率" prop="responseRate" width="120" align="center">
               <template slot-scope="scope">{{ formatRate(scope.row.responseRate) }}</template>
             </el-table-column>
           </el-table>
         </el-tab-pane>
-        <el-tab-pane label="回收趋势">
+        <el-tab-pane label="填报趋势" name="tracking-trend">
           <el-table :data="trackingTrend" max-height="320">
             <el-table-column label="提交日期" prop="submitDate" min-width="160" />
-            <el-table-column label="回收数" prop="submittedCount" width="120" align="center" />
+            <el-table-column label="填报数" prop="submittedCount" width="120" align="center" />
             <el-table-column label="趋势" min-width="260">
               <template slot-scope="scope">
                 <div class="trend-bar">
@@ -199,7 +209,7 @@
             </el-table-column>
           </el-table>
         </el-tab-pane>
-        <el-tab-pane label="满意度分析">
+        <el-tab-pane label="满意度分析" name="analytics">
           <div class="satisfaction-head">
             <div class="tracking-metric">
               <span>有效答卷数</span>
@@ -224,7 +234,7 @@
             </el-col>
             <el-col :span="12">
               <div class="analysis-panel">
-                <div class="analysis-title">地区</div>
+                <div class="analysis-title">城市</div>
                 <div v-for="item in satisfactionAnalytics.regionStats || []" :key="'region-' + item.statName" class="analysis-bar">
                   <span>{{ item.statName }}</span>
                   <div><em :style="{ width: scoreWidth(item.score) }"></em></div>
@@ -264,13 +274,12 @@
             </el-table-column>
           </el-table>
         </el-tab-pane>
-        <el-tab-pane label="任务样本">
+        <el-tab-pane label="任务样本" name="samples">
           <el-table :data="detail.samples || []" max-height="360">
             <el-table-column label="企业名称" prop="enterpriseName" min-width="180" show-overflow-tooltip />
-            <el-table-column label="地区" prop="regionName" width="130" />
+            <el-table-column label="城市" prop="regionName" width="130" />
             <el-table-column label="行业" prop="industryCategory" width="150" />
             <el-table-column label="规模" prop="enterpriseScale" width="100" />
-            <el-table-column label="token失效时间" prop="tokenExpireTime" width="170" />
             <el-table-column label="状态" prop="status" width="80">
               <template slot-scope="scope">{{ sampleStatusText(scope.row.status) }}</template>
             </el-table-column>
@@ -281,17 +290,25 @@
             </el-table-column>
           </el-table>
         </el-tab-pane>
-        <el-tab-pane label="发送记录">
+        <el-tab-pane label="发送记录" name="dispatch-records">
           <el-table :data="detail.sendRecords || []" max-height="360">
             <el-table-column label="渠道" prop="channel" width="90">
               <template slot-scope="scope">{{ channelText(scope.row.channel) }}</template>
             </el-table-column>
             <el-table-column label="接收人" prop="receiver" width="150" show-overflow-tooltip />
             <el-table-column label="内容" prop="content" min-width="260" show-overflow-tooltip />
-            <el-table-column label="状态" prop="sendStatus" width="90">
-              <template slot-scope="scope">{{ scope.row.sendStatus === '0' ? '已生成' : scope.row.sendStatus }}</template>
+            <el-table-column label="发送状态" prop="sendStatus" width="100">
+              <template slot-scope="scope">{{ sendStatusText(scope.row.sendStatus) }}</template>
             </el-table-column>
-            <el-table-column label="生成时间" prop="createTime" width="170" />
+            <el-table-column label="填报状态" prop="submitStatus" width="100">
+              <template slot-scope="scope">{{ submitStatusText(scope.row.submitStatus) }}</template>
+            </el-table-column>
+            <el-table-column label="填报时间" prop="recoveryTime" width="170">
+              <template slot-scope="scope">{{ parseTime(scope.row.recoveryTime) }}</template>
+            </el-table-column>
+            <el-table-column label="生成时间" prop="createTime" width="170">
+              <template slot-scope="scope">{{ parseTime(scope.row.createTime) }}</template>
+            </el-table-column>
           </el-table>
         </el-tab-pane>
       </el-tabs>
@@ -320,6 +337,23 @@ import {
   getTaskQrCode
 } from '@/api/survey/task'
 
+const HUNAN_CITY_OPTIONS = [
+  { code: '430100', name: '长沙市' },
+  { code: '430200', name: '株洲市' },
+  { code: '430300', name: '湘潭市' },
+  { code: '430400', name: '衡阳市' },
+  { code: '430500', name: '邵阳市' },
+  { code: '430600', name: '岳阳市' },
+  { code: '430700', name: '常德市' },
+  { code: '430800', name: '张家界市' },
+  { code: '430900', name: '益阳市' },
+  { code: '431000', name: '郴州市' },
+  { code: '431100', name: '永州市' },
+  { code: '431200', name: '怀化市' },
+  { code: '431300', name: '娄底市' },
+  { code: '433100', name: '湘西土家族苗族自治州' }
+]
+
 const SOURCE_OPTIONS = [
   { label: '全部企业', value: 'all' },
   { label: '企业分组', value: 'group' },
@@ -334,22 +368,31 @@ const SAMPLING_METHODS = [
 
 export default {
   name: 'SurveyTask',
+  props: {
+    entryMode: {
+      type: String,
+      default: 'manage'
+    }
+  },
   components: { Treeselect },
   data() {
     return {
       SOURCE_OPTIONS,
       SAMPLING_METHODS,
+      HUNAN_CITY_OPTIONS,
       loading: true,
       ids: [],
       multiple: true,
       showSearch: true,
       total: 0,
       taskList: [],
+      entryBootstrapped: false,
       questionnaireOptions: [],
       enterpriseOptions: [],
       groupOptions: [],
       open: false,
       detailOpen: false,
+      activeDetailTab: 'tracking-detail',
       title: '',
       detail: {},
       trackingSummary: {},
@@ -373,7 +416,7 @@ export default {
       form: this.emptyForm(),
       rules: {
         taskName: [{ required: true, message: '任务名称不能为空', trigger: 'blur' }],
-        questionnaireId: [{ required: true, message: '已发布问卷不能为空', trigger: 'change' }],
+        questionnaireId: [{ required: true, message: '可用问卷不能为空', trigger: 'change' }],
         sampleSource: [{ required: true, message: '对象池来源不能为空', trigger: 'change' }],
         samplingMethod: [{ required: true, message: '抽样方式不能为空', trigger: 'change' }]
       }
@@ -395,6 +438,38 @@ export default {
         })
       })
       return rows
+    },
+    isSampleEntry() {
+      return this.entryMode === 'sample'
+    },
+    isTrackingEntry() {
+      return this.entryMode === 'tracking'
+    },
+    isAnalyticsEntry() {
+      return this.entryMode === 'analytics'
+    },
+    routeTitle() {
+      if (this.isSampleEntry) return '样本抽取与发卷'
+      if (this.isTrackingEntry) return '填报追踪'
+      if (this.isAnalyticsEntry) return '满意度统计分析'
+      return ''
+    },
+    showAddAction() {
+      return !this.isTrackingEntry && !this.isAnalyticsEntry
+    },
+    showDeleteAction() {
+      return !this.isTrackingEntry && !this.isAnalyticsEntry
+    },
+    showDispatchAction() {
+      return !this.isTrackingEntry && !this.isAnalyticsEntry
+    },
+    addButtonText() {
+      return this.isSampleEntry ? '新增抽样任务' : '新增'
+    },
+    detailButtonText() {
+      if (this.isTrackingEntry) return '追踪'
+      if (this.isAnalyticsEntry) return '分析'
+      return '详情'
     }
   },
   created() {
@@ -408,11 +483,46 @@ export default {
         this.taskList = response.rows || []
         this.total = response.total || 0
         this.loading = false
+        this.bootstrapEntryMode()
       })
     },
+    bootstrapEntryMode() {
+      if (this.entryBootstrapped) {
+        return
+      }
+      if (this.isSampleEntry) {
+        this.entryBootstrapped = true
+        this.handleAdd()
+        return
+      }
+      if ((this.isTrackingEntry || this.isAnalyticsEntry) && this.routeTaskId()) {
+        this.entryBootstrapped = true
+        this.openDetailByTaskId(this.routeTaskId())
+        return
+      }
+      if ((this.isTrackingEntry || this.isAnalyticsEntry) && this.taskList.length) {
+        this.entryBootstrapped = true
+        this.openDetail(this.taskList[0])
+        return
+      }
+      if (!this.isTrackingEntry && !this.isAnalyticsEntry) {
+        this.entryBootstrapped = true
+      }
+    },
     loadOptions() {
-      listQuestionnaire({ status: '1', pageNum: 1, pageSize: 200 }).then(response => {
-        this.questionnaireOptions = response.rows || []
+      Promise.all([
+        listQuestionnaire({ status: '1', pageNum: 1, pageSize: 200 }),
+        listQuestionnaire({ status: '3', pageNum: 1, pageSize: 200 })
+      ]).then(([publishedResponse, collectingResponse]) => {
+        const merged = [...(publishedResponse.rows || []), ...(collectingResponse.rows || [])]
+        const seen = new Set()
+        this.questionnaireOptions = merged.filter(item => {
+          if (seen.has(item.questionnaireId)) {
+            return false
+          }
+          seen.add(item.questionnaireId)
+          return true
+        })
       })
       listEnterprise({ pageNum: 1, pageSize: 500, status: '0' }).then(response => {
         this.enterpriseOptions = response.rows || []
@@ -420,6 +530,30 @@ export default {
       groupTreeSelect().then(response => {
         this.groupOptions = response.data || []
       })
+    },
+    routeTaskId() {
+      const value = Number(this.$route.query.taskId)
+      return Number.isInteger(value) && value > 0 ? value : null
+    },
+    openDetailByTaskId(taskId) {
+      this.activeDetailTab = this.isAnalyticsEntry ? 'analytics' : 'tracking-detail'
+      getTask(taskId).then(response => {
+        const detail = response.data || {}
+        if (!detail.taskId) {
+          this.openFirstEntryTask()
+          return
+        }
+        this.detail = detail
+        this.loadTracking(taskId)
+        this.detailOpen = true
+      }).catch(() => {
+        this.openFirstEntryTask()
+      })
+    },
+    openFirstEntryTask() {
+      if (this.taskList.length) {
+        this.openDetail(this.taskList[0])
+      }
     },
     handleQuery() {
       this.queryParams.pageNum = 1
@@ -435,8 +569,12 @@ export default {
     },
     handleAdd() {
       this.form = this.emptyForm()
-      this.title = '新增调研任务'
+      this.title = this.isSampleEntry ? '样本抽取任务' : '新增调研任务'
       this.open = true
+    },
+    openDetail(row) {
+      this.activeDetailTab = this.isAnalyticsEntry ? 'analytics' : 'tracking-detail'
+      this.handleDetail(row)
     },
     handleSourceChange(value) {
       if (value === 'enterprise') {
@@ -554,7 +692,6 @@ export default {
         sampleSize: 10,
         groupId: undefined,
         enterpriseIds: [],
-        tokenExpireHours: 168,
         sendChannels: ['sms', 'site'],
         remark: ''
       }
@@ -589,7 +726,7 @@ export default {
       return value === '1' ? '已发送' : value === '2' ? '已填报' : value === '3' ? '已失效' : '待发送'
     },
     sendStatusText(value) {
-      return value === '0' ? '已生成' : '未生成'
+      return value === '0' ? '已生成' : value === '1' ? '已发送' : value || '-'
     },
     submitStatusText(value) {
       return value === '1' ? '已填报' : '未填报'
@@ -618,6 +755,13 @@ export default {
 </script>
 
 <style scoped>
+.entry-title {
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
 .survey-task-page .form-suffix {
   color: #606266;
   margin-left: 8px;

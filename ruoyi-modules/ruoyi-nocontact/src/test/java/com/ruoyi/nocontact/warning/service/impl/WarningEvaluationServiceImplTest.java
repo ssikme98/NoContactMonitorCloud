@@ -3,6 +3,7 @@ package com.ruoyi.nocontact.warning.service.impl;
 import com.ruoyi.nocontact.fusion.domain.FusionCollectionBatch;
 import com.ruoyi.nocontact.fusion.domain.FusionCollectionItem;
 import com.ruoyi.nocontact.fusion.mapper.FusionCollectionBatchMapper;
+import com.ruoyi.nocontact.support.service.IBusinessMessageService;
 import com.ruoyi.nocontact.warning.domain.WarningMessage;
 import com.ruoyi.nocontact.warning.domain.WarningRule;
 import com.ruoyi.nocontact.warning.mapper.WarningMessageMapper;
@@ -40,6 +41,9 @@ class WarningEvaluationServiceImplTest
     @Mock
     private WarningMessageMapper messageMapper;
 
+    @Mock
+    private IBusinessMessageService businessMessageService;
+
     @BeforeEach
     void setUp()
     {
@@ -47,6 +51,7 @@ class WarningEvaluationServiceImplTest
         ReflectionTestUtils.setField(service, "batchMapper", batchMapper);
         ReflectionTestUtils.setField(service, "ruleMapper", ruleMapper);
         ReflectionTestUtils.setField(service, "messageMapper", messageMapper);
+        ReflectionTestUtils.setField(service, "businessMessageService", businessMessageService);
     }
 
     @Test

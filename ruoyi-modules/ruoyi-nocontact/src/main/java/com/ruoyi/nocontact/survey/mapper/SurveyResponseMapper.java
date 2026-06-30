@@ -25,4 +25,6 @@ public interface SurveyResponseMapper
     public int batchResponseAnswer(@Param("list") List<SurveyResponseAnswer> answers);
 
     public int updateSampleCompleted(Long sampleId);
+
+    public int updateSendRecordSubmitted(@Param("sampleId") Long sampleId, @Param("recoveryTime") java.util.Date recoveryTime);
 }

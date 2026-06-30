@@ -59,6 +59,14 @@ public class RectificationIssueController extends BaseController
         return toAjax(issueService.insertIssue(issue, SecurityUtils.getUsername()));
     }
 
+    @RequiresPermissions("nocontact:rectification:issue:add")
+    @Log(title = "预警转整改", businessType = BusinessType.INSERT)
+    @PostMapping("/from-warning/{messageId}")
+    public AjaxResult createFromWarning(@PathVariable Long messageId, @RequestBody RectificationIssue issue)
+    {
+        return toAjax(issueService.createFromWarning(messageId, issue, SecurityUtils.getUsername()));
+    }
+
     @RequiresPermissions("nocontact:rectification:issue:edit")
     @Log(title = "问题整改", businessType = BusinessType.UPDATE)
     @PutMapping
@@ -76,6 +84,14 @@ public class RectificationIssueController extends BaseController
     }
 
     @RequiresPermissions("nocontact:rectification:issue:edit")
+    @Log(title = "开始整改", businessType = BusinessType.UPDATE)
+    @PutMapping("/{issueId}/start")
+    public AjaxResult start(@PathVariable Long issueId)
+    {
+        return toAjax(issueService.start(issueId, SecurityUtils.getUsername()));
+    }
+
+    @RequiresPermissions("nocontact:rectification:issue:edit")
     @Log(title = "提交整改", businessType = BusinessType.UPDATE)
     @PutMapping("/{issueId}/submit")
     public AjaxResult submit(@PathVariable Long issueId, @RequestBody RectificationIssue issue)
@@ -89,14 +105,6 @@ public class RectificationIssueController extends BaseController
     public AjaxResult review(@PathVariable Long issueId, @PathVariable Boolean approved, @RequestBody RectificationIssue issue)
     {
         return toAjax(issueService.review(issueId, approved.booleanValue(), issue, SecurityUtils.getUsername()));
-    }
-
-    @RequiresPermissions("nocontact:rectification:issue:edit")
-    @Log(title = "归档整改", businessType = BusinessType.UPDATE)
-    @PutMapping("/{issueId}/archive")
-    public AjaxResult archive(@PathVariable Long issueId)
-    {
-        return toAjax(issueService.archive(issueId, SecurityUtils.getUsername()));
     }
 
     @RequiresPermissions("nocontact:rectification:issue:remove")

@@ -10,7 +10,10 @@ import com.ruoyi.nocontact.survey.domain.SurveyEnterpriseGroupRel;
 import com.ruoyi.nocontact.survey.mapper.SurveyEnterpriseMapper;
 import com.ruoyi.nocontact.survey.service.ISurveyEnterpriseService;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +30,8 @@ import org.slf4j.LoggerFactory;
 public class SurveyEnterpriseServiceImpl implements ISurveyEnterpriseService
 {
     private static final Logger log = LoggerFactory.getLogger(SurveyEnterpriseServiceImpl.class);
+
+    private static final Map<String, String> HUNAN_CITY_CODES = buildHunanCityCodes();
 
     @Autowired
     private SurveyEnterpriseMapper enterpriseMapper;
@@ -63,6 +68,7 @@ public class SurveyEnterpriseServiceImpl implements ISurveyEnterpriseService
     @Transactional(rollbackFor = Exception.class)
     public int insertEnterprise(SurveyEnterprise enterprise)
     {
+        normalizeCity(enterprise);
         enterprise.setCreateTime(DateUtils.getNowDate());
         if (enterprise.getStatus() == null || enterprise.getStatus().length() == 0)
         {
@@ -77,6 +83,7 @@ public class SurveyEnterpriseServiceImpl implements ISurveyEnterpriseService
     @Transactional(rollbackFor = Exception.class)
     public int updateEnterprise(SurveyEnterprise enterprise)
     {
+        normalizeCity(enterprise);
         enterprise.setUpdateTime(DateUtils.getNowDate());
         enterpriseMapper.deleteEnterpriseGroupByEnterpriseId(enterprise.getEnterpriseId());
         insertEnterpriseGroupRel(enterprise);
@@ -110,6 +117,7 @@ public class SurveyEnterpriseServiceImpl implements ISurveyEnterpriseService
             try
             {
                 BeanValidators.validateWithException(validator, enterprise);
+                normalizeCity(enterprise);
                 SurveyEnterprise exists = enterpriseMapper.selectEnterpriseByCreditCode(enterprise.getCreditCode());
                 if (StringUtils.isNull(exists))
                 {
@@ -149,6 +157,16 @@ public class SurveyEnterpriseServiceImpl implements ISurveyEnterpriseService
         return successMsg.toString();
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int updateEnterpriseLocation(SurveyEnterprise enterprise, String operName)
+    {
+        normalizeCity(enterprise);
+        enterprise.setUpdateBy(operName);
+        enterprise.setUpdateTime(DateUtils.getNowDate());
+        return enterpriseMapper.updateEnterpriseLocation(enterprise);
+    }
+
     private void insertEnterpriseGroupRel(SurveyEnterprise enterprise)
     {
         Long[] groupIds = enterprise.getGroupIds();
@@ -174,5 +192,46 @@ public class SurveyEnterpriseServiceImpl implements ISurveyEnterpriseService
         {
             enterpriseMapper.batchEnterpriseGroup(list);
         }
+    }
+
+    private void normalizeCity(SurveyEnterprise enterprise)
+    {
+        if (enterprise == null)
+        {
+            return;
+        }
+        String cityName = StringUtils.trim(enterprise.getRegionName());
+        enterprise.setRegionName(cityName);
+        if (StringUtils.isBlank(cityName))
+        {
+            enterprise.setRegionCode(null);
+            return;
+        }
+        String cityCode = HUNAN_CITY_CODES.get(cityName);
+        if (cityCode == null)
+        {
+            throw new ServiceException("城市必须为湖南省内城市：" + cityName);
+        }
+        enterprise.setRegionCode(cityCode);
+    }
+
+    private static Map<String, String> buildHunanCityCodes()
+    {
+        Map<String, String> cities = new HashMap<String, String>();
+        cities.put("长沙市", "430100");
+        cities.put("株洲市", "430200");
+        cities.put("湘潭市", "430300");
+        cities.put("衡阳市", "430400");
+        cities.put("邵阳市", "430500");
+        cities.put("岳阳市", "430600");
+        cities.put("常德市", "430700");
+        cities.put("张家界市", "430800");
+        cities.put("益阳市", "430900");
+        cities.put("郴州市", "431000");
+        cities.put("永州市", "431100");
+        cities.put("怀化市", "431200");
+        cities.put("娄底市", "431300");
+        cities.put("湘西土家族苗族自治州", "433100");
+        return Collections.unmodifiableMap(cities);
     }
 }

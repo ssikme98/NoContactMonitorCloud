@@ -13,7 +13,11 @@ public interface FusionCollectionTaskMapper
 {
     public List<FusionCollectionTask> selectTaskList(FusionCollectionTask task);
 
+    public int countTaskList(FusionCollectionTask task);
+
     public FusionCollectionTask selectTaskById(Long taskId);
+
+    public FusionCollectionTask selectTaskByScope(FusionCollectionTask task);
 
     public int insertTask(FusionCollectionTask task);
 
@@ -23,7 +27,7 @@ public interface FusionCollectionTaskMapper
 
     public int deleteTaskByIds(Long[] taskIds);
 
-    public List<Map<String, Object>> selectTaskStatusStats();
+    public List<Map<String, Object>> selectTaskStatusStats(FusionCollectionTask task);
 
-    public List<Map<String, Object>> selectTaskTypeStats();
+    public List<Map<String, Object>> selectTaskTypeStats(FusionCollectionTask task);
 }
