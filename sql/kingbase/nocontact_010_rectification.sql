@@ -39,6 +39,9 @@ CREATE TABLE IF NOT EXISTS nc_rectification_issue (
   CONSTRAINT pk_nc_rectification_issue PRIMARY KEY (issue_id)
 );
 
+-- 兼容已部署但未包含 dept_id 列的旧表结构
+ALTER TABLE nc_rectification_issue ADD COLUMN IF NOT EXISTS dept_id bigint DEFAULT NULL;
+
 COMMENT ON TABLE nc_rectification_issue IS '问题整改台账';
 COMMENT ON COLUMN nc_rectification_issue.issue_code IS '问题编号';
 COMMENT ON COLUMN nc_rectification_issue.issue_title IS '问题标题';
