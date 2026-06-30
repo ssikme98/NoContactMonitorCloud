@@ -2,18 +2,18 @@
   <div>
     <el-popover ref="noticePopover" placement="bottom-end" width="320" trigger="manual" :value="noticeVisible" popper-class="notice-popover">
       <div class="notice-header">
-        <span class="notice-title">通知公告</span>
-        <span class="notice-mark-all" @click="markAllRead">全部已读</span>
+        <span class="notice-title">业务消息</span>
+        <span class="notice-mark-all" @click="openMessageCenter">进入消息中心</span>
       </div>
       <div v-if="noticeLoading" class="notice-loading"><i class="el-icon-loading"></i> 加载中...</div>
-      <div v-else-if="noticeList.length === 0" class="notice-empty"><i class="el-icon-inbox"></i><br>暂无公告</div>
+      <div v-else-if="noticeList.length === 0" class="notice-empty"><i class="el-icon-inbox"></i><br>暂无业务消息</div>
       <div v-else>
-        <div v-for="item in noticeList" :key="item.noticeId" class="notice-item" :class="{ 'is-read': item.isRead }" @click="previewNotice(item)">
-          <el-tag size="mini" :type="item.noticeType === '1' ? 'warning' : 'success'" class="notice-tag">
-            {{ item.noticeType === '1' ? '通知' : '公告' }}
+        <div v-for="item in noticeList" :key="item.messageId" class="notice-item" :class="{ 'is-read': item.readStatus === '1' }" @click="previewNotice(item)">
+          <el-tag size="mini" :type="item.readStatus === '1' ? 'info' : 'warning'" class="notice-tag">
+            {{ item.readStatus === '1' ? '已读' : '未读' }}
           </el-tag>
-          <span class="notice-item-title">{{ item.noticeTitle }}</span>
-          <span class="notice-item-date">{{ item.createTime }}</span>
+          <span class="notice-item-title">{{ item.title }}</span>
+          <span class="notice-item-date">{{ item.eventTime }}</span>
         </div>
       </div>
     </el-popover>
@@ -22,18 +22,14 @@
       <svg-icon icon-class="bell" />
       <span v-if="unreadCount > 0" class="notice-badge">{{ unreadCount }}</span>
     </div>
-
-    <notice-detail-view ref="noticeViewRef" />
   </div>
 </template>
 
 <script>
-import NoticeDetailView from './DetailView'
-import { listNoticeTop, markNoticeRead, markNoticeReadAll } from '@/api/system/notice'
+import { listBusinessMessage, markBusinessMessageRead } from '@/api/nocontact/support'
 
 export default {
   name: 'HeaderNotice',
-  components: { NoticeDetailView },
   data() {
     return {
       noticeList: [], // 通知列表
@@ -69,31 +65,29 @@ export default {
     // 加载顶部公告列表
     loadNoticeTop() {
       this.noticeLoading = true
-      listNoticeTop().then(res => {
-        this.noticeList = res.data || []
-        this.unreadCount = res.unreadCount !== undefined ? res.unreadCount : this.noticeList.filter(n => !n.isRead).length
+      listBusinessMessage({}).then(res => {
+        this.noticeList = (res.data || []).slice(0, 6)
+        this.unreadCount = this.noticeList.filter(item => item.readStatus !== '1').length
       }).finally(() => {
         this.noticeLoading = false
       })
     },
-    // 预览公告详情
     previewNotice(item) {
-      if (!item.isRead) {
-        markNoticeRead(item.noticeId).catch(() => {})
-        item.isRead = true
+      if (item.readStatus !== '1') {
+        markBusinessMessageRead(item.messageId).catch(() => {})
+        item.readStatus = '1'
         const idx = this.noticeList.indexOf(item)
-        if (idx !== -1) this.$set(this.noticeList, idx, { ...item, isRead: true })
+        if (idx !== -1) this.$set(this.noticeList, idx, { ...item, readStatus: '1' })
         this.unreadCount = Math.max(0, this.unreadCount - 1)
       }
-      this.$refs.noticeViewRef.open(item.noticeId)
+      if (item.jumpTarget) {
+        this.noticeVisible = false
+        this.$router.push(item.jumpTarget.replace('/nocontact', ''))
+      }
     },
-    // 全部已读
-    markAllRead() {
-      const ids = this.noticeList.map(n => n.noticeId).join(',')
-      if (!ids) return
-      markNoticeReadAll(ids).catch(() => {})
-      this.noticeList = this.noticeList.map(n => ({ ...n, isRead: true }))
-      this.unreadCount = 0
+    openMessageCenter() {
+      this.noticeVisible = false
+      this.$router.push('/support/message')
     }
   }
 }

@@ -3,5 +3,6 @@ FROM mysql:5.7
 # author
 MAINTAINER ruoyi
 
-# 执行sql脚本
-ADD ./db/*.sql /docker-entrypoint-initdb.d/
+# 默认不自动导入仓库内 SQL，避免把全量/破坏性脚本放进初始化路径。
+RUN mkdir -p /opt/ruoyi/mysql-db
+ADD ./db/ /opt/ruoyi/mysql-db/

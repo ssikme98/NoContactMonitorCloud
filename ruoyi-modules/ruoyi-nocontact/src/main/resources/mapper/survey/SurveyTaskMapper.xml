@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.survey.mapper.SurveyTaskMapper">
+
+    <resultMap type="SurveyTask" id="SurveyTaskResult">
+        <id     property="taskId"           column="task_id"            />
+        <result property="taskName"         column="task_name"          />
+        <result property="questionnaireId"  column="questionnaire_id"   />
+        <result property="questionnaireName" column="questionnaire_name" />
+        <result property="sampleSource"     column="sample_source"      />
+        <result property="samplingMethod"   column="sampling_method"    />
+        <result property="sampleSize"       column="sample_size"        />
+        <result property="groupId"          column="group_id"           />
+        <result property="samplingBatchNo"  column="sampling_batch_no"  />
+        <result property="samplingBatchTime" column="sampling_batch_time" />
+        <result property="samplingFilterSnapshot" column="sampling_filter_snapshot" />
+        <result property="tokenExpireHours" column="token_expire_hours" />
+        <result property="sendChannelsText" column="send_channels"      />
+        <result property="status"           column="status"             />
+        <result property="dispatchTime"     column="dispatch_time"      />
+        <result property="delFlag"          column="del_flag"           />
+        <result property="createBy"         column="create_by"          />
+        <result property="createTime"       column="create_time"        />
+        <result property="updateBy"         column="update_by"          />
+        <result property="updateTime"       column="update_time"        />
+        <result property="remark"           column="remark"             />
+    </resultMap>
+
+    <resultMap type="SurveyTaskSample" id="SurveyTaskSampleResult">
+        <id     property="sampleId"       column="sample_id"         />
+        <result property="taskId"         column="task_id"           />
+        <result property="enterpriseId"   column="enterprise_id"     />
+        <result property="enterpriseName" column="enterprise_name"   />
+        <result property="creditCode"     column="credit_code"       />
+        <result property="regionName"     column="region_name"       />
+        <result property="industryCategory" column="industry_category" />
+        <result property="enterpriseScale" column="enterprise_scale" />
+        <result property="contactPhone"   column="contact_phone"     />
+        <result property="token"          column="token"             />
+        <result property="tokenExpireTime" column="token_expire_time" />
+        <result property="qrContent"      column="qr_content"        />
+        <result property="status"         column="status"            />
+        <result property="createTime"     column="create_time"       />
+    </resultMap>
+
+    <resultMap type="SurveyTaskSendRecord" id="SurveyTaskSendRecordResult">
+        <id     property="recordId"    column="record_id"    />
+        <result property="taskId"      column="task_id"      />
+        <result property="sampleId"    column="sample_id"    />
+        <result property="enterpriseId" column="enterprise_id" />
+        <result property="channel"     column="channel"      />
+        <result property="receiver"    column="receiver"     />
+        <result property="content"     column="content"      />
+        <result property="sendStatus"  column="send_status"  />
+        <result property="submitStatus" column="submit_status" />
+        <result property="recoveryTime" column="recovery_time" />
+        <result property="createTime"  column="create_time"  />
+    </resultMap>
+
+    <resultMap type="com.ruoyi.nocontact.survey.domain.vo.SurveyTaskTrackingSummary" id="SurveyTaskTrackingSummaryResult">
+        <result property="totalCount"       column="total_count"       />
+        <result property="submittedCount"   column="submitted_count"   />
+        <result property="unsubmittedCount" column="unsubmitted_count" />
+        <result property="responseRate"     column="response_rate"     />
+    </resultMap>
+
+    <resultMap type="com.ruoyi.nocontact.survey.domain.vo.SurveyTaskRegionStat" id="SurveyTaskRegionStatResult">
+        <result property="regionName"     column="region_name"     />
+        <result property="totalCount"     column="total_count"     />
+        <result property="submittedCount" column="submitted_count" />
+        <result property="responseRate"   column="response_rate"   />
+    </resultMap>
+
+    <resultMap type="com.ruoyi.nocontact.survey.domain.vo.SurveyTaskTrackingDetail" id="SurveyTaskTrackingDetailResult">
+        <id     property="sampleId"         column="sample_id"         />
+        <result property="taskId"           column="task_id"           />
+        <result property="enterpriseId"     column="enterprise_id"     />
+        <result property="responseId"       column="response_id"       />
+        <result property="enterpriseName"   column="enterprise_name"   />
+        <result property="creditCode"       column="credit_code"       />
+        <result property="regionName"       column="region_name"       />
+        <result property="industryCategory" column="industry_category" />
+        <result property="enterpriseScale"  column="enterprise_scale"  />
+        <result property="contactPhone"     column="contact_phone"     />
+        <result property="sampleStatus"     column="sample_status"     />
+        <result property="sendStatus"       column="send_status"       />
+        <result property="submitStatus"     column="submit_status"     />
+        <result property="sendTime"         column="send_time"         />
+        <result property="submitTime"       column="submit_time"       />
+        <result property="recoveryTime"     column="recovery_time"     />
+        <result property="tokenExpireTime"  column="token_expire_time" />
+    </resultMap>
+
+    <resultMap type="com.ruoyi.nocontact.survey.domain.vo.SurveyTaskResponseTrend" id="SurveyTaskResponseTrendResult">
+        <result property="submitDate"     column="submit_date"     />
+        <result property="submittedCount" column="submitted_count" />
+    </resultMap>
+
+    <resultMap type="SurveyEnterprise" id="SurveyEnterprisePoolResult">
+        <id     property="enterpriseId"     column="enterprise_id"     />
+        <result property="enterpriseName"   column="enterprise_name"   />
+        <result property="creditCode"       column="credit_code"       />
+        <result property="industryCategory" column="industry_category" />
+        <result property="regionCode"       column="region_code"       />
+        <result property="regionName"       column="region_name"       />
+        <result property="enterpriseScale"  column="enterprise_scale"  />
+        <result property="contactName"      column="contact_name"      />
+        <result property="contactPhone"     column="contact_phone"     />
+        <result property="status"           column="status"            />
+    </resultMap>
+
+    <sql id="selectTaskVo">
+        select t.task_id, t.task_name, t.questionnaire_id, q.questionnaire_name,
+               t.sample_source, t.sampling_method, t.sample_size, t.group_id,
+               t.sampling_batch_no, t.sampling_batch_time, t.sampling_filter_snapshot,
+               t.token_expire_hours, t.send_channels, t.status, t.dispatch_time, t.del_flag,
+               t.create_by, t.create_time, t.update_by, t.update_time, t.remark
+        from survey_task t
+        left join survey_questionnaire q on q.questionnaire_id = t.questionnaire_id
+        left join sys_user u on u.user_name = t.create_by
+    </sql>
+
+    <select id="selectTaskList" parameterType="SurveyTask" resultMap="SurveyTaskResult">
+        <include refid="selectTaskVo"/>
+        <where>
+            t.del_flag = '0'
+            <if test="taskName != null and taskName != ''">
+                AND t.task_name like '%' || #{taskName} || '%'
+            </if>
+            <if test="questionnaireId != null">
+                AND t.questionnaire_id = #{questionnaireId}
+            </if>
+            <if test="status != null and status != ''">
+                AND t.status = #{status}
+            </if>
+            ${params.dataScope}
+        </where>
+        order by t.create_time desc, t.task_id desc
+    </select>
+
+    <select id="selectTaskById" parameterType="Long" resultMap="SurveyTaskResult">
+        <include refid="selectTaskVo"/>
+        where t.task_id = #{taskId} and t.del_flag = '0'
+    </select>
+
+    <select id="selectTaskByScope" parameterType="SurveyTask" resultMap="SurveyTaskResult">
+        <include refid="selectTaskVo"/>
+        where t.task_id = #{taskId} and t.del_flag = '0'
+        ${params.dataScope}
+    </select>
+
+    <select id="selectSamplesByTaskId" parameterType="Long" resultMap="SurveyTaskSampleResult">
+        select sample_id, task_id, enterprise_id, enterprise_name, credit_code,
+               region_name, industry_category, enterprise_scale, contact_phone,
+               token, token_expire_time, qr_content, status, create_time
+        from survey_task_sample
+        where task_id = #{taskId}
+        order by sample_id
+    </select>
+
+    <select id="selectSendRecordsByTaskId" parameterType="Long" resultMap="SurveyTaskSendRecordResult">
+        select record_id, task_id, sample_id, enterprise_id, channel, receiver,
+               content, send_status, submit_status, recovery_time, create_time
+        from survey_task_send_record
+        where task_id = #{taskId}
+        order by record_id
+    </select>
+
+    <select id="selectSampleById" parameterType="Long" resultMap="SurveyTaskSampleResult">
+        select sample_id, task_id, enterprise_id, enterprise_name, credit_code,
+               region_name, industry_category, enterprise_scale, contact_phone,
+               token, token_expire_time, qr_content, status, create_time
+        from survey_task_sample
+        where sample_id = #{sampleId}
+    </select>
+
+    <select id="selectEnterprisePool" parameterType="SurveyTask" resultMap="SurveyEnterprisePoolResult">
+        select e.enterprise_id, e.enterprise_name, e.credit_code, e.industry_category,
+               e.region_code, e.region_name, e.enterprise_scale, e.contact_name,
+               e.contact_phone, e.status
+        from survey_enterprise e
+        <where>
+            e.del_flag = '0'
+            and e.status = '0'
+            <if test="sampleSource == 'group' and groupId != null">
+                and exists (
+                    select 1 from survey_enterprise_group_rel r
+                    left join survey_enterprise_group g on g.group_id = r.group_id
+                    where r.enterprise_id = e.enterprise_id
+                      and (
+                          r.group_id = #{groupId}
+                          or ',' || g.ancestors || ',' LIKE '%,' || #{groupId} || ',%'
+                      )
+                )
+            </if>
+            <if test="enterpriseIds != null and enterpriseIds.length > 0">
+                and e.enterprise_id in
+                <foreach collection="enterpriseIds" item="enterpriseId" open="(" separator="," close=")">
+                    #{enterpriseId}
+                </foreach>
+            </if>
+        </where>
+        order by e.enterprise_id
+    </select>
+
+    <select id="countSendRecordsByTaskId" parameterType="Long" resultType="int">
+        select count(1) from survey_task_send_record where task_id = #{taskId}
+    </select>
+
+    <select id="countPendingTodoSamples" parameterType="SurveyTask" resultType="int">
+        select count(1)
+        from survey_task_sample s
+        inner join survey_task t on t.task_id = s.task_id
+        left join sys_user u on u.user_name = t.create_by
+        where t.del_flag = '0'
+          and t.status = '2'
+          and s.status = '1'
+          ${params.dataScope}
+    </select>
+
+    <select id="selectTrackingSummary" parameterType="Long" resultMap="SurveyTaskTrackingSummaryResult">
+        select count(s.sample_id) as total_count,
+               count(r.response_id) as submitted_count,
+               count(s.sample_id) - count(r.response_id) as unsubmitted_count,
+               case when count(s.sample_id) = 0 then 0
+                    else round(count(r.response_id) * 100.0 / count(s.sample_id), 2)
+               end as response_rate
+        from survey_task_sample s
+        left join survey_response r on r.sample_id = s.sample_id
+        where s.task_id = #{taskId}
+    </select>
+
+    <select id="selectTrackingRegionStats" parameterType="Long" resultMap="SurveyTaskRegionStatResult">
+        select coalesce(nullif(s.region_name, ''), '未填城市') as region_name,
+               count(s.sample_id) as total_count,
+               count(r.response_id) as submitted_count,
+               case when count(s.sample_id) = 0 then 0
+                    else round(count(r.response_id) * 100.0 / count(s.sample_id), 2)
+               end as response_rate
+        from survey_task_sample s
+        left join survey_response r on r.sample_id = s.sample_id
+        where s.task_id = #{taskId}
+        group by coalesce(nullif(s.region_name, ''), '未填城市')
+        order by response_rate desc, total_count desc, region_name
+    </select>
+
+    <select id="selectTrackingDetailList" parameterType="com.ruoyi.nocontact.survey.domain.vo.SurveyTaskTrackingDetail" resultMap="SurveyTaskTrackingDetailResult">
+        select s.task_id,
+               s.sample_id,
+               s.enterprise_id,
+               r.response_id,
+               s.enterprise_name,
+               s.credit_code,
+               s.region_name,
+               s.industry_category,
+               s.enterprise_scale,
+               s.contact_phone,
+               s.status as sample_status,
+               coalesce(sr.send_status, '') as send_status,
+               coalesce(sr.submit_status, case when r.response_id is null then '0' else '1' end) as submit_status,
+               sr.send_time,
+               coalesce(sr.recovery_time, r.submit_time) as submit_time,
+               sr.recovery_time,
+               s.token_expire_time
+        from survey_task_sample s
+        left join survey_response r on r.sample_id = s.sample_id
+        left join (
+            select sample_id,
+                   min(send_status) as send_status,
+                   min(submit_status) as submit_status,
+                   min(create_time) as send_time,
+                   min(recovery_time) as recovery_time
+            from survey_task_send_record
+            where task_id = #{taskId}
+            group by sample_id
+        ) sr on sr.sample_id = s.sample_id
+        <where>
+            s.task_id = #{taskId}
+            <if test="enterpriseName != null and enterpriseName != ''">
+                AND s.enterprise_name like '%' || #{enterpriseName} || '%'
+            </if>
+            <if test="regionName != null and regionName != ''">
+                AND s.region_name like '%' || #{regionName} || '%'
+            </if>
+            <if test="industryCategory != null and industryCategory != ''">
+                AND s.industry_category like '%' || #{industryCategory} || '%'
+            </if>
+            <if test="enterpriseScale != null and enterpriseScale != ''">
+                AND s.enterprise_scale like '%' || #{enterpriseScale} || '%'
+            </if>
+            <if test="submitStatus != null and submitStatus == '1'.toString()">
+                AND r.response_id is not null
+            </if>
+            <if test="submitStatus != null and submitStatus == '0'.toString()">
+                AND r.response_id is null
+            </if>
+        </where>
+        order by s.sample_id
+    </select>
+
+    <select id="selectTrackingTrend" parameterType="Long" resultMap="SurveyTaskResponseTrendResult">
+        select to_char(submit_time, 'YYYY-MM-DD') as submit_date,
+               count(1) as submitted_count
+        from survey_response
+        where task_id = #{taskId}
+        group by to_char(submit_time, 'YYYY-MM-DD')
+        order by submit_date
+    </select>
+
+    <insert id="insertTask" parameterType="SurveyTask" useGeneratedKeys="true" keyProperty="taskId">
+        insert into survey_task(
+            task_name, questionnaire_id, sample_source, sampling_method, sample_size,
+            group_id, sampling_batch_no, sampling_batch_time, sampling_filter_snapshot,
+            token_expire_hours, send_channels, status, dispatch_time, del_flag,
+            create_by, create_time, remark
+        ) values (
+            #{taskName}, #{questionnaireId}, #{sampleSource}, #{samplingMethod}, #{sampleSize},
+            #{groupId}, #{samplingBatchNo}, #{samplingBatchTime}, #{samplingFilterSnapshot},
+            #{tokenExpireHours}, #{sendChannelsText}, #{status}, #{dispatchTime}, '0',
+            #{createBy}, #{createTime}, #{remark}
+        )
+    </insert>
+
+    <update id="updateTaskStatus" parameterType="SurveyTask">
+        update survey_task
+        <set>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="dispatchTime != null">dispatch_time = #{dispatchTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = #{updateTime}
+        </set>
+        where task_id = #{taskId} and del_flag = '0'
+        <if test="expectedStatus != null and expectedStatus != ''">
+            and status = #{expectedStatus}
+        </if>
+    </update>
+
+    <update id="deleteTaskByIds" parameterType="Long">
+        update survey_task set del_flag = '2' where del_flag = '0' and task_id in
+        <foreach collection="array" item="taskId" open="(" separator="," close=")">
+            #{taskId}
+        </foreach>
+    </update>
+
+    <insert id="insertTaskSample" parameterType="SurveyTaskSample" useGeneratedKeys="true" keyProperty="sampleId">
+        insert into survey_task_sample(
+            task_id, enterprise_id, enterprise_name, credit_code, region_name,
+            industry_category, enterprise_scale, contact_phone, token,
+            token_expire_time, qr_content, status, create_time
+        ) values (
+            #{taskId}, #{enterpriseId}, #{enterpriseName}, #{creditCode}, #{regionName},
+            #{industryCategory}, #{enterpriseScale}, #{contactPhone}, #{token},
+            #{tokenExpireTime}, #{qrContent}, #{status}, #{createTime}
+        )
+    </insert>
+
+    <insert id="batchSendRecord">
+        insert into survey_task_send_record(
+            task_id, sample_id, enterprise_id, channel, receiver, content, send_status, submit_status, recovery_time, create_time
+        ) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.taskId}, #{item.sampleId}, #{item.enterpriseId}, #{item.channel}, #{item.receiver}, #{item.content}, #{item.sendStatus}, #{item.submitStatus}, #{item.recoveryTime}, #{item.createTime})
+        </foreach>
+    </insert>
+
+    <delete id="deleteSendRecordsByTaskId" parameterType="Long">
+        delete from survey_task_send_record where task_id = #{taskId}
+    </delete>
+
+    <update id="updateSamplesSent" parameterType="Long">
+        update survey_task_sample set status = '1' where task_id = #{taskId}
+    </update>
+
+    <update id="updateSendRecordSubmitted">
+        update survey_task_send_record
+        set submit_status = '1',
+            recovery_time = #{recoveryTime}
+        where sample_id = #{sampleId}
+    </update>
+
+</mapper>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.support.mapper.BusinessMessageMapper">
+
+    <resultMap id="BusinessMessageResult" type="BusinessMessage">
+        <id property="messageId" column="message_id" />
+        <result property="messageType" column="message_type" />
+        <result property="title" column="title" />
+        <result property="content" column="content" />
+        <result property="businessType" column="business_type" />
+        <result property="businessId" column="business_id" />
+        <result property="jumpTarget" column="jump_target" />
+        <result property="readStatus" column="read_status" />
+        <result property="receiverUserId" column="receiver_user_id" />
+        <result property="receiverUserName" column="receiver_user_name" />
+        <result property="eventTime" column="event_time" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <select id="selectMessageList" parameterType="BusinessMessage" resultMap="BusinessMessageResult">
+        select message_id, message_type, title, content, business_type, business_id, jump_target, read_status,
+               receiver_user_id, receiver_user_name, event_time, create_by, create_time, update_by, update_time, remark
+        from nc_business_message
+        <where>
+            del_flag = '0'
+            <if test="receiverUserName != null and receiverUserName != ''">
+                and receiver_user_name = #{receiverUserName}
+            </if>
+            <if test="readStatus != null and readStatus != ''">
+                and read_status = #{readStatus}
+            </if>
+        </where>
+        order by event_time desc, message_id desc
+    </select>
+
+    <select id="selectMessageById" parameterType="Long" resultMap="BusinessMessageResult">
+        select message_id, message_type, title, content, business_type, business_id, jump_target, read_status,
+               receiver_user_id, receiver_user_name, event_time, create_by, create_time, update_by, update_time, remark
+        from nc_business_message
+        where message_id = #{messageId} and del_flag = '0'
+    </select>
+
+    <insert id="insertMessage" parameterType="BusinessMessage" useGeneratedKeys="true" keyProperty="messageId">
+        insert into nc_business_message
+        (message_type, title, content, business_type, business_id, jump_target, read_status,
+         receiver_user_id, receiver_user_name, event_time, create_by, create_time, remark)
+        values
+        (#{messageType}, #{title}, #{content}, #{businessType}, #{businessId}, #{jumpTarget}, #{readStatus},
+         #{receiverUserId}, #{receiverUserName}, #{eventTime}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateReadStatus" parameterType="BusinessMessage">
+        update nc_business_message
+        set read_status = #{readStatus},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where message_id = #{messageId}
+          and del_flag = '0'
+    </update>
+
+    <select id="countUnreadByUserName" parameterType="String" resultType="int">
+        select count(1)
+        from nc_business_message
+        where del_flag = '0'
+          and receiver_user_name = #{userName}
+          and read_status = '0'
+    </select>
+
+</mapper>

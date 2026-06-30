@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.fusion.mapper.FusionIndicatorTagMapper">
+
+    <resultMap type="FusionIndicatorTag" id="FusionIndicatorTagResult">
+        <id property="tagId" column="tag_id" />
+        <result property="tagName" column="tag_name" />
+        <result property="tagColor" column="tag_color" />
+        <result property="categoryName" column="category_name" />
+        <result property="orderNum" column="order_num" />
+        <result property="relatedCount" column="related_count" />
+        <result property="status" column="status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="selectTagVo">
+        select tag_id, tag_name, tag_color, category_name, order_num, related_count,
+               status, create_by, create_time, update_by, update_time, remark
+        from nc_indicator_tag
+    </sql>
+
+    <select id="selectTagList" parameterType="FusionIndicatorTag" resultMap="FusionIndicatorTagResult">
+        <include refid="selectTagVo"/>
+        <where>
+            del_flag = '0'
+            <if test="tagName != null and tagName != ''">
+                AND tag_name like '%' || #{tagName} || '%'
+            </if>
+            <if test="categoryName != null and categoryName != ''">
+                AND category_name like '%' || #{categoryName} || '%'
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        order by order_num, tag_id desc
+    </select>
+
+    <select id="selectTagById" parameterType="Long" resultMap="FusionIndicatorTagResult">
+        <include refid="selectTagVo"/>
+        where tag_id = #{tagId} and del_flag = '0'
+    </select>
+
+    <insert id="insertTag" parameterType="FusionIndicatorTag" useGeneratedKeys="true" keyProperty="tagId">
+        insert into nc_indicator_tag
+        (tag_name, tag_color, category_name, order_num, related_count, status, create_by, create_time, remark)
+        values
+        (#{tagName}, #{tagColor}, #{categoryName}, #{orderNum}, coalesce(#{relatedCount}, 0), coalesce(#{status}, '0'), #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateTag" parameterType="FusionIndicatorTag">
+        update nc_indicator_tag
+        <set>
+            <if test="tagName != null">tag_name = #{tagName},</if>
+            <if test="tagColor != null">tag_color = #{tagColor},</if>
+            <if test="categoryName != null">category_name = #{categoryName},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="relatedCount != null">related_count = #{relatedCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where tag_id = #{tagId}
+    </update>
+
+    <update id="deleteTagByIds" parameterType="Long">
+        update nc_indicator_tag set del_flag = '2'
+        where tag_id in
+        <foreach collection="array" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+    </update>
+</mapper>

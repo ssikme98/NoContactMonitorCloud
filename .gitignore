@@ -51,15 +51,21 @@ nbdist/
 # Docker deployment JARs
 docker/ruoyi/**/jar/*.jar
 docker/nacos/*.jar
+docker/nacos/plugins/*.jar
 
 # Database driver JARs at project root
 /kingbase8-*.jar
 
+# Local generated caches/artifacts
+.m2/
+**/.m2/
+.tmp/
+**/.tmp/
+META-INF/
+
 ######################################################################
 # Local agent/wiki docs
 
-AGENTS.md
-**/AGENTS.md
 .wiki/
 **/.wiki/
 .scratch/

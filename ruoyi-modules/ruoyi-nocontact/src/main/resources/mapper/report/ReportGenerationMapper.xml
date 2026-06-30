@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.report.mapper.ReportGenerationMapper">
+
+    <resultMap type="ReportTemplate" id="ReportTemplateResult">
+        <id property="templateId" column="template_id" />
+        <result property="templateName" column="template_name" />
+        <result property="reportType" column="report_type" />
+        <result property="sections" column="sections" />
+        <result property="dataScope" column="data_scope" />
+        <result property="styleConfig" column="style_config" />
+        <result property="versionNo" column="version_no" />
+        <result property="status" column="status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <resultMap type="ReportGenerationTask" id="ReportGenerationTaskResult">
+        <id property="taskId" column="task_id" />
+        <result property="taskName" column="task_name" />
+        <result property="templateId" column="template_id" />
+        <result property="templateName" column="template_name" />
+        <result property="reportPeriod" column="report_period" />
+        <result property="reportScope" column="report_scope" />
+        <result property="generateMode" column="generate_mode" />
+        <result property="taskStatus" column="task_status" />
+        <result property="generatedFileName" column="generated_file_name" />
+        <result property="generatedWordFileName" column="generated_word_file_name" />
+        <result property="generatedExcelFileName" column="generated_excel_file_name" />
+        <result property="templateVersion" column="template_version" />
+        <result property="generatedBy" column="generated_by" />
+        <result property="snapshotContent" column="snapshot_content" />
+        <result property="generatedTime" column="generated_time" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <resultMap type="ReportGenerationSnapshot" id="ReportGenerationSnapshotResult">
+        <id property="snapshotId" column="snapshot_id" />
+        <result property="taskId" column="task_id" />
+        <result property="taskName" column="task_name" />
+        <result property="templateName" column="template_name" />
+        <result property="reportPeriod" column="report_period" />
+        <result property="reportScope" column="report_scope" />
+        <result property="generatedWordFileName" column="generated_word_file_name" />
+        <result property="generatedExcelFileName" column="generated_excel_file_name" />
+        <result property="templateVersion" column="template_version" />
+        <result property="generatedBy" column="generated_by" />
+        <result property="snapshotContent" column="snapshot_content" />
+        <result property="generatedTime" column="generated_time" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <select id="selectTemplateList" parameterType="ReportTemplate" resultMap="ReportTemplateResult">
+        select template_id, template_name, report_type, sections, data_scope, style_config,
+               version_no, status, create_by, create_time, update_by, update_time, remark
+        from nc_report_template
+        <where>
+            del_flag = '0'
+            <if test="templateName != null and templateName != ''">
+                AND template_name like '%' || #{templateName} || '%'
+            </if>
+            <if test="reportType != null and reportType != ''">
+                AND report_type = #{reportType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        order by create_time desc, template_id desc
+    </select>
+
+    <select id="selectTemplateById" parameterType="Long" resultMap="ReportTemplateResult">
+        select template_id, template_name, report_type, sections, data_scope, style_config,
+               version_no, status, create_by, create_time, update_by, update_time, remark
+        from nc_report_template
+        where template_id = #{templateId} and del_flag = '0'
+    </select>
+
+    <insert id="insertTemplate" parameterType="ReportTemplate" useGeneratedKeys="true" keyProperty="templateId">
+        insert into nc_report_template
+        (template_name, report_type, sections, data_scope, style_config, version_no, status, create_by, create_time, remark)
+        values
+        (#{templateName}, #{reportType}, #{sections}, #{dataScope}, #{styleConfig}, #{versionNo}, #{status}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateTemplate" parameterType="ReportTemplate">
+        update nc_report_template
+        <set>
+            <if test="templateName != null">template_name = #{templateName},</if>
+            <if test="reportType != null">report_type = #{reportType},</if>
+            <if test="sections != null">sections = #{sections},</if>
+            <if test="dataScope != null">data_scope = #{dataScope},</if>
+            <if test="styleConfig != null">style_config = #{styleConfig},</if>
+            <if test="versionNo != null">version_no = #{versionNo},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where template_id = #{templateId}
+    </update>
+
+    <update id="deleteTemplateByIds" parameterType="Long">
+        update nc_report_template set del_flag = '2'
+        where template_id in
+        <foreach collection="array" item="templateId" open="(" separator="," close=")">
+            #{templateId}
+        </foreach>
+    </update>
+
+    <select id="selectTaskList" parameterType="ReportGenerationTask" resultMap="ReportGenerationTaskResult">
+        select t.task_id, t.task_name, t.template_id, coalesce(p.template_name, t.template_name) as template_name,
+               t.report_period, t.report_scope, t.generate_mode, t.task_status,
+               t.generated_file_name, t.generated_word_file_name, t.generated_excel_file_name,
+               t.template_version, t.generated_by, t.snapshot_content, t.generated_time,
+               t.create_by, t.create_time, t.update_by, t.update_time, t.remark
+        from nc_report_generation_task t
+        left join nc_report_template p on p.template_id = t.template_id
+        <where>
+            t.del_flag = '0'
+            <if test="taskName != null and taskName != ''">
+                AND t.task_name like '%' || #{taskName} || '%'
+            </if>
+            <if test="taskStatus != null and taskStatus != ''">
+                AND t.task_status = #{taskStatus}
+            </if>
+            <if test="reportPeriod != null and reportPeriod != ''">
+                AND t.report_period = #{reportPeriod}
+            </if>
+        </where>
+        order by t.create_time desc, t.task_id desc
+    </select>
+
+    <select id="selectTaskById" parameterType="Long" resultMap="ReportGenerationTaskResult">
+        select t.task_id, t.task_name, t.template_id, coalesce(p.template_name, t.template_name) as template_name,
+               t.report_period, t.report_scope, t.generate_mode, t.task_status,
+               t.generated_file_name, t.generated_word_file_name, t.generated_excel_file_name,
+               t.template_version, t.generated_by, t.snapshot_content, t.generated_time,
+               t.create_by, t.create_time, t.update_by, t.update_time, t.remark
+        from nc_report_generation_task t
+        left join nc_report_template p on p.template_id = t.template_id
+        where t.task_id = #{taskId} and t.del_flag = '0'
+    </select>
+
+    <insert id="insertTask" parameterType="ReportGenerationTask" useGeneratedKeys="true" keyProperty="taskId">
+        insert into nc_report_generation_task
+        (task_name, template_id, template_name, report_period, report_scope, generate_mode,
+         task_status, generated_file_name, generated_word_file_name, generated_excel_file_name,
+         template_version, generated_by, snapshot_content, generated_time, create_by, create_time, remark)
+        values
+        (#{taskName}, #{templateId}, #{templateName}, #{reportPeriod}, #{reportScope}, #{generateMode},
+         #{taskStatus}, #{generatedFileName}, #{generatedWordFileName}, #{generatedExcelFileName},
+         #{templateVersion}, #{generatedBy}, #{snapshotContent}, #{generatedTime}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateTask" parameterType="ReportGenerationTask">
+        update nc_report_generation_task
+        <set>
+            <if test="taskName != null">task_name = #{taskName},</if>
+            <if test="templateId != null">template_id = #{templateId},</if>
+            <if test="templateName != null">template_name = #{templateName},</if>
+            <if test="reportPeriod != null">report_period = #{reportPeriod},</if>
+            <if test="reportScope != null">report_scope = #{reportScope},</if>
+            <if test="generateMode != null">generate_mode = #{generateMode},</if>
+            <if test="taskStatus != null">task_status = #{taskStatus},</if>
+            <if test="generatedFileName != null">generated_file_name = #{generatedFileName},</if>
+            <if test="generatedWordFileName != null">generated_word_file_name = #{generatedWordFileName},</if>
+            <if test="generatedExcelFileName != null">generated_excel_file_name = #{generatedExcelFileName},</if>
+            <if test="templateVersion != null">template_version = #{templateVersion},</if>
+            <if test="generatedBy != null">generated_by = #{generatedBy},</if>
+            <if test="snapshotContent != null">snapshot_content = #{snapshotContent},</if>
+            <if test="generatedTime != null">generated_time = #{generatedTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where task_id = #{taskId}
+    </update>
+
+    <select id="selectSnapshotList" parameterType="Long" resultMap="ReportGenerationSnapshotResult">
+        select snapshot_id, task_id, task_name, template_name, report_period, report_scope,
+               generated_word_file_name, generated_excel_file_name, template_version,
+               generated_by, snapshot_content, generated_time, create_by, create_time, remark
+        from nc_report_generation_snapshot
+        where task_id = #{taskId}
+        order by generated_time desc, snapshot_id desc
+    </select>
+
+    <select id="selectSnapshotById" parameterType="Long" resultMap="ReportGenerationSnapshotResult">
+        select snapshot_id, task_id, task_name, template_name, report_period, report_scope,
+               generated_word_file_name, generated_excel_file_name, template_version,
+               generated_by, snapshot_content, generated_time, create_by, create_time, remark
+        from nc_report_generation_snapshot
+        where snapshot_id = #{snapshotId}
+    </select>
+
+    <insert id="insertSnapshot" parameterType="ReportGenerationSnapshot" useGeneratedKeys="true" keyProperty="snapshotId">
+        insert into nc_report_generation_snapshot
+        (task_id, task_name, template_name, report_period, report_scope,
+         generated_word_file_name, generated_excel_file_name, template_version,
+         generated_by, snapshot_content, generated_time, create_by, create_time, remark)
+        values
+        (#{taskId}, #{taskName}, #{templateName}, #{reportPeriod}, #{reportScope},
+         #{generatedWordFileName}, #{generatedExcelFileName}, #{templateVersion},
+         #{generatedBy}, #{snapshotContent}, #{generatedTime}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <select id="countIndicators" parameterType="ReportGenerationTask" resultType="Long">
+        select count(1)
+        from nc_fusion_indicator
+        where del_flag = '0'
+        <if test="scopeType == 'indicator' and scopeIndicatorId != null">
+            and indicator_id = #{scopeIndicatorId}
+        </if>
+    </select>
+
+    <select id="countCollectionBatches" parameterType="ReportGenerationTask" resultType="Long">
+        select count(distinct b.batch_id)
+        from nc_fusion_collection_batch b
+        <if test="scopeType == 'indicator' and scopeIndicatorId != null">
+            inner join nc_fusion_collection_item i on i.batch_id = b.batch_id and i.del_flag = '0'
+        </if>
+        where b.del_flag = '0'
+        <if test="reportPeriod != null and reportPeriod != ''">
+            and b.period_key = #{reportPeriod}
+        </if>
+        <if test="scopeType == 'region' and scopeRegionName != null and scopeRegionName != ''">
+            and coalesce(b.region_name, '') = #{scopeRegionName}
+        </if>
+        <if test="scopeType == 'indicator' and scopeIndicatorId != null">
+            and i.indicator_id = #{scopeIndicatorId}
+        </if>
+    </select>
+
+    <select id="countCollectionItems" parameterType="ReportGenerationTask" resultType="Long">
+        select count(1)
+        from nc_fusion_collection_item i
+        inner join nc_fusion_collection_batch b on b.batch_id = i.batch_id
+        where i.del_flag = '0'
+          and b.del_flag = '0'
+        <if test="reportPeriod != null and reportPeriod != ''">
+            and b.period_key = #{reportPeriod}
+        </if>
+        <if test="scopeType == 'region' and scopeRegionName != null and scopeRegionName != ''">
+            and coalesce(b.region_name, '') = #{scopeRegionName}
+        </if>
+        <if test="scopeType == 'indicator' and scopeIndicatorId != null">
+            and i.indicator_id = #{scopeIndicatorId}
+        </if>
+    </select>
+
+    <select id="countWarningMessages" parameterType="ReportGenerationTask" resultType="Long">
+        select count(1)
+        from nc_warning_message w
+        where w.del_flag = '0'
+        <if test="reportPeriod != null and reportPeriod != ''">
+            and w.period_key = #{reportPeriod}
+        </if>
+        <if test="scopeType == 'region' and scopeRegionName != null and scopeRegionName != ''">
+            and coalesce(w.region_name, '') = #{scopeRegionName}
+        </if>
+        <if test="scopeType == 'indicator' and scopeIndicatorId != null">
+            and w.indicator_id = #{scopeIndicatorId}
+        </if>
+    </select>
+
+    <select id="countRectificationIssues" parameterType="ReportGenerationTask" resultType="Long">
+        select count(1)
+        from nc_rectification_issue i
+        left join nc_warning_message w on w.message_id = i.source_warning_id and w.del_flag = '0'
+        where i.del_flag = '0'
+        <if test="reportPeriod != null and reportPeriod != ''">
+            and (
+                (i.source_warning_id is not null and w.period_key = #{reportPeriod})
+                or
+                (i.source_warning_id is null
+                    <choose>
+                        <when test="reportPeriodType == 'year'">
+                            and to_char(i.create_time, 'YYYY') = #{reportPeriod}
+                        </when>
+                        <when test="reportPeriodType == 'quarter'">
+                            and (to_char(i.create_time, 'YYYY') || 'Q' || to_char(i.create_time, 'Q')) = #{reportPeriod}
+                        </when>
+                        <when test="reportPeriodType == 'month'">
+                            and to_char(i.create_time, 'YYYY-MM') = #{reportPeriod}
+                        </when>
+                    </choose>
+                )
+            )
+        </if>
+        <if test="scopeType == 'region' and scopeRegionName != null and scopeRegionName != ''">
+            and coalesce(nullif(i.region_name, ''), w.region_name, '') = #{scopeRegionName}
+        </if>
+        <if test="scopeType == 'indicator' and scopeIndicatorId != null">
+            and coalesce(i.indicator_id, w.indicator_id) = #{scopeIndicatorId}
+        </if>
+    </select>
+
+    <select id="countSurveySamples" parameterType="ReportGenerationTask" resultType="Long">
+        select count(1)
+        from survey_task_sample s
+        inner join survey_task t on t.task_id = s.task_id
+        where t.del_flag = '0'
+        <if test="reportPeriod != null and reportPeriod != ''">
+            <choose>
+                <when test="reportPeriodType == 'year'">
+                    and to_char(coalesce(t.dispatch_time, t.create_time), 'YYYY') = #{reportPeriod}
+                </when>
+                <when test="reportPeriodType == 'quarter'">
+                    and (to_char(coalesce(t.dispatch_time, t.create_time), 'YYYY') || 'Q' || to_char(coalesce(t.dispatch_time, t.create_time), 'Q')) = #{reportPeriod}
+                </when>
+                <when test="reportPeriodType == 'month'">
+                    and to_char(coalesce(t.dispatch_time, t.create_time), 'YYYY-MM') = #{reportPeriod}
+                </when>
+            </choose>
+        </if>
+        <if test="scopeType == 'region' and scopeRegionName != null and scopeRegionName != ''">
+            and coalesce(s.region_name, '') = #{scopeRegionName}
+        </if>
+        <if test="scopeType == 'indicator' and scopeIndicatorId != null">
+            and 1 = 0
+        </if>
+    </select>
+
+    <select id="countSurveyResponses" parameterType="ReportGenerationTask" resultType="Long">
+        select count(1)
+        from survey_response r
+        left join survey_task_sample s on s.sample_id = r.sample_id
+        where r.status = '0'
+        <if test="reportPeriod != null and reportPeriod != ''">
+            <choose>
+                <when test="reportPeriodType == 'year'">
+                    and to_char(r.submit_time, 'YYYY') = #{reportPeriod}
+                </when>
+                <when test="reportPeriodType == 'quarter'">
+                    and (to_char(r.submit_time, 'YYYY') || 'Q' || to_char(r.submit_time, 'Q')) = #{reportPeriod}
+                </when>
+                <when test="reportPeriodType == 'month'">
+                    and to_char(r.submit_time, 'YYYY-MM') = #{reportPeriod}
+                </when>
+            </choose>
+        </if>
+        <if test="scopeType == 'region' and scopeRegionName != null and scopeRegionName != ''">
+            and coalesce(s.region_name, '') = #{scopeRegionName}
+        </if>
+        <if test="scopeType == 'indicator' and scopeIndicatorId != null">
+            and 1 = 0
+        </if>
+    </select>
+</mapper>

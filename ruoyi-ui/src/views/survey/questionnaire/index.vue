@@ -1,5 +1,6 @@
 <template>
   <div class="app-container questionnaire-page">
+    <div v-if="isDesignerEntry" class="entry-title">问卷设计器</div>
     <el-form v-show="showSearch" ref="queryForm" :model="queryParams" size="small" :inline="true">
       <el-form-item label="问卷名称" prop="questionnaireName">
         <el-input v-model="queryParams.questionnaireName" placeholder="请输入问卷名称" clearable @keyup.enter.native="handleQuery" />
@@ -17,7 +18,7 @@
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['survey:questionnaire:add']">新增</el-button>
+        <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['survey:questionnaire:add']">{{ createButtonText }}</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['survey:questionnaire:remove']">删除</el-button>
@@ -37,14 +38,18 @@
         </template>
       </el-table-column>
       <el-table-column label="创建人" prop="createBy" width="110" />
-      <el-table-column label="创建时间" prop="createTime" width="160" />
-      <el-table-column label="发布时间" prop="publishedTime" width="160" />
+      <el-table-column label="创建时间" prop="createTime" width="160">
+        <template slot-scope="scope">{{ parseTime(scope.row.createTime) }}</template>
+      </el-table-column>
+      <el-table-column label="发布时间" prop="publishedTime" width="160">
+        <template slot-scope="scope">{{ parseTime(scope.row.publishedTime) }}</template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="310">
         <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['survey:questionnaire:edit']">{{ scope.row.status === '1' ? '查看' : '设计' }}</el-button>
+          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['survey:questionnaire:edit']">{{ isReadonlyStatus(scope.row.status) ? '查看' : '设计' }}</el-button>
           <el-button v-if="scope.row.status === '0'" size="mini" type="text" icon="el-icon-position" @click="handlePublish(scope.row)" v-hasPermi="['survey:questionnaire:publish']">发布</el-button>
-          <el-button v-if="scope.row.status === '1'" size="mini" type="text" icon="el-icon-document-copy" @click="handleDraft(scope.row)" v-hasPermi="['survey:questionnaire:edit']">新版</el-button>
-          <el-button v-if="scope.row.status === '1'" size="mini" type="text" icon="el-icon-circle-close" @click="handleEnd(scope.row)" v-hasPermi="['survey:questionnaire:end']">结束</el-button>
+          <el-button v-if="allowDraft(scope.row.status)" size="mini" type="text" icon="el-icon-document-copy" @click="handleDraft(scope.row)" v-hasPermi="['survey:questionnaire:edit']">新版</el-button>
+          <el-button v-if="allowEnd(scope.row.status)" size="mini" type="text" icon="el-icon-circle-close" @click="handleEnd(scope.row)" v-hasPermi="['survey:questionnaire:end']">结束</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['survey:questionnaire:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -54,39 +59,43 @@
 
     <el-dialog :title="dialogTitle" :visible.sync="open" width="1120px" append-to-body class="questionnaire-dialog">
       <el-form ref="form" :model="form" :rules="rules" label-width="92px">
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="问卷名称" prop="questionnaireName">
-              <el-input v-model="form.questionnaireName" :disabled="readonly" maxlength="120" show-word-limit />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="版本">
-              <el-input :value="'v' + (form.versionNo || 1)" disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="预览宽度">
-              <el-radio-group v-model="previewMode" size="mini">
-                <el-radio-button label="pc">PC</el-radio-button>
-                <el-radio-button label="mobile">移动端</el-radio-button>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="问卷说明">
-          <el-input v-model="form.description" :disabled="readonly" type="textarea" :rows="2" maxlength="500" show-word-limit />
-        </el-form-item>
+        <template v-if="!readonly">
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="问卷名称" prop="questionnaireName">
+                <el-input v-model="form.questionnaireName" maxlength="120" show-word-limit />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="版本">
+                <el-input :value="'v' + (form.versionNo || 1)" disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="预览宽度">
+                <el-radio-group v-model="previewMode" size="mini">
+                  <el-radio-button label="pc">PC</el-radio-button>
+                  <el-radio-button label="mobile">移动端</el-radio-button>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="问卷说明">
+            <el-input v-model="form.description" type="textarea" :rows="2" maxlength="500" show-word-limit />
+          </el-form-item>
+        </template>
+        <div v-else class="preview-only-toolbar">
+          <span class="preview-only-meta">版本 v{{ form.versionNo || 1 }}</span>
+        </div>
 
-        <div class="designer-shell">
-          <div class="designer-editor">
+        <div class="designer-shell" :class="{ 'designer-shell--readonly': readonly }">
+          <div v-if="!readonly" class="designer-editor">
             <div class="designer-toolbar">
-              <el-button type="primary" plain size="mini" icon="el-icon-plus" :disabled="readonly" @click="addQuestion('single')">单选题</el-button>
-              <el-button plain size="mini" icon="el-icon-plus" :disabled="readonly" @click="addQuestion('multiple')">多选题</el-button>
-              <el-button plain size="mini" icon="el-icon-plus" :disabled="readonly" @click="addQuestion('text')">填空题</el-button>
-              <el-button plain size="mini" icon="el-icon-plus" :disabled="readonly" @click="addQuestion('score')">评分题</el-button>
-              <el-button plain size="mini" icon="el-icon-plus" :disabled="readonly" @click="addQuestion('matrix_score')">矩阵评分</el-button>
-              <el-button plain size="mini" icon="el-icon-plus" :disabled="readonly" @click="addQuestion('likert')">Likert</el-button>
+              <el-button type="primary" plain size="mini" icon="el-icon-plus" @click="addQuestion('single')">单选题</el-button>
+              <el-button plain size="mini" icon="el-icon-plus" @click="addQuestion('multiple')">多选题</el-button>
+              <el-button plain size="mini" icon="el-icon-plus" @click="addQuestion('text')">填空题</el-button>
+              <el-button plain size="mini" icon="el-icon-plus" @click="addQuestion('score')">评分题</el-button>
+              <el-button plain size="mini" icon="el-icon-plus" @click="addQuestion('matrix_score')">矩阵评分</el-button>
             </div>
 
             <el-empty v-if="!form.questions.length" description="暂无题目" :image-size="80" />
@@ -104,10 +113,7 @@
                 </el-button-group>
               </div>
               <el-input v-model="question.questionTitle" :disabled="readonly" placeholder="请输入题目标题" maxlength="300" show-word-limit />
-              <el-row :gutter="12" class="question-meta">
-                <el-col :span="12">
-                  <el-input v-model="question.dimension" :disabled="readonly" size="small" placeholder="维度，如政策知晓度、服务满意度" />
-                </el-col>
+              <el-row v-if="isScoreQuestion(question)" :gutter="12" class="question-meta">
                 <el-col v-if="isScoreQuestion(question)" :span="6">
                   <el-input-number v-model="question.scoreMax" :disabled="readonly" size="small" :min="1" :max="10" label="评分上限" />
                 </el-col>
@@ -146,7 +152,7 @@
             </div>
           </div>
 
-          <div class="designer-preview" :class="'designer-preview--' + previewMode">
+          <div class="designer-preview" :class="['designer-preview--' + previewMode, { 'designer-preview--readonly': readonly }]">
             <div class="preview-surface">
               <h3>{{ form.questionnaireName || '未命名问卷' }}</h3>
               <p v-if="form.description">{{ form.description }}</p>
@@ -176,7 +182,7 @@
                     </tbody>
                   </table>
                 </div>
-                <el-radio-group v-else-if="question.questionType === 'likert'" disabled>
+                <el-radio-group v-else-if="question.questionType === 'likert' && readonly" disabled>
                   <el-radio v-for="option in optionRows(question, 'option')" :key="option.localId" :label="option.optionValue">{{ option.optionLabel }}</el-radio>
                 </el-radio-group>
               </div>
@@ -209,12 +215,17 @@ const QUESTION_TYPES = [
   { label: '多选题', value: 'multiple' },
   { label: '填空题', value: 'text' },
   { label: '评分题', value: 'score' },
-  { label: '矩阵评分', value: 'matrix_score' },
-  { label: 'Likert量表', value: 'likert' }
+  { label: '矩阵评分', value: 'matrix_score' }
 ]
 
 export default {
   name: 'SurveyQuestionnaire',
+  props: {
+    entryMode: {
+      type: String,
+      default: 'manage'
+    }
+  },
   data() {
     return {
       QUESTION_TYPES,
@@ -225,6 +236,7 @@ export default {
       showSearch: true,
       total: 0,
       questionnaireList: [],
+      entryBootstrapped: false,
       open: false,
       dialogTitle: '',
       readonly: false,
@@ -238,7 +250,8 @@ export default {
       statusOptions: [
         { label: '草稿', value: '0' },
         { label: '已发布', value: '1' },
-        { label: '已结束', value: '2' }
+        { label: '已结束', value: '2' },
+        { label: '收集中', value: '3' }
       ],
       form: this.emptyForm(),
       rules: {
@@ -248,10 +261,33 @@ export default {
       }
     }
   },
+  computed: {
+    isDesignerEntry() {
+      return this.entryMode === 'designer'
+    },
+    createButtonText() {
+      return this.isDesignerEntry ? '新建设计' : '新增'
+    },
+    readonlyStatuses() {
+      return ['1', '2', '3']
+    }
+  },
   created() {
     this.getList()
   },
+  mounted() {
+    this.bootstrapEntryMode()
+  },
   methods: {
+    bootstrapEntryMode() {
+      if (this.entryBootstrapped) {
+        return
+      }
+      this.entryBootstrapped = true
+      if (this.isDesignerEntry) {
+        this.handleAdd()
+      }
+    },
     getList() {
       this.loading = true
       listQuestionnaire(this.queryParams).then(response => {
@@ -265,7 +301,16 @@ export default {
       return item ? item.label : '未知'
     },
     statusTag(status) {
-      return status === '1' ? 'success' : status === '2' ? 'info' : 'warning'
+      return status === '1' ? 'success' : status === '3' ? 'warning' : status === '2' ? 'info' : 'warning'
+    },
+    isReadonlyStatus(status) {
+      return this.readonlyStatuses.includes(status)
+    },
+    allowDraft(status) {
+      return status === '1' || status === '3'
+    },
+    allowEnd(status) {
+      return status === '1' || status === '3'
     },
     handleQuery() {
       this.queryParams.pageNum = 1
@@ -284,15 +329,15 @@ export default {
       this.form = this.emptyForm()
       this.readonly = false
       this.previewMode = 'pc'
-      this.dialogTitle = '新增问卷'
+      this.dialogTitle = this.isDesignerEntry ? '问卷设计器' : '新增问卷'
       this.open = true
     },
     handleUpdate(row) {
       getQuestionnaire(row.questionnaireId).then(response => {
         this.form = this.normalizeQuestionnaire(response.data)
-        this.readonly = this.form.status === '1' || this.form.status === '2'
-        this.previewMode = 'pc'
-        this.dialogTitle = this.readonly ? '问卷预览' : '设计问卷'
+        this.readonly = this.isReadonlyStatus(this.form.status)
+        this.previewMode = this.readonly ? 'mobile' : 'pc'
+        this.dialogTitle = this.readonly ? '问卷查看' : (this.isDesignerEntry ? '问卷设计器' : '设计问卷')
         this.open = true
       })
     },
@@ -303,7 +348,7 @@ export default {
         this.$modal.msgSuccess('新版草稿已创建')
         this.form = this.normalizeQuestionnaire(response.data)
         this.readonly = false
-        this.dialogTitle = '设计新版草稿'
+        this.dialogTitle = this.isDesignerEntry ? '问卷设计器' : '设计新版草稿'
         this.open = true
         this.getList()
       })
@@ -377,6 +422,9 @@ export default {
         options: []
       }, question || {})
       row.localId = row.localId || this.localId()
+      if (row.questionType !== 'matrix_score') {
+        row.dimension = ''
+      }
       row.options = (row.options || []).map(option => Object.assign({
         localId: this.localId(),
         optionType: 'option',
@@ -442,15 +490,6 @@ export default {
         this.addOption(question, 'column', '5分', 5)
         return
       }
-      if (question.questionType === 'likert') {
-        question.options = []
-        this.addOption(question, 'option', '非常不同意', 1)
-        this.addOption(question, 'option', '不同意', 2)
-        this.addOption(question, 'option', '一般', 3)
-        this.addOption(question, 'option', '同意', 4)
-        this.addOption(question, 'option', '非常同意', 5)
-        return
-      }
       question.options = []
       this.addOption(question, 'option', '选项1')
       this.addOption(question, 'option', '选项2')
@@ -481,7 +520,7 @@ export default {
       return this.optionRows(question, 'column')
     },
     needsOptions(question) {
-      return question.questionType === 'single' || question.questionType === 'multiple' || question.questionType === 'likert'
+      return question.questionType === 'single' || question.questionType === 'multiple' || (question.questionType === 'likert' && this.readonly)
     },
     isMatrixQuestion(question) {
       return question.questionType === 'matrix_score'
@@ -494,10 +533,22 @@ export default {
 </script>
 
 <style scoped>
+.entry-title {
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
 .questionnaire-page .designer-shell {
   display: flex;
   gap: 16px;
   min-height: 520px;
+}
+
+.questionnaire-page .designer-shell--readonly {
+  display: block;
+  min-height: auto;
 }
 
 .designer-editor {
@@ -580,8 +631,28 @@ export default {
   padding-left: 16px;
 }
 
+.designer-preview--readonly {
+  border-left: 0;
+  flex-basis: auto;
+  margin: 0 auto;
+  max-width: 720px;
+  padding-left: 0;
+}
+
 .designer-preview--mobile {
   flex-basis: 260px;
+}
+
+.preview-only-toolbar {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.preview-only-meta {
+  color: #606266;
+  font-size: 13px;
 }
 
 .preview-surface {

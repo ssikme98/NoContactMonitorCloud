@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.warning.mapper.WarningRuleMapper">
+
+    <resultMap type="WarningRule" id="WarningRuleResult">
+        <id     property="ruleId"          column="rule_id"          />
+        <result property="ruleName"        column="rule_name"        />
+        <result property="indicatorId"     column="indicator_id"     />
+        <result property="indicatorName"   column="indicator_name"   />
+        <result property="responsibleUnitId" column="responsible_unit_id" />
+        <result property="responsibleUnitName" column="responsible_unit_name" />
+        <result property="regionCode"      column="region_code"      />
+        <result property="regionName"      column="region_name"      />
+        <result property="periodType"      column="period_type"      />
+        <result property="warningLevel"    column="warning_level"    />
+        <result property="thresholdType"   column="threshold_type"   />
+        <result property="thresholdValue"  column="threshold_value"  />
+        <result property="thresholdValueMax" column="threshold_value_max" />
+        <result property="triggerCondition" column="trigger_condition" />
+        <result property="triggerFrequency" column="trigger_frequency" />
+        <result property="pushChannels"    column="push_channels"    />
+        <result property="pushTargets"     column="push_targets"     />
+        <result property="contentTemplate" column="content_template" />
+        <result property="effectiveMode"   column="effective_mode"   />
+        <result property="effectiveTime"   column="effective_time"   />
+        <result property="status"          column="status"           />
+        <result property="createBy"        column="create_by"        />
+        <result property="createTime"      column="create_time"      />
+        <result property="updateBy"        column="update_by"        />
+        <result property="updateTime"      column="update_time"      />
+        <result property="remark"          column="remark"           />
+    </resultMap>
+
+    <sql id="selectRuleVo">
+        select r.rule_id, r.rule_name, r.indicator_id, coalesce(i.indicator_name, r.indicator_name) as indicator_name,
+               r.responsible_unit_id, r.responsible_unit_name, r.region_code, r.region_name, r.period_type,
+               r.warning_level, r.threshold_type, r.threshold_value, r.trigger_condition, r.trigger_frequency,
+               r.threshold_value_max,
+               r.push_channels, r.push_targets, r.content_template, r.effective_mode, r.effective_time,
+               r.status, r.create_by, r.create_time, r.update_by, r.update_time, r.remark
+        from nc_warning_rule r
+        left join nc_fusion_indicator i on i.indicator_id = r.indicator_id
+    </sql>
+
+    <select id="selectRuleList" parameterType="WarningRule" resultMap="WarningRuleResult">
+        <include refid="selectRuleVo"/>
+        <where>
+            r.del_flag = '0'
+            <if test="ruleName != null and ruleName != ''">
+                AND r.rule_name like '%' || #{ruleName} || '%'
+            </if>
+            <if test="status != null and status != ''">
+                AND r.status = #{status}
+            </if>
+            <if test="warningLevel != null and warningLevel != ''">
+                AND r.warning_level = #{warningLevel}
+            </if>
+            <if test="indicatorName != null and indicatorName != ''">
+                AND coalesce(i.indicator_name, r.indicator_name) like '%' || #{indicatorName} || '%'
+            </if>
+            <if test="responsibleUnitId != null">
+                AND r.responsible_unit_id = #{responsibleUnitId}
+            </if>
+            <if test="regionCode != null and regionCode != ''">
+                AND r.region_code = #{regionCode}
+            </if>
+            <if test="periodType != null and periodType != ''">
+                AND r.period_type = #{periodType}
+            </if>
+        </where>
+        order by r.create_time desc, r.rule_id desc
+    </select>
+
+    <select id="selectRuleById" parameterType="Long" resultMap="WarningRuleResult">
+        <include refid="selectRuleVo"/>
+        where r.rule_id = #{ruleId} and r.del_flag = '0'
+    </select>
+
+    <select id="selectEnabledRulesByIndicator" parameterType="Long" resultMap="WarningRuleResult">
+        <include refid="selectRuleVo"/>
+        where r.indicator_id = #{indicatorId} and r.status = '0' and r.del_flag = '0'
+        order by r.warning_level, r.rule_id
+    </select>
+
+    <select id="selectScheduledRules" resultMap="WarningRuleResult">
+        <include refid="selectRuleVo"/>
+        where r.status = '0'
+          and r.del_flag = '0'
+          and r.trigger_condition in ('missing', 'overdue')
+        order by r.warning_level, r.rule_id
+    </select>
+
+    <insert id="insertRule" parameterType="WarningRule" useGeneratedKeys="true" keyProperty="ruleId">
+        insert into nc_warning_rule
+        (rule_name, indicator_id, indicator_name, responsible_unit_id, responsible_unit_name, region_code, region_name,
+         period_type, warning_level, threshold_type, threshold_value, threshold_value_max,
+         trigger_condition, trigger_frequency, push_channels, push_targets, content_template,
+         effective_mode, effective_time, status, create_by, create_time, remark)
+        values
+        (#{ruleName}, #{indicatorId}, #{indicatorName}, #{responsibleUnitId}, #{responsibleUnitName}, #{regionCode}, #{regionName},
+         #{periodType}, #{warningLevel}, #{thresholdType}, #{thresholdValue}, #{thresholdValueMax},
+         #{triggerCondition}, #{triggerFrequency}, #{pushChannels}, #{pushTargets}, #{contentTemplate},
+         #{effectiveMode}, #{effectiveTime}, #{status}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateRule" parameterType="WarningRule">
+        update nc_warning_rule
+        set rule_name = #{ruleName},
+            indicator_id = #{indicatorId},
+            indicator_name = #{indicatorName},
+            responsible_unit_id = #{responsibleUnitId},
+            responsible_unit_name = #{responsibleUnitName},
+            region_code = #{regionCode},
+            region_name = #{regionName},
+            period_type = #{periodType},
+            warning_level = #{warningLevel},
+            threshold_type = #{thresholdType},
+            threshold_value = #{thresholdValue},
+            threshold_value_max = #{thresholdValueMax},
+            trigger_condition = #{triggerCondition},
+            trigger_frequency = #{triggerFrequency},
+            push_channels = #{pushChannels},
+            push_targets = #{pushTargets},
+            content_template = #{contentTemplate},
+            effective_mode = #{effectiveMode},
+            effective_time = #{effectiveTime},
+            status = #{status},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where rule_id = #{ruleId}
+    </update>
+
+    <update id="updateRuleStatus" parameterType="WarningRule">
+        update nc_warning_rule
+        set status = #{status}, update_by = #{updateBy}, update_time = #{updateTime}
+        where rule_id = #{ruleId}
+    </update>
+
+    <update id="deleteRuleByIds" parameterType="Long">
+        update nc_warning_rule set del_flag = '2'
+        where rule_id in
+        <foreach collection="array" item="ruleId" open="(" separator="," close=")">
+            #{ruleId}
+        </foreach>
+    </update>
+</mapper>

@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS survey_questionnaire (
 COMMENT ON TABLE survey_questionnaire IS '问卷配置';
 COMMENT ON COLUMN survey_questionnaire.questionnaire_id IS '问卷ID';
 COMMENT ON COLUMN survey_questionnaire.questionnaire_name IS '问卷名称';
-COMMENT ON COLUMN survey_questionnaire.status IS '状态（0草稿 1已发布 2已结束）';
+COMMENT ON COLUMN survey_questionnaire.status IS '状态（0草稿 1已发布 2已结束 3收集中）';
 COMMENT ON COLUMN survey_questionnaire.version_no IS '版本号';
 COMMENT ON COLUMN survey_questionnaire.source_questionnaire_id IS '来源问卷ID';
 COMMENT ON COLUMN survey_questionnaire.del_flag IS '删除标志（0代表存在 2代表删除）';
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS survey_question (
 
 COMMENT ON TABLE survey_question IS '问卷题目';
 COMMENT ON COLUMN survey_question.questionnaire_id IS '问卷ID';
-COMMENT ON COLUMN survey_question.question_type IS '题型（single multiple text score matrix_score likert）';
+COMMENT ON COLUMN survey_question.question_type IS '题型（single multiple text score matrix_score）';
 COMMENT ON COLUMN survey_question.required_flag IS '是否必填（0否 1是）';
 COMMENT ON COLUMN survey_question.dimension IS '题目维度';
 COMMENT ON COLUMN survey_question.score_max IS '评分上限';

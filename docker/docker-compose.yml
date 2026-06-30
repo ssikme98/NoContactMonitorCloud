@@ -8,6 +8,10 @@ services:
       context: ./nacos
     environment:
       - MODE=standalone
+      - KINGBASE_HOST=${KINGBASE_HOST:?KINGBASE_HOST is required}
+      - KINGBASE_PORT=${KINGBASE_PORT:-54321}
+      - KINGBASE_USERNAME=${KINGBASE_USERNAME:-root}
+      - KINGBASE_PASSWORD=${KINGBASE_PASSWORD:-password}
     volumes:
       - ./nacos/logs/:/home/nacos/logs
       - ./nacos/conf/application.properties:/home/nacos/conf/application.properties
@@ -48,6 +52,8 @@ services:
     build:
       context: ./ruoyi/gateway
       dockerfile: dockerfile
+    environment:
+      - REDIS_HOST=ruoyi-redis
     ports:
       - "8080:8080"
     depends_on:
@@ -59,6 +65,8 @@ services:
     build:
       context: ./ruoyi/auth
       dockerfile: dockerfile
+    environment:
+      - REDIS_HOST=ruoyi-redis
     ports:
       - "9200:9200"
     depends_on:
@@ -70,6 +78,12 @@ services:
     build:
       context: ./ruoyi/modules/system
       dockerfile: dockerfile
+    environment:
+      - REDIS_HOST=ruoyi-redis
+      - KINGBASE_HOST=${KINGBASE_HOST:?KINGBASE_HOST is required}
+      - KINGBASE_PORT=${KINGBASE_PORT:-54321}
+      - KINGBASE_USERNAME=${KINGBASE_USERNAME:-root}
+      - KINGBASE_PASSWORD=${KINGBASE_PASSWORD:-password}
     ports:
       - "9201:9201"
     depends_on:
@@ -82,6 +96,12 @@ services:
     build:
       context: ./ruoyi/modules/gen
       dockerfile: dockerfile
+    environment:
+      - REDIS_HOST=ruoyi-redis
+      - KINGBASE_HOST=${KINGBASE_HOST:?KINGBASE_HOST is required}
+      - KINGBASE_PORT=${KINGBASE_PORT:-54321}
+      - KINGBASE_USERNAME=${KINGBASE_USERNAME:-root}
+      - KINGBASE_PASSWORD=${KINGBASE_PASSWORD:-password}
     ports:
       - "9202:9202"
     restart: unless-stopped
@@ -90,14 +110,26 @@ services:
     build:
       context: ./ruoyi/modules/job
       dockerfile: dockerfile
+    environment:
+      - REDIS_HOST=ruoyi-redis
+      - KINGBASE_HOST=${KINGBASE_HOST:?KINGBASE_HOST is required}
+      - KINGBASE_PORT=${KINGBASE_PORT:-54321}
+      - KINGBASE_USERNAME=${KINGBASE_USERNAME:-root}
+      - KINGBASE_PASSWORD=${KINGBASE_PASSWORD:-password}
     ports:
       - "9203:9203"
     restart: unless-stopped
-  ruoyi-modules-survey:
-    container_name: ruoyi-modules-survey
+  ruoyi-modules-nocontact:
+    container_name: ruoyi-modules-nocontact
     build:
-      context: ./ruoyi/modules/survey
+      context: ./ruoyi/modules/nocontact
       dockerfile: dockerfile
+    environment:
+      - REDIS_HOST=ruoyi-redis
+      - KINGBASE_HOST=${KINGBASE_HOST:?KINGBASE_HOST is required}
+      - KINGBASE_PORT=${KINGBASE_PORT:-54321}
+      - KINGBASE_USERNAME=${KINGBASE_USERNAME:-root}
+      - KINGBASE_PASSWORD=${KINGBASE_PASSWORD:-password}
     ports:
       - "9204:9204"
     depends_on:

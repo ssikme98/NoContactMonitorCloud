@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { geocodeEnterpriseAddress } from '@/api/nocontact/support'
 
 // 查询企业库列表
 export function listEnterprise(query) {
@@ -92,4 +93,8 @@ export function delEnterpriseGroup(groupId) {
     url: '/survey/enterprise/group/' + groupId,
     method: 'delete'
   })
+}
+
+export function geocodeEnterpriseLocation(regionName, address) {
+  return geocodeEnterpriseAddress(regionName, address)
 }

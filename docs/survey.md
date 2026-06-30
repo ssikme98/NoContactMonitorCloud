@@ -1,10 +1,10 @@
 # Survey: NoContactMonitorCloud
 
-> 注：仓库名 `NoContactMonitorCloud` 是 owner 起的目录名；仓库内容是**上游 RuoYi-Cloud v3.6.8（Spring Boot 2 分支）的纯单次 import**，没有任何业务定制代码（git log 仅 1 个 commit `1cf0ee1 init: Import RuoYi-Cloud (Spring Boot 2 branch)`，全仓搜索 `NoContact` / `监控定制` 0 命中）。下文按 RuoYi-Cloud 标准结构整理。
+> 注：当前仓库不是单独的前端原型项目，而是基于上游 `RuoYi-Cloud v3.6.8` 持续扩展后的实际业务仓库。现状已经包含 `ruoyi-nocontact` 业务服务、问卷模块、营商环境无感监测相关前后端页面、人大金仓 Kingbase 启动与部署脚本，下文按当前真实交付状态整理。
 
 ## Repo Summary
 
-RuoYi-Cloud 是若依开源的**前后端分离分布式微服务架构脚手架**，v3.6.8 / Spring Boot 2.7.18 / Spring Cloud 2021.0.9 / Spring Cloud Alibaba 2021.0.6.1 / JDK 1.8；前端 Vue 2.6.12 + Element UI 2.15.14。Nacos（注册+配置）、Redis（缓存/token）、MySQL（业务）、Sentinel（流控）、Seata（仅 SQL 脚本，无 server）作为基础设施；Spring Boot Admin 作为可视化监控；代码生成、文件存储、定时任务、RBAC、内置 CRUD 与登录链路开箱即用。仓库根 `pom.xml` 编排 6 个顶层模块（auth / gateway / visual / modules / api / common），单仓库多模块 Maven 工程。
+`NoContactMonitorCloud` 仍然以 RuoYi-Cloud 为底座，技术栈为 Spring Boot 2.7.18 / Spring Cloud 2021.0.9 / Spring Cloud Alibaba 2021.0.6.1 / JDK 1.8，前端为 Vue 2.6.12 + Element UI 2.15.14。当前业务交付基线已经统一到**人大金仓 Kingbase**：Nacos（注册+配置）、Redis（缓存/token）、Kingbase（业务与配置库）、Spring Boot Admin（监控）和 `ruoyi-nocontact` 无感监测业务域共同构成现有系统。
 
 ## Architecture Overview
 
@@ -17,15 +17,18 @@ flowchart LR
   GW -->|lb: ruoyi-system| Sys[ruoyi-system :9201]
   GW -->|lb: ruoyi-gen| Gen[ruoyi-gen :9202]
   GW -->|lb: ruoyi-job| Job[ruoyi-job :9203]
+  GW -->|lb: ruoyi-nocontact| Nocontact[ruoyi-nocontact :9204]
   GW -->|lb: ruoyi-file| File[ruoyi-file :9300]
   Monitor[ruoyi-visual-monitor :9100 Spring Boot Admin] -. Nacos discovery .-> Sys
   Auth -->|OpenFeign RemoteUserService/RemoteLogService| Sys
   Sys -->|OpenFeign RemoteFileService| File
-  Sys --> MySQL[(MySQL 5.7 ry-cloud)]
+  Sys --> Kingbase[(人大金仓 Kingbase ry-cloud)]
   Auth --> Redis[(Redis)]
   Sys --> Redis
-  Gen --> MySQL
-  Job --> MySQL
+  Gen --> Kingbase
+  Job --> Kingbase
+  Nocontact --> Kingbase
+  Nocontact --> Redis
   Job --> Redis
   File --> Local[/本地磁盘/] & MinIO[(MinIO/OSS/FastDFS)]
   Nacos[(Nacos 2.4.2 :8848 discovery+config)]
@@ -34,12 +37,13 @@ flowchart LR
   Sys --- Nacos
   Gen --- Nacos
   Job --- Nacos
+  Nocontact --- Nacos
   File --- Nacos
   Monitor --- Nacos
-  SeataSQL[/Seata SQL/] -. 仅有表结构,无 server .-> MySQL
+  SeataSQL[/Seata SQL/] -. 仅有表结构,无 server .-> Kingbase
 ```
 
-**请求主链路**：浏览器 → nginx(80) → gateway(8080) → auth(9200) [登录] / system/gen/job/file (业务) → MySQL/Redis。**内部调用**：auth→system、system→file 经 OpenFeign + `@InnerAuth`。**配置/发现**：所有服务 bootstrap.yml 拉 Nacos `application-dev.yml` 共享配置 + Nacos Discovery 注册。
+**请求主链路**：浏览器 → nginx(80) → gateway(8080) → auth(9200) [登录] / system/gen/job/nocontact/file (业务) → Kingbase/Redis。**内部调用**：auth→system、system→file 经 OpenFeign + `@InnerAuth`。**配置/发现**：所有服务 bootstrap.yml 拉 Nacos `application-dev.yml` 共享配置 + Nacos Discovery 注册。
 
 ## Discovered Topics
 
@@ -52,12 +56,13 @@ flowchart LR
 | Gateway 网关 | `ruoyi-gateway` | 8080 | WebFlux 路由、JWT 鉴权（`AuthFilter`）、XSS 清洗（`XssFilter`）、验证码（`ValidateCodeFilter`）、黑白名单（`BlackListUrlFilter`）、Sentinel 流控、Swagger 聚合 |
 | Auth 认证中心 | `ruoyi-auth` | 9200 | login/logout/refresh/register/unlock；不直连 DB，**全部走 OpenFeign** 调 system 完成密码校验 + 登录日志 |
 | System 系统业务核心 | `ruoyi-modules/ruoyi-system` | 9201 | RBAC: 用户/角色/菜单/部门/岗位/字典/参数/公告(已读)/操作日志/登录日志/在线用户；`@InnerAuth` 暴露 3 个 Feign 服务端 |
+| Nocontact 无感监测业务域 | `ruoyi-modules/ruoyi-nocontact` | 9204 | 问卷、数据融合、监测预警、外部同步、报告生成、公共支撑等业务闭环 |
 | UI 前端 | `ruoyi-ui` | 80 (dev 9526) | Vue 2 + Element UI SPA；动态路由、按钮级权限（`v-hasPermi`）、RSA 登录加密、`request.js` 拦截器 |
 | Common-Core | `ruoyi-common/ruoyi-common-core` | — | 响应体 R/AjaxResult/TableDataInfo、BaseEntity/BaseController、PageHelper、异常、Excel/Xss 注解、工具类、常量、TTL SecurityContext |
 | Common-Security | `ruoyi-common/ruoyi-common-security` | — | TokenService、HeaderInterceptor、FeignRequestInterceptor、PreAuthorizeAspect、InnerAuthAspect、GlobalExceptionHandler、`@EnableCustomConfig`/`@EnableRyFeignClients` |
 | Common-Datasource + Datascope | `ruoyi-common/ruoyi-common-datasource` + `ruoyi-common/ruoyi-common-datascope` | — | `@Master`/`@Slave` 动态数据源（Druid+dynamic-ds 4.3.1）；`@DataScope` 行级权限 AOP 注入 5 种数据范围 SQL |
 | API-System 远程契约 | `ruoyi-api/ruoyi-api-system` | — | RemoteUserService/RemoteLogService/RemoteFileService + DTO（SysUser/SysRole/LoginUser 等）+ FallbackFactory |
-| Infra (sql/docker/bin) | `sql/`, `docker/`, `bin/` | 3306/6379/8848 + 业务端口 | SQL 初始化、docker-compose 一键部署、Windows bat 启动 |
+| Infra (sql/docker/bin) | `sql/`, `docker/`, `bin/` | 54321/6379/8848 + 业务端口 | Kingbase 手工初始化、docker-compose 一键部署、Windows bat 启动 |
 
 ### Tier 2 — 重要但专业
 
@@ -84,15 +89,15 @@ flowchart LR
 |---|---|---|
 | 父级构建 | `mvn clean install -DskipTests` | 仓库根 — 拉所有 18 子模块 |
 | 父级构建（含子模块指定） | `mvn clean package -pl ruoyi-gateway,ruoyi-auth,ruoyi-modules/ruoyi-system -am -DskipTests` | 增量构建（gateway+auth+system 及其依赖） |
-| 后端单模块 | `cd ruoyi-modules/ruoyi-system && mvn spring-boot:run` | 需先启动 Nacos+MySQL+Redis |
+| 后端单模块 | `cd ruoyi-modules/ruoyi-system && mvn spring-boot:run` | 需先启动 Nacos+Kingbase+Redis |
 | 前端安装 | `cd ruoyi-ui && npm install` | node>=8.9 |
 | 前端开发 | `npm run dev` | vue-cli-service serve，devServer proxy `/dev-api` → `localhost:8080` |
 | 前端生产构建 | `npm run build:prod` / `npm run build:stage` | 产物 `ruoyi-ui/dist` |
 | 前端 lint/test | **无** — package.json 无 lint/test 脚本 | 潜在 CI 盲区 |
-| 一键部署 | `docker/copy.sh` + `cd docker && docker-compose up -d` | 启动 mysql→nacos→redis→各微服务→nginx |
-| SQL 初始化 | mysql 容器首次启动自动执行 `sql/ry_*.sql` / `quartz.sql` / `ry_seata_*.sql` / `ry_config_*.sql` | 需 docker volume 干净 |
+| 一键部署 | `docker/copy.sh` + `cd docker && docker-compose up -d` | 当前 compose 启动 nacos→redis→gateway/auth/system/gen/job/nocontact/file→nginx；不含 mysql |
+| SQL 初始化 | 手动执行，见 `sql/mysql/README.md` | 当前运行基线为 Kingbase 手工导入；仓库保留少量历史 MySQL 文件仅作参考，不再自动导入 |
 
-> **强事实证据**：`docker/copy.sh` 引用 `ry_20260402.sql` / `ry_config_20260311.sql`，但 `sql/` 实际是 `ry_20260417.sql` / `ry_config_20250902.sql` — 文件名漂移，`docker-compose` 部署必坏。
+> **强事实证据**：`ruoyi-nocontact` 当前 Nacos 配置明确使用 Kingbase 数据源（`sql/kingbase/ruoyi-nocontact-dev.yml`），`docker/nacos/conf/application.properties` 也已切到 Kingbase 插件路径，`sql/kingbase/ry-config.sql` 已直接写入 PostgreSQL 兼容 JDBC 配置。因此基础初始化、Nacos 配置导入、问卷/无感菜单同步、Kingbase 业务库导入必须按手动顺序执行。
 
 ## Key Patterns
 
@@ -148,8 +153,8 @@ flowchart LR
 | `ruoyi-common/ruoyi-common-swagger/` | springdoc-openapi 装配 | 2 |
 | `ruoyi-common/ruoyi-common-sensitive/` | `@Sensitive` 脱敏序列化 | 3 |
 | `ruoyi-common/ruoyi-common-seata/` | **空壳** — 仅 pom，无源码 | 3 |
-| `sql/` | MySQL/Quartz/Nacos/Seata 初始化 SQL | 1 |
-| `docker/` | docker-compose 编排（mysql/nacos/redis/nginx/7 个业务镜像） | 1 |
+| `sql/` | Kingbase/Quartz/Nacos/Seata 初始化 SQL，兼容保留少量历史 MySQL 参考文件 | 1 |
+| `docker/` | docker-compose 编排（nacos/redis/nginx/8 个业务镜像） | 1 |
 | `bin/` | Windows bat 启动/打包脚本 | 3 |
 | `.github/FUNDING.yml` | OSS 资金募集声明 | 3 |
 
@@ -172,7 +177,7 @@ flowchart LR
 
 ## 后续建议
 
-> 仓库是**单次 import**，没有任何业务代码；要做 NoContactMonitorCloud 的实际产品（看仓库名疑似是"无接触监控云"），下一步应：
+> 仓库已经承载 NoContactMonitorCloud 的实际业务代码；后续工作应继续围绕需求文档、issue 闭环和 Kingbase 生产基线收口，而不是按原型项目重新推演。
 
 1. 修基础设施：`docker/copy.sh` 文件名同步、Redis 密码或 yml 同步、Nacos auth 开启、JWT SECRET 抽到 Nacos、Admin Server 9100 加 IP 白名单
 2. 新建 `ruoyi-modules/ruoyi-monitor-business/` 业务模块，依赖 `ruoyi-common-*`；通过 `@InnerAuth` 暴露给 system

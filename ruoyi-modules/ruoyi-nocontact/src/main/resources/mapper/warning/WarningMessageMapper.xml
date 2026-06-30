@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.nocontact.warning.mapper.WarningMessageMapper">
+
+    <resultMap type="WarningMessage" id="WarningMessageResult">
+        <id     property="messageId"      column="message_id"      />
+        <result property="ruleId"         column="rule_id"         />
+        <result property="ruleName"       column="rule_name"       />
+        <result property="indicatorId"    column="indicator_id"    />
+        <result property="indicatorName"  column="indicator_name"  />
+        <result property="warningLevel"   column="warning_level"   />
+        <result property="deptId"         column="dept_id"         />
+        <result property="responsibleUnitId" column="responsible_unit_id" />
+        <result property="responsibleUnitName" column="responsible_unit_name" />
+        <result property="regionCode"     column="region_code"     />
+        <result property="regionName"     column="region_name"     />
+        <result property="periodKey"      column="period_key"      />
+        <result property="currentValue"   column="current_value"   />
+        <result property="thresholdValue" column="threshold_value" />
+        <result property="pushChannels"   column="push_channels"   />
+        <result property="receivers"      column="receivers"       />
+        <result property="messageStatus"  column="message_status"  />
+        <result property="businessKey"    column="business_key"    />
+        <result property="hitCount"       column="hit_count"       />
+        <result property="sourceBatchId"  column="source_batch_id" />
+        <result property="sourceItemId"   column="source_item_id"  />
+        <result property="triggerTime"    column="trigger_time"    />
+        <result property="latestHitTime"  column="latest_hit_time" />
+        <result property="handleTime"     column="handle_time"     />
+        <result property="handleOpinion"  column="handle_opinion"  />
+        <result property="createBy"       column="create_by"       />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateBy"       column="update_by"       />
+        <result property="updateTime"     column="update_time"     />
+        <result property="remark"         column="remark"          />
+    </resultMap>
+
+    <resultMap type="WarningMessageHandleLog" id="WarningMessageHandleLogResult">
+        <id     property="logId"         column="log_id"         />
+        <result property="messageId"     column="message_id"     />
+        <result property="fromStatus"    column="from_status"    />
+        <result property="toStatus"      column="to_status"      />
+        <result property="handleBy"      column="handle_by"      />
+        <result property="handleTime"    column="handle_time"    />
+        <result property="handleOpinion" column="handle_opinion" />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="remark"        column="remark"         />
+    </resultMap>
+
+    <sql id="selectMessageVo">
+        select m.message_id, m.rule_id, coalesce(r.rule_name, m.rule_name) as rule_name,
+               m.indicator_id, coalesce(i.indicator_name, m.indicator_name) as indicator_name,
+               m.warning_level, m.dept_id, m.responsible_unit_id, m.responsible_unit_name,
+               m.region_code, m.region_name, m.period_key, m.current_value, m.threshold_value,
+               m.push_channels, m.receivers, m.message_status, m.business_key, m.hit_count,
+               m.source_batch_id, m.source_item_id, m.trigger_time, m.latest_hit_time,
+               m.handle_time, m.handle_opinion,
+               m.create_by, m.create_time, m.update_by, m.update_time, m.remark
+        from nc_warning_message m
+        left join nc_warning_rule r on r.rule_id = m.rule_id
+        left join nc_fusion_indicator i on i.indicator_id = m.indicator_id
+    </sql>
+
+    <select id="selectMessageList" parameterType="WarningMessage" resultMap="WarningMessageResult">
+        <include refid="selectMessageVo"/>
+        <where>
+            m.del_flag = '0'
+            <if test="ruleName != null and ruleName != ''">
+                AND coalesce(r.rule_name, m.rule_name) like '%' || #{ruleName} || '%'
+            </if>
+            <if test="indicatorName != null and indicatorName != ''">
+                AND coalesce(i.indicator_name, m.indicator_name) like '%' || #{indicatorName} || '%'
+            </if>
+            <if test="warningLevel != null and warningLevel != ''">
+                AND m.warning_level = #{warningLevel}
+            </if>
+            <if test="messageStatus != null and messageStatus != ''">
+                AND m.message_status = #{messageStatus}
+            </if>
+            <if test="regionName != null and regionName != ''">
+                AND m.region_name like '%' || #{regionName} || '%'
+            </if>
+            <if test="deptId != null">
+                AND m.dept_id = #{deptId}
+            </if>
+            <if test="responsibleUnitId != null">
+                AND m.responsible_unit_id = #{responsibleUnitId}
+            </if>
+            <if test="responsibleUnitName != null and responsibleUnitName != ''">
+                AND m.responsible_unit_name like '%' || #{responsibleUnitName} || '%'
+            </if>
+            <if test="regionCode != null and regionCode != ''">
+                AND m.region_code = #{regionCode}
+            </if>
+            <if test="periodKey != null and periodKey != ''">
+                AND m.period_key = #{periodKey}
+            </if>
+            ${params.dataScope}
+        </where>
+        order by m.trigger_time desc, m.message_id desc
+    </select>
+
+    <select id="countMessageList" parameterType="WarningMessage" resultType="int">
+        select count(1)
+        from nc_warning_message m
+        left join nc_warning_rule r on r.rule_id = m.rule_id
+        left join nc_fusion_indicator i on i.indicator_id = m.indicator_id
+        <where>
+            m.del_flag = '0'
+            <if test="ruleName != null and ruleName != ''">
+                AND coalesce(r.rule_name, m.rule_name) like '%' || #{ruleName} || '%'
+            </if>
+            <if test="indicatorName != null and indicatorName != ''">
+                AND coalesce(i.indicator_name, m.indicator_name) like '%' || #{indicatorName} || '%'
+            </if>
+            <if test="warningLevel != null and warningLevel != ''">
+                AND m.warning_level = #{warningLevel}
+            </if>
+            <if test="messageStatus != null and messageStatus != ''">
+                AND m.message_status = #{messageStatus}
+            </if>
+            <if test="regionName != null and regionName != ''">
+                AND m.region_name like '%' || #{regionName} || '%'
+            </if>
+            <if test="deptId != null">
+                AND m.dept_id = #{deptId}
+            </if>
+            <if test="responsibleUnitId != null">
+                AND m.responsible_unit_id = #{responsibleUnitId}
+            </if>
+            <if test="responsibleUnitName != null and responsibleUnitName != ''">
+                AND m.responsible_unit_name like '%' || #{responsibleUnitName} || '%'
+            </if>
+            <if test="regionCode != null and regionCode != ''">
+                AND m.region_code = #{regionCode}
+            </if>
+            <if test="periodKey != null and periodKey != ''">
+                AND m.period_key = #{periodKey}
+            </if>
+            ${params.dataScope}
+        </where>
+    </select>
+
+    <select id="selectMessageById" parameterType="Long" resultMap="WarningMessageResult">
+        <include refid="selectMessageVo"/>
+        where m.message_id = #{messageId} and m.del_flag = '0'
+    </select>
+
+    <select id="selectMessageByScope" parameterType="WarningMessage" resultMap="WarningMessageResult">
+        <include refid="selectMessageVo"/>
+        where m.message_id = #{messageId} and m.del_flag = '0'
+        ${params.dataScope}
+    </select>
+
+    <select id="selectHandleLogsByMessageId" parameterType="Long" resultMap="WarningMessageHandleLogResult">
+        select log_id, message_id, from_status, to_status, handle_by, handle_time,
+               handle_opinion, create_by, create_time, remark
+        from nc_warning_message_handle_log
+        where message_id = #{messageId}
+        order by handle_time, log_id
+    </select>
+
+    <select id="selectOpenMessagesByScope" parameterType="WarningMessage" resultMap="WarningMessageResult">
+        <include refid="selectMessageVo"/>
+        <where>
+            m.del_flag = '0'
+            and m.message_status not in ('closed', 'ignored', 'handled', 'archived')
+            <if test="deptId != null">
+                AND m.dept_id = #{deptId}
+            </if>
+            <if test="responsibleUnitId != null">
+                AND m.responsible_unit_id = #{responsibleUnitId}
+            </if>
+            <choose>
+                <when test="regionCode != null and regionCode != ''">
+                    AND m.region_code = #{regionCode}
+                </when>
+                <otherwise>
+                    AND (m.region_code is null or m.region_code = '')
+                </otherwise>
+            </choose>
+            <if test="periodKey != null and periodKey != ''">
+                AND m.period_key = #{periodKey}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insertMessage" parameterType="WarningMessage" useGeneratedKeys="true" keyProperty="messageId">
+        insert into nc_warning_message
+        (rule_id, rule_name, indicator_id, indicator_name, warning_level,
+         dept_id, responsible_unit_id, responsible_unit_name, region_code, region_name, period_key,
+         current_value, threshold_value, push_channels, receivers, message_status,
+         business_key, hit_count, source_batch_id, source_item_id,
+         trigger_time, latest_hit_time, handle_time, create_by, create_time, remark)
+        values
+        (#{ruleId}, #{ruleName}, #{indicatorId}, #{indicatorName}, #{warningLevel},
+         #{deptId}, #{responsibleUnitId}, #{responsibleUnitName}, #{regionCode}, #{regionName}, #{periodKey},
+         #{currentValue}, #{thresholdValue}, #{pushChannels}, #{receivers}, #{messageStatus},
+         #{businessKey}, #{hitCount}, #{sourceBatchId}, #{sourceItemId},
+         #{triggerTime}, #{latestHitTime}, #{handleTime}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateMessageHit" parameterType="WarningMessage">
+        update nc_warning_message
+        <set>
+            current_value = #{currentValue},
+            threshold_value = #{thresholdValue},
+            hit_count = #{hitCount},
+            source_batch_id = #{sourceBatchId},
+            source_item_id = #{sourceItemId},
+            latest_hit_time = #{latestHitTime},
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        where message_id = #{messageId}
+          and del_flag = '0'
+          and message_status not in ('closed', 'ignored', 'handled', 'archived')
+    </update>
+
+    <update id="updateOpenMessageHitByBusinessKey" parameterType="WarningMessage">
+        update nc_warning_message
+        set current_value = #{currentValue},
+            threshold_value = #{thresholdValue},
+            hit_count = coalesce(hit_count, 0) + 1,
+            source_batch_id = #{sourceBatchId},
+            source_item_id = #{sourceItemId},
+            latest_hit_time = #{latestHitTime},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where business_key = #{businessKey}
+          and del_flag = '0'
+          and message_status not in ('closed', 'ignored', 'handled', 'archived')
+    </update>
+
+    <update id="updateMessageStatus" parameterType="WarningMessage">
+        update nc_warning_message
+        <set>
+            message_status = #{messageStatus},
+            <if test="handleTime != null">handle_time = #{handleTime},</if>
+            <if test="handleOpinion != null">handle_opinion = #{handleOpinion},</if>
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        </set>
+        where message_id = #{messageId}
+          and del_flag = '0'
+          and message_status = #{expectedStatus}
+    </update>
+
+    <insert id="insertHandleLog" parameterType="WarningMessageHandleLog" useGeneratedKeys="true" keyProperty="logId">
+        insert into nc_warning_message_handle_log
+        (message_id, from_status, to_status, handle_by, handle_time, handle_opinion,
+         create_by, create_time, remark)
+        values
+        (#{messageId}, #{fromStatus}, #{toStatus}, #{handleBy}, #{handleTime}, #{handleOpinion},
+         #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="deleteMessageByIds" parameterType="Long">
+        update nc_warning_message set del_flag = '2'
+        where message_id in
+        <foreach collection="array" item="messageId" open="(" separator="," close=")">
+            #{messageId}
+        </foreach>
+    </update>
+
+    <select id="selectDashboardSummary" parameterType="WarningMessage" resultType="map">
+        select count(1) as total_count,
+               sum(case when cast(m.trigger_time as date) = current_date then 1 else 0 end) as today_count,
+               sum(case when m.message_status in ('handled','archived','closed','ignored') then 1 else 0 end) as handled_count,
+               sum(case when m.message_status in ('sent','read','pending','processing') then 1 else 0 end) as pending_count
+        from nc_warning_message m
+        where m.del_flag = '0'
+        ${params.dataScope}
+    </select>
+
+    <select id="selectLevelStats" parameterType="WarningMessage" resultType="map">
+        select m.warning_level as stat_name, count(1) as count_value
+        from nc_warning_message m
+        where m.del_flag = '0'
+        ${params.dataScope}
+        group by m.warning_level
+        order by m.warning_level
+    </select>
+
+    <select id="selectRegionStats" parameterType="WarningMessage" resultType="map">
+        select m.region_name as stat_name, count(1) as count_value
+        from nc_warning_message m
+        where m.del_flag = '0'
+        ${params.dataScope}
+        group by m.region_name
+        order by count(1) desc
+        limit 10
+    </select>
+
+    <select id="selectIndicatorStats" parameterType="WarningMessage" resultType="map">
+        select coalesce(i.indicator_name, m.indicator_name) as stat_name, count(1) as count_value
+        from nc_warning_message m
+        left join nc_fusion_indicator i on i.indicator_id = m.indicator_id
+        where m.del_flag = '0'
+        ${params.dataScope}
+        group by coalesce(i.indicator_name, m.indicator_name)
+        order by count(1) desc
+        limit 10
+    </select>
+
+    <select id="selectTrendStats" parameterType="WarningMessage" resultType="map">
+        select cast(m.trigger_time as date) as stat_name, count(1) as count_value
+        from nc_warning_message m
+        where m.del_flag = '0' and m.trigger_time >= current_date - interval '29 days'
+        ${params.dataScope}
+        group by cast(m.trigger_time as date)
+        order by cast(m.trigger_time as date)
+    </select>
+</mapper>

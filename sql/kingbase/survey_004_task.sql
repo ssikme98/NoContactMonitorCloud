@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS survey_task (
   sampling_method varchar(16) not null,
   sample_size int default 0,
   group_id bigint,
+  sampling_batch_no varchar(40) default '',
+  sampling_batch_time timestamp,
+  sampling_filter_snapshot text,
   token_expire_hours int default 168,
   send_channels varchar(64) default 'sms,site',
   status char(1) default '1',
@@ -27,6 +30,9 @@ COMMENT ON TABLE survey_task IS '调研任务';
 COMMENT ON COLUMN survey_task.questionnaire_id IS '已发布问卷ID';
 COMMENT ON COLUMN survey_task.sample_source IS '样本来源（all全部 group分组 enterprise指定企业）';
 COMMENT ON COLUMN survey_task.sampling_method IS '抽样方式（random随机 stratified分层 specified指定）';
+COMMENT ON COLUMN survey_task.sampling_batch_no IS '抽样批次号';
+COMMENT ON COLUMN survey_task.sampling_batch_time IS '抽样批次时间';
+COMMENT ON COLUMN survey_task.sampling_filter_snapshot IS '抽样筛选快照';
 COMMENT ON COLUMN survey_task.send_channels IS '模拟发送渠道，逗号分隔';
 COMMENT ON COLUMN survey_task.status IS '状态（0草稿 1已抽样 2已发卷 3已结束）';
 
@@ -64,6 +70,8 @@ CREATE TABLE IF NOT EXISTS survey_task_send_record (
   receiver varchar(120) default '',
   content varchar(500) default '',
   send_status char(1) default '0',
+  submit_status char(1) default '0',
+  recovery_time timestamp,
   create_time timestamp,
   CONSTRAINT pk_survey_task_send_record PRIMARY KEY (record_id)
 );
@@ -71,6 +79,8 @@ CREATE TABLE IF NOT EXISTS survey_task_send_record (
 COMMENT ON TABLE survey_task_send_record IS '调研任务发送记录';
 COMMENT ON COLUMN survey_task_send_record.channel IS '发送渠道（sms短信 site站内信）';
 COMMENT ON COLUMN survey_task_send_record.send_status IS '发送状态（0已生成）';
+COMMENT ON COLUMN survey_task_send_record.submit_status IS '填报状态（0未填报 1已填报）';
+COMMENT ON COLUMN survey_task_send_record.recovery_time IS '填报时间';
 
 CREATE INDEX IF NOT EXISTS idx_survey_task_questionnaire ON survey_task(questionnaire_id);
 CREATE INDEX IF NOT EXISTS idx_survey_task_sample_task ON survey_task_sample(task_id);

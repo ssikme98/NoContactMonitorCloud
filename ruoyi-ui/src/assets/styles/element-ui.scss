@@ -46,6 +46,23 @@
   }
 }
 
+.el-switch__label {
+  white-space: nowrap;
+}
+
+.el-dialog {
+  .el-input-number {
+    width: 100%;
+  }
+
+  .el-input-number.is-controls-right {
+    .el-input__inner {
+      padding-left: 8px;
+      padding-right: 42px;
+    }
+  }
+}
+
 // to fixed https://github.com/ElemeFE/element/issues/2461
 .el-dialog {
   transform: none;

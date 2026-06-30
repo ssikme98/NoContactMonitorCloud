@@ -41,7 +41,7 @@
           <div class="detail-card-title"><i class="el-icon-time"></i> 任务信息</div>
           <el-row class="detail-row">
             <el-col :span="12">
-              <div class="detail-item"><span class="detail-label">任务名称</span><span class="detail-value">{{ form.jobName }}</span></div>
+              <div class="detail-item"><span class="detail-label">任务名称</span><span class="detail-value">{{ displayJobName }}</span></div>
             </el-col>
             <el-col :span="12">
               <div class="detail-item">
@@ -82,7 +82,7 @@
               <div class="detail-item"><span class="detail-label">任务编号</span><span class="detail-value">{{ form.jobId }}</span></div>
             </el-col>
             <el-col :span="12">
-              <div class="detail-item"><span class="detail-label">任务名称</span><span class="detail-value">{{ form.jobName }}</span></div>
+              <div class="detail-item"><span class="detail-label">任务名称</span><span class="detail-value">{{ displayJobName }}</span></div>
             </el-col>
           </el-row>
           <el-row class="detail-row">
@@ -172,6 +172,8 @@
 </template>
 
 <script>
+import { formatJobName } from '@/utils/jobName'
+
 export default {
   dicts: ['sys_job_group'],
   props: {
@@ -182,6 +184,9 @@ export default {
   },
   computed: {
     form() { return this.row || {} },
+    displayJobName() {
+      return formatJobName(this.form.jobName)
+    },
     costTime() {
       if (!this.form.startTime || !this.form.endTime) return 0
       return new Date(this.form.endTime).getTime() - new Date(this.form.startTime).getTime()

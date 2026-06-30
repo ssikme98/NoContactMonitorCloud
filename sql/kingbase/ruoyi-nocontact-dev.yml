@@ -1,0 +1,60 @@
+# spring配置
+spring:
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: 6379
+    password:
+  datasource:
+    druid:
+      stat-view-servlet:
+        enabled: true
+        loginUsername: ruoyi
+        loginPassword: 123456
+    dynamic:
+      druid:
+        initial-size: 5
+        min-idle: 5
+        maxActive: 20
+        maxWait: 60000
+        connectTimeout: 30000
+        socketTimeout: 60000
+        timeBetweenEvictionRunsMillis: 60000
+        minEvictableIdleTimeMillis: 300000
+        validationQuery: SELECT 1
+        testWhileIdle: true
+        testOnBorrow: false
+        testOnReturn: false
+        poolPreparedStatements: true
+        maxPoolPreparedStatementPerConnectionSize: 20
+        filters: stat,slf4j
+        connectionProperties: druid.stat.mergeSql\=true;druid.stat.slowSqlMillis\=5000
+      datasource:
+          # 主库数据源
+          master:
+            driver-class-name: org.postgresql.Driver
+            url: jdbc:postgresql://${KINGBASE_HOST:localhost}:${KINGBASE_PORT:54321}/ry-cloud
+            username: ${KINGBASE_USERNAME:root}
+            password: ${KINGBASE_PASSWORD:password}
+
+# mybatis配置
+mybatis:
+    # 搜索指定包别名
+    typeAliasesPackage: com.ruoyi.nocontact
+    # 配置mapper的扫描,找到所有的mapper.xml映射文件
+    mapperLocations: classpath:mapper/**/*.xml
+
+# springdoc配置
+springdoc:
+  gatewayUrl: http://localhost:8080/${spring.application.name}
+  api-docs:
+    # 是否开启接口文档
+    enabled: true
+  info:
+    # 标题
+    title: '营商无感业务模块接口文档'
+    # 描述
+    description: '营商环境无感监测业务接口描述'
+    # 作者信息
+    contact:
+      name: RuoYi
+      url: https://ruoyi.vip
