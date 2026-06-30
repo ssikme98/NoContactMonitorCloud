@@ -208,7 +208,7 @@ import {
   createDraftQuestionnaire,
   publishQuestionnaire,
   endQuestionnaire
-} from '@/api/survey/questionnaire'
+} from '@/api/nocontact/questionnaire'
 
 const QUESTION_TYPES = [
   { label: '单选题', value: 'single' },

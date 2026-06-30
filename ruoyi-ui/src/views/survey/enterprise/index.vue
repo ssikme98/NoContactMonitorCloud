@@ -211,7 +211,7 @@
       </div>
     </el-dialog>
 
-    <excel-import-dialog ref="importEnterpriseRef" title="企业导入" action="/survey/enterprise/importData" template-action="/survey/enterprise/importTemplate" template-file-name="enterprise_template" update-support-label="是否更新统一社会信用代码已存在的数据" @success="getList" />
+    <excel-import-dialog ref="importEnterpriseRef" title="企业导入" action="/nocontact/enterprise/importData" template-action="/nocontact/enterprise/importTemplate" template-file-name="enterprise_template" update-support-label="是否更新统一社会信用代码已存在的数据" @success="getList" />
   </div>
 </template>
 
@@ -228,7 +228,7 @@ import {
   addEnterpriseGroup,
   updateEnterpriseGroup,
   delEnterpriseGroup
-} from '@/api/survey/enterprise'
+} from '@/api/nocontact/enterprise'
 import Treeselect from '@riophae/vue-treeselect'
 import '@riophae/vue-treeselect/dist/vue-treeselect.css'
 import TreePanel from '@/components/TreePanel'
@@ -517,7 +517,7 @@ export default {
       }).catch(() => {})
     },
     handleExport() {
-      this.download('survey/enterprise/export', {
+      this.download('nocontact/enterprise/export', {
         ...this.queryParams
       }, `enterprise_${new Date().getTime()}.xlsx`)
     },

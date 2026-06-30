@@ -60,7 +60,7 @@
 </template>
 
 <script>
-import { getFill, submitFill } from '@/api/survey/fill'
+import { getFill, submitFill } from '@/api/nocontact/fill'
 
 export default {
   name: 'SurveyPublicFill',

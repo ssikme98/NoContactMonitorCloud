@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import { getSurveyOverview } from '@/api/survey/overview'
+import { getSurveyOverview } from '@/api/nocontact/overview'
 
 export default {
   name: 'SurveyOverview',

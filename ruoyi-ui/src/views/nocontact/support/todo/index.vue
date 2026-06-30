@@ -15,7 +15,7 @@
           <strong>采集任务列表</strong>
           <span>进入数据融合采集任务列表</span>
         </button>
-        <button type="button" class="todo-action-card" @click="openAction('/survey/tracking')">
+        <button type="button" class="todo-action-card" @click="openAction('/nocontact/tracking')">
           <strong>问卷填报追踪</strong>
           <span>进入问卷待填报追踪页面</span>
         </button>

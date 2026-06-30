@@ -153,7 +153,7 @@
 import { listTodoSummary, getSupportPublicSettings, listBusinessMessage } from '@/api/nocontact/support'
 import { getTaskSummary } from '@/api/nocontact/fusion/task'
 import { getWarningDashboard } from '@/api/nocontact/warning/message'
-import { listEnterprise } from '@/api/survey/enterprise'
+import { listEnterprise } from '@/api/nocontact/enterprise'
 import { getIssueDashboard } from '@/api/nocontact/rectification/issue'
 import { listReportTask } from '@/api/nocontact/report'
 

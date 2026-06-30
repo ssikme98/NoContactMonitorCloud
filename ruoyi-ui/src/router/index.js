@@ -52,7 +52,7 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: '/survey/fill/:token',
+    path: '/nocontact/fill/:token',
     component: () => import('@/views/survey/fill/index'),
     hidden: true,
     meta: { title: '问卷填报' }
@@ -70,7 +70,7 @@ export const constantRoutes = [
   {
     path: '',
     component: Layout,
-    redirect: '/survey/enterprise'
+    redirect: '/nocontact/enterprise'
   },
   {
     path: '/lock',

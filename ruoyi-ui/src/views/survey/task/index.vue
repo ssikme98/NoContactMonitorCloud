@@ -320,8 +320,8 @@
 import { saveAs } from 'file-saver'
 import Treeselect from '@riophae/vue-treeselect'
 import '@riophae/vue-treeselect/dist/vue-treeselect.css'
-import { listQuestionnaire } from '@/api/survey/questionnaire'
-import { listEnterprise, groupTreeSelect } from '@/api/survey/enterprise'
+import { listQuestionnaire } from '@/api/nocontact/questionnaire'
+import { listEnterprise, groupTreeSelect } from '@/api/nocontact/enterprise'
 import {
   listTask,
   getTask,
@@ -335,7 +335,7 @@ import {
   dispatchTask,
   delTask,
   getTaskQrCode
-} from '@/api/survey/task'
+} from '@/api/nocontact/task'
 
 const HUNAN_CITY_OPTIONS = [
   { code: '430100', name: '长沙市' },

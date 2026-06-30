@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询问卷列表
 export function listQuestionnaire(query) {
   return request({
-    url: '/survey/questionnaire/list',
+    url: '/nocontact/questionnaire/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listQuestionnaire(query) {
 // 查询问卷详细
 export function getQuestionnaire(questionnaireId) {
   return request({
-    url: '/survey/questionnaire/' + questionnaireId,
+    url: '/nocontact/questionnaire/' + questionnaireId,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getQuestionnaire(questionnaireId) {
 // 新增问卷
 export function addQuestionnaire(data) {
   return request({
-    url: '/survey/questionnaire',
+    url: '/nocontact/questionnaire',
     method: 'post',
     data: data
   })
@@ -29,7 +29,7 @@ export function addQuestionnaire(data) {
 // 修改问卷
 export function updateQuestionnaire(data) {
   return request({
-    url: '/survey/questionnaire',
+    url: '/nocontact/questionnaire',
     method: 'put',
     data: data
   })
@@ -38,7 +38,7 @@ export function updateQuestionnaire(data) {
 // 删除问卷
 export function delQuestionnaire(questionnaireId) {
   return request({
-    url: '/survey/questionnaire/' + questionnaireId,
+    url: '/nocontact/questionnaire/' + questionnaireId,
     method: 'delete'
   })
 }
@@ -46,7 +46,7 @@ export function delQuestionnaire(questionnaireId) {
 // 创建新版草稿
 export function createDraftQuestionnaire(questionnaireId) {
   return request({
-    url: '/survey/questionnaire/' + questionnaireId + '/draft',
+    url: '/nocontact/questionnaire/' + questionnaireId + '/draft',
     method: 'post'
   })
 }
@@ -54,7 +54,7 @@ export function createDraftQuestionnaire(questionnaireId) {
 // 发布问卷
 export function publishQuestionnaire(questionnaireId) {
   return request({
-    url: '/survey/questionnaire/' + questionnaireId + '/publish',
+    url: '/nocontact/questionnaire/' + questionnaireId + '/publish',
     method: 'post'
   })
 }
@@ -62,7 +62,7 @@ export function publishQuestionnaire(questionnaireId) {
 // 结束问卷
 export function endQuestionnaire(questionnaireId) {
   return request({
-    url: '/survey/questionnaire/' + questionnaireId + '/end',
+    url: '/nocontact/questionnaire/' + questionnaireId + '/end',
     method: 'post'
   })
 }

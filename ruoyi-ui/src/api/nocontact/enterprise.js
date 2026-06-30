@@ -4,7 +4,7 @@ import { geocodeEnterpriseAddress } from '@/api/nocontact/support'
 // 查询企业库列表
 export function listEnterprise(query) {
   return request({
-    url: '/survey/enterprise/list',
+    url: '/nocontact/enterprise/list',
     method: 'get',
     params: query
   })
@@ -13,7 +13,7 @@ export function listEnterprise(query) {
 // 查询企业库详细
 export function getEnterprise(enterpriseId) {
   return request({
-    url: '/survey/enterprise/' + enterpriseId,
+    url: '/nocontact/enterprise/' + enterpriseId,
     method: 'get'
   })
 }
@@ -21,7 +21,7 @@ export function getEnterprise(enterpriseId) {
 // 新增企业
 export function addEnterprise(data) {
   return request({
-    url: '/survey/enterprise',
+    url: '/nocontact/enterprise',
     method: 'post',
     data: data
   })
@@ -30,7 +30,7 @@ export function addEnterprise(data) {
 // 修改企业
 export function updateEnterprise(data) {
   return request({
-    url: '/survey/enterprise',
+    url: '/nocontact/enterprise',
     method: 'put',
     data: data
   })
@@ -39,7 +39,7 @@ export function updateEnterprise(data) {
 // 删除企业
 export function delEnterprise(enterpriseId) {
   return request({
-    url: '/survey/enterprise/' + enterpriseId,
+    url: '/nocontact/enterprise/' + enterpriseId,
     method: 'delete'
   })
 }
@@ -47,7 +47,7 @@ export function delEnterprise(enterpriseId) {
 // 查询企业分组列表
 export function listEnterpriseGroup(query) {
   return request({
-    url: '/survey/enterprise/group/list',
+    url: '/nocontact/enterprise/group/list',
     method: 'get',
     params: query
   })
@@ -56,7 +56,7 @@ export function listEnterpriseGroup(query) {
 // 查询企业分组下拉树
 export function groupTreeSelect() {
   return request({
-    url: '/survey/enterprise/group/treeselect',
+    url: '/nocontact/enterprise/group/treeselect',
     method: 'get'
   })
 }
@@ -64,7 +64,7 @@ export function groupTreeSelect() {
 // 查询企业分组详细
 export function getEnterpriseGroup(groupId) {
   return request({
-    url: '/survey/enterprise/group/' + groupId,
+    url: '/nocontact/enterprise/group/' + groupId,
     method: 'get'
   })
 }
@@ -72,7 +72,7 @@ export function getEnterpriseGroup(groupId) {
 // 新增企业分组
 export function addEnterpriseGroup(data) {
   return request({
-    url: '/survey/enterprise/group',
+    url: '/nocontact/enterprise/group',
     method: 'post',
     data: data
   })
@@ -81,7 +81,7 @@ export function addEnterpriseGroup(data) {
 // 修改企业分组
 export function updateEnterpriseGroup(data) {
   return request({
-    url: '/survey/enterprise/group',
+    url: '/nocontact/enterprise/group',
     method: 'put',
     data: data
   })
@@ -90,7 +90,7 @@ export function updateEnterpriseGroup(data) {
 // 删除企业分组
 export function delEnterpriseGroup(groupId) {
   return request({
-    url: '/survey/enterprise/group/' + groupId,
+    url: '/nocontact/enterprise/group/' + groupId,
     method: 'delete'
   })
 }
